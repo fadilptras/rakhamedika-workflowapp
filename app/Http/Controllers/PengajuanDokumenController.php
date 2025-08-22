@@ -1,0 +1,14 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class PengajuanDokumenController extends Controller
+{
+    public function pengajuan_dokumen()
+    {
+        $title = 'Pengajuan Dokumen';
+        return view('pengajuan-dokumen', compact('title'));
+    }
+}
