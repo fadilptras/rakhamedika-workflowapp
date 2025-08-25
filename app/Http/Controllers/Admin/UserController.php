@@ -6,18 +6,39 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage; // <-- UBAH DISINI: Tambahkan ini untuk mengelola file
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     /**
-     * Menampilkan halaman daftar user di Dashboard.
+     * Menampilkan halaman dengan daftar karyawan (role = 'user').
+     * Menggunakan view 'admin.dashboard'.
      */
-    public function index()
+    public function indexEmployees()
     {
-        $users = User::latest()->paginate(10); 
-        return view('admin.dashboard', compact('users'));
+        $users = User::where('role', 'user')->latest()->paginate(10);
+        // UBAH DISINI: Arahkan ke view 'admin.dashboard'
+        return view('admin.dashboard', [
+            'users' => $users,
+            'pageTitle' => 'Kelola Akun Karyawan',
+            'defaultRole' => 'user'
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman dengan daftar admin (role = 'admin').
+     * Menggunakan view 'admin.dashboard'.
+     */
+    public function indexAdmins()
+    {
+        $users = User::where('role', 'admin')->latest()->paginate(10);
+        // UBAH DISINI: Arahkan juga ke view 'admin.dashboard'
+        return view('admin.dashboard', [
+            'users' => $users,
+            'pageTitle' => 'Kelola Akun Admin',
+            'defaultRole' => 'admin'
+        ]);
     }
 
     /**
@@ -25,7 +46,6 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi input 
         $validatedData = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -33,10 +53,9 @@ class UserController extends Controller
             'role' => ['required', Rule::in(['admin', 'user'])],
             'jabatan' => 'nullable|string|max:255',
             'tanggal_bergabung' => 'nullable|date',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // max 2MB
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // hash password
         $validatedData['password'] = Hash::make($request->password);
 
         if ($request->hasFile('profile_picture')) {
@@ -46,7 +65,9 @@ class UserController extends Controller
         
         User::create($validatedData);
 
-        return redirect()->route('admin.dashboard')->with('success', 'Akun berhasil ditambahkan.');
+        // UBAH DISINI: Redirect berdasarkan role yang baru dibuat
+        $redirectRoute = $request->role === 'admin' ? 'admin.admins.index' : 'admin.employees.index';
+        return redirect()->route($redirectRoute)->with('success', 'Akun berhasil ditambahkan.');
     }
 
     /**
@@ -54,17 +75,15 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-
         $validatedData = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'role' => ['required', Rule::in(['admin', 'user'])],
-            'password' => ['nullable', 'string', 'min:8'], // Password jadi opsional
+            'password' => ['nullable', 'string', 'min:8'],
             'jabatan' => 'nullable|string|max:255',
             'tanggal_bergabung' => 'nullable|date',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-
     
         if ($request->filled('password')) {
             $validatedData['password'] = Hash::make($request->password);
@@ -72,22 +91,19 @@ class UserController extends Controller
             unset($validatedData['password']);
         }
 
-        // 3. Cek jika ada file gambar baru yang di-upload
         if ($request->hasFile('profile_picture')) {
-            // Hapus gambar lama jika ada
             if ($user->profile_picture) {
                 Storage::disk('public')->delete($user->profile_picture);
             }
-            // Simpan gambar baru dan dapatkan path-nya
             $path = $request->file('profile_picture')->store('profile-pictures', 'public');
             $validatedData['profile_picture'] = $path;
         }
         
-        // 4. Update data user
         $user->update($validatedData);
 
-        // 5. Redirect dengan pesan sukses
-        return redirect()->route('admin.dashboard')->with('success', 'Akun berhasil diupdate.');
+        // UBAH DISINI: Redirect berdasarkan role yang diupdate
+        $redirectRoute = $request->role === 'admin' ? 'admin.admins.index' : 'admin.employees.index';
+        return redirect()->route($redirectRoute)->with('success', 'Akun berhasil diupdate.');
     }
 
     /**
@@ -95,15 +111,16 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        // <-- UBAH DISINI: Hapus juga foto profilnya dari storage -->
+        $role = $user->role; // Simpan role sebelum user dihapus
+
         if ($user->profile_picture) {
             Storage::disk('public')->delete($user->profile_picture);
         }
 
-        // Hapus data user dari database
         $user->delete();
 
-        // Redirect dengan pesan sukses
-        return redirect()->route('admin.dashboard')->with('success', 'Akun berhasil dihapus.');
+        // UBAH DISINI: Redirect berdasarkan role user yang dihapus
+        $redirectRoute = $role === 'admin' ? 'admin.admins.index' : 'admin.employees.index';
+        return redirect()->route($redirectRoute)->with('success', 'Akun berhasil dihapus.');
     }
 }

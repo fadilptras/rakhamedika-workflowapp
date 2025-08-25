@@ -48,6 +48,16 @@ Route::middleware('auth')->group(function () {
 
 // Route khusus untuk Admin
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [UserController::class, 'index'])->name('dashboard');
-    Route::resource('users', UserController::class);
+    // Arahkan URL utama admin ke halaman karyawan
+    Route::get('/', fn() => redirect()->route('admin.employees.index'));
+
+    // Rute untuk menampilkan halaman (ini yang diubah)
+    Route::get('/employees', [UserController::class, 'indexEmployees'])->name('employees.index');
+    Route::get('/admins', [UserController::class, 'indexAdmins'])->name('admins.index');
+    
+    // Rute lama /dashboard, kita arahkan juga ke halaman karyawan
+    Route::get('/dashboard', fn() => redirect()->route('admin.employees.index'))->name('dashboard');
+
+    // Resource untuk proses simpan, update, hapus (ini tetap sama)
+    Route::resource('users', UserController::class)->except(['index', 'show']);
 });
