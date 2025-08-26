@@ -9,6 +9,6 @@ class EmailController extends Controller
     public function email()
     {
         $title = 'Email';
-        return view('Email', compact('title'));
+        return view('users.Email', compact('title'));
     }
 }

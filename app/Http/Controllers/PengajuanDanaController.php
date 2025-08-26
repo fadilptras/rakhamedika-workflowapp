@@ -12,6 +12,6 @@ class PengajuanDanaController extends Controller
     public function pengajuan_dana()
     {
         $title = 'Pengajuan Dana';
-        return view('pengajuan-dana', compact('title'));
+        return view('users.pengajuan-dana', compact('title'));
     }
 }

@@ -22,7 +22,7 @@ class AbsenController extends Controller
                                 ->first();
 
         // Kirim data ke view
-        return view('absen', compact('title', 'absensiHariIni'));
+        return view('users.absen', compact('title', 'absensiHariIni'));
     }
 
     /**

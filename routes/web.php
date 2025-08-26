@@ -27,7 +27,7 @@ Route::view('/forgot-password', 'auth.forgot-password')->middleware('guest')->na
 Route::middleware('auth')->group(function () {
     
     Route::get('/dashboard', function () {
-        return view('dashboard', ['title' => 'Dashboard']);
+        return view('users.dashboard', ['title' => 'Dashboard']);
     })->name('dashboard');
 
     // Absensi

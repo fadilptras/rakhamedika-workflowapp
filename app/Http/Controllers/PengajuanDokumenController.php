@@ -9,6 +9,6 @@ class PengajuanDokumenController extends Controller
     public function pengajuan_dokumen()
     {
         $title = 'Pengajuan Dokumen';
-        return view('pengajuan-dokumen', compact('title'));
+        return view('users.pengajuan-dokumen', compact('title'));
     }
 }

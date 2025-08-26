@@ -41,7 +41,7 @@ class CutiController extends Controller
             'sakit'   => $totalCuti['sakit'] - $cutiTerpakai['sakit'],
         ];
 
-        return view('cuti', [
+        return view('users.cuti', [
             'title' => 'Pengajuan Cuti',
             'sisaCuti' => $sisaCuti,
             'totalCuti' => $totalCuti,

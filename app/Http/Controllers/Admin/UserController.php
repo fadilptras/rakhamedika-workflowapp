@@ -19,9 +19,9 @@ class UserController extends Controller
     {
         $users = User::where('role', 'user')->latest()->paginate(10);
         // UBAH DISINI: Arahkan ke view 'admin.dashboard'
-        return view('admin.dashboard', [
+        return view('admin.karyawan', [
             'users' => $users,
-            'pageTitle' => 'Kelola Akun Karyawan',
+            'pageTitle' => 'Akun Karyawan',
             'defaultRole' => 'user'
         ]);
     }
@@ -34,9 +34,9 @@ class UserController extends Controller
     {
         $users = User::where('role', 'admin')->latest()->paginate(10);
         // UBAH DISINI: Arahkan juga ke view 'admin.dashboard'
-        return view('admin.dashboard', [
+        return view('admin.admin', [
             'users' => $users,
-            'pageTitle' => 'Kelola Akun Admin',
+            'pageTitle' => 'Akun Admin',
             'defaultRole' => 'admin'
         ]);
     }
