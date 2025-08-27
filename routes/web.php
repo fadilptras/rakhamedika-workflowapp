@@ -45,19 +45,22 @@ Route::middleware('auth')->group(function () {
 
 });
 
-
-// Route khusus untuk Admin
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Arahkan URL utama admin ke halaman karyawan
-    Route::get('/', fn() => redirect()->route('admin.employees.index'));
-
-    // Rute untuk menampilkan halaman (ini yang diubah)
-    Route::get('/employees', [UserController::class, 'indexEmployees'])->name('employees.index');
-    Route::get('/admins', [UserController::class, 'indexAdmins'])->name('admins.index');
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
-    // Rute lama /dashboard, kita arahkan juga ke halaman karyawan
-    Route::get('/dashboard', fn() => redirect()->route('admin.employees.index'))->name('dashboard');
+    Route::prefix('employees')->name('employees.')->group(function () {
+        Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'user')->name('index');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::put('/{user}', [UserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+    });
 
-    // Resource untuk proses simpan, update, hapus (ini tetap sama)
-    Route::resource('users', UserController::class)->except(['index', 'show']);
+    Route::prefix('admins')->name('admins.')->group(function () {
+        Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'admin')->name('index');
+        
+        // TAMBAHKAN 3 BARIS DI BAWAH INI
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::put('/{user}', [UserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+    });
+
 });

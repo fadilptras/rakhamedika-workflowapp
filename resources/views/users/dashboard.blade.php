@@ -1,4 +1,4 @@
-<x-layout-dash>
+<x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
     <div class="flex flex-col h-full">
 
@@ -88,4 +88,4 @@
     </div>
 </main>
     </div>
-</x-layout-dash>
+</x-layout-users>

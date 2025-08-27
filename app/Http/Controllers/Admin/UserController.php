@@ -5,121 +5,131 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
     /**
-     * Menampilkan halaman dengan daftar karyawan (role = 'user').
-     * Menggunakan view 'admin.dashboard'.
+     * Menampilkan daftar user berdasarkan role.
      */
-    public function indexEmployees()
-    {
-        $users = User::where('role', 'user')->latest()->paginate(10);
-        // UBAH DISINI: Arahkan ke view 'admin.dashboard'
-        return view('admin.karyawan', [
-            'users' => $users,
-            'pageTitle' => 'Akun Karyawan',
-            'defaultRole' => 'user'
-        ]);
+    // app/Http/Controllers/Admin/UserController.php
+
+public function indexByRole($role)
+{
+    if (!in_array($role, ['admin', 'user'])) {
+        abort(404);
     }
 
-    /**
-     * Menampilkan halaman dengan daftar admin (role = 'admin').
-     * Menggunakan view 'admin.dashboard'.
-     */
-    public function indexAdmins()
-    {
-        $users = User::where('role', 'admin')->latest()->paginate(10);
-        // UBAH DISINI: Arahkan juga ke view 'admin.dashboard'
-        return view('admin.admin', [
-            'users' => $users,
-            'pageTitle' => 'Akun Admin',
-            'defaultRole' => 'admin'
-        ]);
-    }
+    $users = User::where('role', $role)->latest()->paginate(10);
+
+    // --- PERUBAHAN DIMULAI DI SINI ---
+
+    // 1. Tentukan nama view secara dinamis berdasarkan role
+    $viewName = $role === 'admin' ? 'admin.admin' : 'admin.karyawan';
+
+    // 2. Tentukan judul halaman secara dinamis
+    $title = $role === 'admin' ? 'Kelola Admin' : 'Kelola Karyawan';
+
+    // 3. Kembalikan view yang sesuai dengan data yang relevan
+    return view($viewName, [
+        'users' => $users,
+        'title' => $title,
+        'defaultRole' => $role
+    ]);
+    
+    // --- AKHIR DARI PERUBAHAN ---
+}
 
     /**
-     * Menyimpan user baru ke database.
+     * Simpan user baru.
      */
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+        $validated = $request->validate([
+            'name'   => ['required', 'string', 'max:255'],
+            'email'  => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
-            'role' => ['required', Rule::in(['admin', 'user'])],
+            'role'   => ['required', Rule::in(['admin', 'user'])],
             'jabatan' => 'nullable|string|max:255',
             'tanggal_bergabung' => 'nullable|date',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $validatedData['password'] = Hash::make($request->password);
+        DB::transaction(function () use ($validated, $request) {
+            $validated['password'] = Hash::make($validated['password']);
 
-        if ($request->hasFile('profile_picture')) {
-            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
-            $validatedData['profile_picture'] = $path;
-        }
-        
-        User::create($validatedData);
+            if ($request->hasFile('profile_picture')) {
+                $validated['profile_picture'] = $request->file('profile_picture')
+                    ->store('profile-pictures', 'public');
+            }
 
-        // UBAH DISINI: Redirect berdasarkan role yang baru dibuat
+            User::create($validated);
+        });
+
         $redirectRoute = $request->role === 'admin' ? 'admin.admins.index' : 'admin.employees.index';
         return redirect()->route($redirectRoute)->with('success', 'Akun berhasil ditambahkan.');
     }
 
     /**
-     * Mengupdate data user di database.
+     * Update user.
      */
     public function update(Request $request, User $user)
     {
-        $validatedData = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role' => ['required', Rule::in(['admin', 'user'])],
+        $validated = $request->validate([
+            'name'   => ['required', 'string', 'max:255'],
+            'email'  => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'role'   => ['required', Rule::in(['admin', 'user'])],
             'password' => ['nullable', 'string', 'min:8'],
             'jabatan' => 'nullable|string|max:255',
             'tanggal_bergabung' => 'nullable|date',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-    
-        if ($request->filled('password')) {
-            $validatedData['password'] = Hash::make($request->password);
-        } else {
-            unset($validatedData['password']);
-        }
 
-        if ($request->hasFile('profile_picture')) {
-            if ($user->profile_picture) {
-                Storage::disk('public')->delete($user->profile_picture);
+        DB::transaction(function () use ($request, $validated, $user) {
+            if ($request->filled('password')) {
+                $validated['password'] = Hash::make($validated['password']);
+            } else {
+                unset($validated['password']);
             }
-            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
-            $validatedData['profile_picture'] = $path;
-        }
-        
-        $user->update($validatedData);
 
-        // UBAH DISINI: Redirect berdasarkan role yang diupdate
+            if ($request->hasFile('profile_picture')) {
+                if ($user->profile_picture) {
+                    Storage::disk('public')->delete($user->profile_picture);
+                }
+                $validated['profile_picture'] = $request->file('profile_picture')
+                    ->store('profile-pictures', 'public');
+            }
+
+            $user->update($validated);
+        });
+
         $redirectRoute = $request->role === 'admin' ? 'admin.admins.index' : 'admin.employees.index';
         return redirect()->route($redirectRoute)->with('success', 'Akun berhasil diupdate.');
     }
 
     /**
-     * Menghapus user dari database.
+     * Hapus user.
      */
     public function destroy(User $user)
     {
-        $role = $user->role; // Simpan role sebelum user dihapus
-
-        if ($user->profile_picture) {
-            Storage::disk('public')->delete($user->profile_picture);
+        // Cegah hapus admin utama
+        if ($user->email === 'admin@rakha.com') {
+            return redirect()->back()->with('error', 'Aksi Ditolak! Akun admin utama tidak dapat dihapus.');
         }
 
-        $user->delete();
+        $role = $user->role;
 
-        // UBAH DISINI: Redirect berdasarkan role user yang dihapus
+        DB::transaction(function () use ($user) {
+            if ($user->profile_picture) {
+                Storage::disk('public')->delete($user->profile_picture);
+            }
+            $user->delete();
+        });
+
         $redirectRoute = $role === 'admin' ? 'admin.admins.index' : 'admin.employees.index';
         return redirect()->route($redirectRoute)->with('success', 'Akun berhasil dihapus.');
     }

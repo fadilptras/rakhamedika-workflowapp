@@ -14,8 +14,8 @@ class AdminUserSeeder extends Seeder
         User::create([
             'name' => 'admin',
             'email' => 'admin@rakha.com',
-            'password' => Hash::make('password123'), // Ganti dengan password yang aman
-            'role' => 'admin', // Tetapkan sebagai admin
+            'password' => Hash::make('**rakhA#2025'), 
+            'role' => 'admin',
         ]);
     }
 }

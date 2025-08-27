@@ -1,107 +1,177 @@
-{{-- Isinya sama persis dengan karyawan.blade.php --}}
-@extends('layouts.admin')
+<x-layout-admin>
+    {{-- Mengatur judul halaman --}}
+    <x-slot:title>Kelola Admin</x-slot:title>
 
-@section('content')
+    {{-- Header Halaman --}}
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-slate-800">{{ $pageTitle }}</h1>
-        <button id="open-add-modal-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-            Tambah Akun
+        <h1 class="text-2xl font-bold text-white">Manajemen Akun Admin</h1>
+        <button id="open-add-modal-btn" 
+            class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
+            <i class="fas fa-plus mr-2"></i> Tambah Admin
         </button>
     </div>
-    
-    @if (session('success'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md relative mb-4 shadow-sm" role="alert">
-            <p class="font-bold">Sukses!</p>
-            <p>{{ session('success') }}</p>
+
+    {{-- Notifikasi Sukses atau Error --}}
+    @if(session('success'))
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md mb-4" role="alert">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-4" role="alert">
+            {{ session('error') }}
         </div>
     @endif
 
-    @if ($errors->any())
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md relative mb-4 shadow-sm" role="alert">
-            <strong class="font-bold">Oops! Terjadi kesalahan.</strong>
-            <ul class="list-disc ml-5 mt-2">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-    
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full leading-normal">
-                <thead>
-                    <tr class="border-b-2 border-slate-200 bg-slate-50 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <th class="px-5 py-3">Pengguna</th>
-                        <th class="px-5 py-3">Jabatan</th>
-                        <th class="px-5 py-3">Role</th>
-                        <th class="px-5 py-3">Tgl Bergabung</th>
-                        <th class="px-5 py-3 text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($users as $user)
-                    <tr class="border-b border-slate-200 hover:bg-slate-50">
-                        <td class="px-5 py-4 text-sm">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 w-10 h-10">
-                                    <img class="w-full h-full rounded-full object-cover" 
-                                         src="{{ $user->profile_picture ? asset('storage/' . $user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($user->name).'&background=random&color=fff' }}" 
-                                         alt="Foto profil {{ $user->name }}">
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-slate-900 whitespace-no-wrap font-semibold">{{ $user->name }}</p>
-                                    <p class="text-slate-600 whitespace-no-wrap">{{ $user->email }}</p>
-                                </div>
+    {{-- Tabel untuk Menampilkan Data Admin --}}
+    <div class="bg-zinc-800 rounded-lg shadow-lg overflow-hidden">
+        <table class="min-w-full text-zinc-300">
+            <thead class="bg-zinc-700 text-left text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                    <th class="px-5 py-3">Admin</th>
+                    <th class="px-5 py-3">Tanggal Dibuat</th>
+                    <th class="px-5 py-3 text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-700">
+                @forelse($users as $user)
+                <tr class="hover:bg-zinc-700/50">
+                    <td class="px-5 py-4">
+                        <div class="flex items-center">
+                            <img src="{{ $user->profile_picture ? asset('storage/' . $user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($user->name).'&background=0891b2&color=f0f9ff' }}"
+                                 alt="{{ $user->name }}" class="w-10 h-10 rounded-full object-cover mr-4">
+                            <div>
+                                <p class="font-semibold text-white">{{ $user->name }}</p>
+                                <p class="text-sm text-zinc-400">{{ $user->email }}</p>
                             </div>
-                        </td>
-                        <td class="px-5 py-4 text-sm">
-                            <p class="text-slate-900 whitespace-no-wrap">{{ $user->jabatan ?? '-' }}</p>
-                        </td>
-                        <td class="px-5 py-4 text-sm">
-                             @if($user->role == 'admin')
-                                <span class="relative inline-block px-3 py-1 font-semibold text-blue-900 leading-tight">
-                                    <span aria-hidden class="absolute inset-0 bg-blue-200 opacity-50 rounded-full"></span>
-                                    <span class="relative">Admin</span>
-                                </span>
-                            @else
-                                <span class="relative inline-block px-3 py-1 font-semibold text-green-900 leading-tight">
-                                    <span aria-hidden class="absolute inset-0 bg-green-200 opacity-50 rounded-full"></span>
-                                    <span class="relative">User</span>
-                                </span>
-                            @endif
-                        </td>
-                        <td class="px-5 py-4 text-sm">
-                            <p class="text-slate-900 whitespace-no-wrap">
-                                {{ $user->tanggal_bergabung ? \Carbon\Carbon::parse($user->tanggal_bergabung)->isoFormat('DD MMMM YYYY') : '-' }}
-                            </p>
-                        </td>
-                        <td class="px-5 py-4 text-sm text-center">
-                            <div class="flex item-center justify-center gap-4">
-                                <button class="open-edit-modal-btn text-yellow-600 hover:text-yellow-900 transition-colors duration-200" data-user='{{ $user->toJson() }}' title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                        </div>
+                    </td>
+                    <td class="px-5 py-4">{{ $user->created_at->format('d M Y') }}</td>
+                    <td class="px-5 py-4 text-center">
+                        <div class="flex justify-center gap-4">
+                            <button class="open-edit-modal-btn text-amber-400 hover:text-amber-300 transition-colors" data-user='@json($user)' title="Edit">
+                                <i class="fas fa-edit fa-lg"></i>
+                            </button>
+                            <form action="{{ route('admin.admins.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus admin ini?')">
+                                @csrf 
+                                @method('DELETE')
+                                <button type="submit" class="text-red-500 hover:text-red-400 transition-colors" title="Hapus">
+                                    <i class="fas fa-trash fa-lg"></i>
                                 </button>
-                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900 transition-colors duration-200" title="Hapus">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="text-center py-10 text-slate-500">Tidak ada data akun ditemukan.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-         <div class="px-5 py-4 bg-white border-t flex flex-col xs:flex-row items-center xs:justify-between">
-             {{ $users->links() }}
-         </div>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="3" class="text-center py-10 text-zinc-400">Belum ada data admin.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
-@endsection
+
+    <div id="add-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-zinc-800 rounded-lg w-full max-w-lg p-6 shadow-lg border border-zinc-700">
+            <h2 class="text-xl font-bold mb-6 text-white">Formulir Tambah Admin Baru</h2>
+            <form action="{{ route('admin.admins.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="role" value="admin">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="add-name" class="block text-sm font-medium text-zinc-300">Nama Lengkap</label>
+                        <input type="text" id="add-name" name="name" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white" required>
+                    </div>
+                    <div>
+                        <label for="add-email" class="block text-sm font-medium text-zinc-300">Alamat Email</label>
+                        <input type="email" id="add-email" name="email" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white" required>
+                    </div>
+                    <div>
+                        <label for="add-password" class="block text-sm font-medium text-zinc-300">Password</label>
+                        <input type="password" id="add-password" name="password" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white" required>
+                    </div>
+                     <div>
+                        <label for="add-profile_picture" class="block text-sm font-medium text-zinc-300">Foto Profil (Opsional)</label>
+                        <input type="file" id="add-profile_picture" name="profile_picture" class="mt-1 w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-500/10 file:text-sky-300 hover:file:bg-sky-500/20">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-8">
+                    <button type="button" class="close-modal bg-zinc-600 hover:bg-zinc-500 text-white px-4 py-2 rounded-lg">Batal</button>
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg">Simpan Admin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-zinc-800 rounded-lg w-full max-w-lg p-6 shadow-lg border border-zinc-700">
+            <h2 class="text-xl font-bold mb-6 text-white">Edit Data Admin</h2>
+            <form id="edit-form" method="POST" enctype="multipart/form-data">
+                @csrf 
+                @method('PUT')
+                <input type="hidden" name="role" value="admin">
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="edit-name" class="block text-sm font-medium text-zinc-300">Nama Lengkap</label>
+                        <input type="text" id="edit-name" name="name" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white" required>
+                    </div>
+                    <div>
+                        <label for="edit-email" class="block text-sm font-medium text-zinc-300">Alamat Email</label>
+                        <input type="email" id="edit-email" name="email" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white" required>
+                    </div>
+                    <div>
+                        <label for="edit-password" class="block text-sm font-medium text-zinc-300">Password Baru (Opsional)</label>
+                        <input type="password" id="edit-password" name="password" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white" placeholder="Kosongkan jika tidak diubah">
+                    </div>
+                     <div>
+                        <label for="edit-profile_picture" class="block text-sm font-medium text-zinc-300">Ganti Foto Profil (Opsional)</label>
+                        <input type="file" id="edit-profile_picture" name="profile_picture" class="mt-1 w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-500/10 file:text-sky-300 hover:file:bg-sky-500/20">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-8">
+                    <button type="button" class="close-modal bg-zinc-600 hover:bg-zinc-500 text-white px-4 py-2 rounded-lg">Batal</button>
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg">Update Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Script untuk mengelola Modal (disederhanakan untuk admin) --}}
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addModal = document.getElementById('add-modal');
+            const editModal = document.getElementById('edit-modal');
+            
+            document.getElementById('open-add-modal-btn')?.addEventListener('click', () => {
+                addModal?.classList.remove('hidden');
+            });
+
+            document.querySelectorAll('.open-edit-modal-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const user = JSON.parse(btn.getAttribute('data-user'));
+                    
+                    if (editModal) {
+                        const form = editModal.querySelector('#edit-form');
+                        form.action = `/admin/admins/${user.id}`;
+                        form.querySelector('#edit-name').value = user.name;
+                        form.querySelector('#edit-email').value = user.email;
+                        form.querySelector('#edit-password').value = '';
+                        form.querySelector('#edit-profile_picture').value = '';
+                        
+                        editModal.classList.remove('hidden');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.closest('.modal')?.classList.add('hidden');
+                });
+            });
+        });
+    </script>
+    @endpush
+</x-layout-admin>

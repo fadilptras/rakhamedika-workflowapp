@@ -1,4 +1,4 @@
-<x-layout-dash>
+<x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
 
     <div class="bg-gray-50 p-4 md:p-8 min-h-screen">
@@ -165,4 +165,4 @@
         });
     </script>
     @endpush
-</x-layout-dash>
+</x-layout-users>

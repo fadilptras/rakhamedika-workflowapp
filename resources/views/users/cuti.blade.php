@@ -1,4 +1,4 @@
-<x-layout-dash>
+<x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
     
     {{-- Ikon (Font Awesome) --}}
@@ -274,4 +274,4 @@
     });
     </script>
     @endpush
-</x-layout-dash>
+</x-layout-users>
