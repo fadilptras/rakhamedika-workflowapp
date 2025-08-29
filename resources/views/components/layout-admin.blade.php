@@ -19,7 +19,7 @@
     <aside id="sidebar" class="bg-zinc-800 h-full flex flex-col w-64 flex-shrink-0">
         <div class="p-4 border-b border-zinc-700/50 flex items-center justify-center h-[68px]">
             <i class="fas fa-user-shield text-3xl mr-3 text-amber-400"></i>
-            <span class="font-bold text-xl text-white">Admin Panel</span>
+            <span class="font-bold text-xl text-white">Admin Rakha</span>
         </div>
         
         <div class="flex-grow overflow-y-auto">
@@ -37,6 +37,16 @@
                             {{ request()->routeIs('admin.admins.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
                             <i class="fas fa-user-cog text-xl w-8 text-center"></i>
                             <span class="ml-3 font-semibold">Kelola Admin</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.absensi.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
+                            {{ request()->routeIs('admin.absensi.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            
+                            {{-- Ikon bisa diganti sesuai selera, misal fa-calendar-check --}}
+                            <i class="fas fa-calendar-check text-xl w-8 text-center"></i> 
+                            
+                            <span class="ml-3 font-semibold">Kelola Absen</span>
                         </a>
                     </li>
                 </ul>
@@ -58,11 +68,6 @@
     <div class="flex-1 flex flex-col">
         <header class="bg-zinc-800 shadow-md p-2 flex justify-between items-center px-4 sm:px-6 lg:px-8 h-[68px] flex-shrink-0">
             <h1 class="text-white text-lg font-bold">{{ $title ?? 'Dashboard' }}</h1>
-            <div class="flex items-center">
-                <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=3f3f46&color=e4e4e7' }}"
-                     alt="Admin" class="w-9 h-9 rounded-full mr-3 object-cover border-2 border-zinc-600">
-                <span class="text-zinc-200 font-semibold">{{ Auth::user()->name }}</span>
-            </div>
         </header>
 
         <main class="flex-1 overflow-y-auto p-6">
@@ -70,7 +75,6 @@
         </main>
     </div>
 
-    {{-- Tempat untuk script tambahan dari halaman anak --}}
     @stack('scripts')
     
 </body>

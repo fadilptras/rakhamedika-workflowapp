@@ -55,11 +55,25 @@
         </div>
 
         <div class="lg:col-span-3 lg:row-span-2">
-             <div class="bg-white p-4 rounded-lg shadow-md h-full">
+            <div class="bg-white p-4 rounded-lg shadow-md h-full">
                 <h3 class="font-bold text-gray-800 mb-4">Kalender</h3>
-                <div class="flex items-center justify-center h-full bg-gray-100 rounded-lg min-h-[300px]">
-                    <p class="text-gray-500">Kalender akan ditempatkan di sini.</p>
-                </div>
+
+                <iframe 
+                    src="https://calendar.google.com/calendar/embed?src=b14c3781c2e07b17fed844b9d3b2553d6cd63cf3664a8a32fe68cdc30a02a278%40group.calendar.google.com&ctz=Asia%2FJakarta" 
+                    style="border: 0" width="100%" height="300px" 
+                    frameborder="0" 
+                    scrolling="no">
+                </iframe>
+                
+                <h4 class="font-bold text-gray-700 mt-6 mb-4">Agenda Mendatang</h4>
+
+                <iframe 
+                    src="https://calendar.google.com/calendar/embed?height=300&wkst=1&ctz=Asia%2FJakarta&showPrint=0&mode=AGENDA&showTabs=0&src=YjE0YzM3ODFjMmUwN2IxN2ZlZDg0NGI5ZDNiMjU1M2Q2Y2Q2M2NmMzY2NGE4YTMyZmU2OGNkYzMwYTAyYTI3OEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t&color=%238e24aa" 
+                    style="border:solid 1px #777" width="100%" height="300" 
+                    frameborder="0" 
+                    scrolling="no">
+                </iframe>
+
             </div>
         </div>
 

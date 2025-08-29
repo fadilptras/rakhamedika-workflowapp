@@ -57,6 +57,7 @@ public function indexByRole($role)
             'jabatan' => 'nullable|string|max:255',
             'tanggal_bergabung' => 'nullable|date',
             'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'divisi' => 'nullable|string|max:255',
         ]);
 
         DB::transaction(function () use ($validated, $request) {
@@ -87,6 +88,7 @@ public function indexByRole($role)
             'jabatan' => 'nullable|string|max:255',
             'tanggal_bergabung' => 'nullable|date',
             'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'divisi' => 'nullable|string|max:255',
         ]);
 
         DB::transaction(function () use ($request, $validated, $user) {

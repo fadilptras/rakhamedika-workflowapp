@@ -8,6 +8,7 @@ use App\Http\Controllers\PengajuanDanaController;
 use App\Http\Controllers\PengajuanDokumenController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\CutiController;
+use App\Http\Controllers\Admin\AbsensiController;
 
 // Route utama, langsung arahkan ke halaman login
 Route::get('/', fn() => redirect()->route('login'));
@@ -47,6 +48,14 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     
+    // --- PERUBAHAN DI SINI ---
+    // Tambahkan rute ini untuk mengarahkan /admin ke halaman karyawan secara otomatis
+    Route::get('/', fn() => redirect()->route('admin.employees.index'));
+    
+     // Rute untuk Rekap Absensi   <--- TAMBAHKAN BLOK INI
+    Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+
+    // Rute untuk mengelola KARYAWAN (role='user')
     Route::prefix('employees')->name('employees.')->group(function () {
         Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'user')->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
@@ -54,10 +63,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
     });
 
+    // Rute untuk mengelola ADMIN (role='admin')
     Route::prefix('admins')->name('admins.')->group(function () {
         Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'admin')->name('index');
-        
-        // TAMBAHKAN 3 BARIS DI BAWAH INI
         Route::post('/', [UserController::class, 'store'])->name('store');
         Route::put('/{user}', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');

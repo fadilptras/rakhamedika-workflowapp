@@ -35,7 +35,7 @@ class LoginController extends Controller
             $user = Auth::user();
 
             if ($user->role === 'admin') {
-                return redirect()->intended('/admin/dashboard'); // Arahkan ke dashboard admin
+                return redirect()->route('admin.employees.index');
             }
 
             // Jika bukan admin, arahkan ke dashboard user
