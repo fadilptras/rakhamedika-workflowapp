@@ -5,13 +5,14 @@
         <h1 class="text-2xl font-bold text-white">{{ $title }}</h1>
     </div>
 
+    {{-- FORM FILTER --}}
     <div class="my-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
         <form method="GET" action="{{ route('admin.absensi.index') }}" id="filter-form">
             <div class="flex flex-wrap items-end gap-4">
                 
-                {{-- Filter Utama: Rentang Waktu --}}
+                {{-- Filter Rentang Waktu --}}
                 <div>
-                    <label for="filter_rentang" class="block text-sm font-medium text-zinc-300">Filter Berdasarkan</label>
+                    <label for="filter_rentang" class="block text-sm font-medium text-zinc-300">Filter Waktu</label>
                     <select name="filter_rentang" id="filter_rentang" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                         <option value="semua" @selected(request('filter_rentang') == 'semua' || !request()->has('filter_rentang'))>Semua Waktu</option>
                         <option value="harian" @selected(request('tanggal'))>Harian</option>
@@ -21,13 +22,13 @@
                     </select>
                 </div>
 
-                {{-- Filter Spesifik Tanggal (Harian) --}}
+                {{-- Filter Tanggal (Harian) --}}
                 <div id="filter-harian" class="hidden">
                     <label for="tanggal" class="block text-sm font-medium text-zinc-300">Pilih Tanggal</label>
                     <input type="date" name="tanggal" id="tanggal" value="{{ request('tanggal') }}" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 </div>
 
-                {{-- Filter Spesifik Bulan & Tahun --}}
+                {{-- Filter Bulan & Tahun --}}
                 <div id="filter-bulanan" class="hidden flex items-end gap-4">
                     <div>
                         <label for="bulan" class="block text-sm font-medium text-zinc-300">Bulan</label>
@@ -47,11 +48,34 @@
                     </div>
                 </div>
 
+                {{-- Filter Divisi --}}
+                <div>
+                    <label for="divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
+                    <select name="divisi" id="divisi" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="">Semua Divisi</option>
+                        @foreach($divisions as $divisi)
+                            <option value="{{ $divisi }}" @selected(request('divisi') == $divisi)>{{ $divisi }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Filter Karyawan --}}
+                <div>
+                    <label for="user_id" class="block text-sm font-medium text-zinc-300">Karyawan</label>
+                    <select name="user_id" id="user_id" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="">Semua Karyawan</option>
+                        {{-- [MODIFIKASI] Tambahkan data-divisi pada setiap option --}}
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}" data-divisi="{{ $user->divisi }}" @selected(request('user_id') == $user->id)>{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 {{-- Filter Status --}}
                 <div>
                     <label for="status" class="block text-sm font-medium text-zinc-300">Status</label>
                     <select name="status" id="status" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        <option value="">Semua</option>
+                        <option value="">Semua Status</option>
                         <option value="hadir" @selected(request('status') == 'hadir')>Hadir</option>
                         <option value="sakit" @selected(request('status') == 'sakit')>Sakit</option>
                         <option value="izin" @selected(request('status') == 'izin')>Izin</option>
@@ -68,8 +92,8 @@
         </form>
     </div>
 
+    {{-- TABEL DATA --}}
     <div class="bg-zinc-800 rounded-lg shadow-lg overflow-hidden border border-zinc-700">
-        {{-- ... Isi tabel dari <thead> sampai </tbody> sama persis seperti sebelumnya ... --}}
         <div class="overflow-x-auto">
             <table class="min-w-full text-zinc-300">
                 <thead class="bg-zinc-700 text-left text-xs font-semibold uppercase tracking-wider">
@@ -91,14 +115,23 @@
                                      alt="{{ $record->user->name ?? '' }}" class="w-10 h-10 rounded-full object-cover mr-4">
                                 <div>
                                     <p class="font-semibold text-white">{{ $record->user->name ?? 'User Dihapus' }}</p>
-                                    <p class="text-sm text-zinc-400">{{ $record->user->email ?? '-' }}</p>
+                                    <p class="text-sm text-zinc-400">{{ $record->user->divisi ?? '-' }}</p>
                                 </div>
                             </div>
                         </td>
                         <td class="px-5 py-4 text-sm">
                            {{ \Carbon\Carbon::parse($record->tanggal)->isoFormat('dddd, D MMMM YYYY') }}
                         </td>
-                        <td class="px-5 py-4 text-sm">{{ $record->jam_masuk }}</td>
+                        <td class="px-5 py-4 text-sm">
+                            @if ($record->status == 'hadir' && $record->jam_masuk > '09:00:00')
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-red-400">{{ $record->jam_masuk }}</span>
+                                    <span class="text-xs text-red-500/80">Terlambat</span>
+                                </div>
+                            @else
+                                {{ $record->jam_masuk }}
+                            @endif
+                        </td>
                         <td class="px-5 py-4 text-center">
                             @if ($record->status == 'hadir')
                                 <span class="px-2 py-1 font-semibold leading-tight text-green-400 bg-green-500/10 rounded-full text-xs">
@@ -138,6 +171,7 @@
         </div>
     </div>
     
+    {{-- PAGINASI --}}
     <div class="mt-8">
         {{ $absensiRecords->links() }}
     </div>
@@ -155,11 +189,9 @@
             function toggleFilters() {
                 const selected = rentangFilter.value;
                 
-                // Sembunyikan semua filter spesifik terlebih dahulu
                 harianFilter.classList.add('hidden');
                 bulananFilter.classList.add('hidden');
 
-                // Nonaktifkan input agar tidak terkirim saat form disubmit
                 tanggalInput.disabled = true;
                 bulanInput.disabled = true;
                 tahunInput.disabled = true;
@@ -175,10 +207,46 @@
             }
 
             rentangFilter.addEventListener('change', toggleFilters);
-            
-            // Jalankan fungsi saat halaman dimuat untuk menyesuaikan dengan state filter saat ini
             toggleFilters();
+
+            // [BARU] LOGIKA UNTUK FILTER KARYAWAN BERDASARKAN DIVISI
+            const divisiSelect = document.getElementById('divisi');
+            const userSelect = document.getElementById('user_id');
+            // Simpan semua opsi karyawan dalam sebuah array agar tidak perlu query ulang
+            const userOptions = Array.from(userSelect.options);
+
+            function filterKaryawan() {
+                const selectedDivisi = divisiSelect.value;
+                const currentSelectedUser = userSelect.value;
+
+                // Kosongkan dulu dropdown karyawan
+                userSelect.innerHTML = '';
+
+                // Tambahkan kembali opsi karyawan yang sesuai
+                userOptions.forEach(option => {
+                    // Opsi "Semua Karyawan" selalu ditampilkan
+                    if (option.value === '') {
+                        userSelect.add(option.cloneNode(true));
+                    }
+                    // Tampilkan karyawan jika divisinya cocok atau jika "Semua Divisi" dipilih
+                    else if (selectedDivisi === '' || option.dataset.divisi === selectedDivisi) {
+                        userSelect.add(option.cloneNode(true));
+                    }
+                });
+
+                // Set kembali user yang terpilih jika masih ada di daftar yang baru
+                userSelect.value = currentSelectedUser;
+                // Jika user yang sebelumnya terpilih sudah tidak ada di daftar,
+                // maka value akan otomatis menjadi "" (Semua Karyawan)
+            }
+
+            divisiSelect.addEventListener('change', filterKaryawan);
+            
+            // Panggil fungsi saat halaman pertama kali dimuat
+            // untuk memastikan daftar karyawan sesuai dengan filter divisi yang mungkin sudah ada
+            filterKaryawan();
         });
     </script>
     @endpush
 </x-layout-admin>
+

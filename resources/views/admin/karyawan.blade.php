@@ -25,7 +25,8 @@
             <thead class="bg-zinc-700 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
                     <th class="px-5 py-3">Karyawan</th>
-                    <th class="px-5 py-3">Jabatan</th>
+                    {{-- PERUBAHAN 1: Mengubah judul kolom --}}
+                    <th class="px-5 py-3">Posisi</th>
                     <th class="px-5 py-3">Tanggal Bergabung</th>
                     <th class="px-5 py-3 text-center">Aksi</th>
                 </tr>
@@ -43,7 +44,11 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-5 py-4">{{ $user->jabatan ?? '-' }}</td>
+                    {{-- PERUBAHAN 2: Menggabungkan Divisi dan Jabatan --}}
+                    <td class="px-5 py-4">
+                        <p class="font-semibold text-white">{{ $user->jabatan ?? '-' }}</p>
+                        <p class="text-sm text-zinc-400">{{ $user->divisi ?? 'Tidak ada divisi' }}</p>
+                    </td>
                     <td class="px-5 py-4">{{ $user->tanggal_bergabung ? \Carbon\Carbon::parse($user->tanggal_bergabung)->format('d M Y') : $user->created_at->format('d M Y') }}</td>
                     <td class="px-5 py-4 text-center">
                         <div class="flex justify-center gap-4">
@@ -69,6 +74,7 @@
         </table>
     </div>
 
+    {{-- Kode Modal Add dan Edit tidak perlu diubah, karena input Jabatan dan Divisi tetap terpisah di form --}}
     <div id="add-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-zinc-800 rounded-lg w-full max-w-4xl p-8 shadow-lg border border-zinc-700">
             <h2 class="text-xl font-bold mb-6 text-white">Formulir Tambah Karyawan Baru</h2>
@@ -98,6 +104,17 @@
                         <div>
                             <label for="add-jabatan" class="block text-sm font-medium text-zinc-300">Jabatan</label>
                             <input type="text" id="add-jabatan" name="jabatan" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                         <div>
+                            <label for="add-divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
+                            <select id="add-divisi" name="divisi" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white">
+                                <option value="">Pilih Divisi</option>
+                                <option value="Teknologi Informasi">Teknologi Informasi</option>
+                                <option value="Sumber Daya Manusia">Sumber Daya Manusia</option>
+                                <option value="Keuangan">Keuangan</option>
+                                <option value="Pemasaran">Pemasaran</option>
+                                <option value="Operasional">Operasional</option>
+                            </select>
                         </div>
                         <div>
                             <label for="add-tanggal_bergabung" class="block text-sm font-medium text-zinc-300">Tanggal Bergabung</label>
@@ -149,6 +166,17 @@
                             <label for="edit-jabatan" class="block text-sm font-medium text-zinc-300">Jabatan</label>
                             <input type="text" id="edit-jabatan" name="jabatan" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white">
                         </div>
+                         <div>
+                            <label for="edit-divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
+                            <select id="edit-divisi" name="divisi" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white">
+                                <option value="">Pilih Divisi</option>
+                                <option value="Teknologi Informasi">Teknologi Informasi</option>
+                                <option value="Sumber Daya Manusia">Sumber Daya Manusia</option>
+                                <option value="Keuangan">Keuangan</option>
+                                <option value="Pemasaran">Pemasaran</option>
+                                <option value="Operasional">Operasional</option>
+                            </select>
+                        </div>
                         <div>
                             <label for="edit-tanggal_bergabung" class="block text-sm font-medium text-zinc-300">Tanggal Bergabung</label>
                             <input type="date" id="edit-tanggal_bergabung" name="tanggal_bergabung" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white">
@@ -168,7 +196,6 @@
         </div>
     </div>
 
-    {{-- Script tidak berubah --}}
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -188,6 +215,8 @@
                         form.querySelector('#edit-name').value = user.name;
                         form.querySelector('#edit-email').value = user.email;
                         form.querySelector('#edit-jabatan').value = user.jabatan ?? '';
+                        // PERUBAHAN 3: Mengisi data divisi di modal edit
+                        form.querySelector('#edit-divisi').value = user.divisi ?? ''; 
                         form.querySelector('#edit-tanggal_bergabung').value = user.tanggal_bergabung;
                         form.querySelector('#edit-password').value = '';
                         form.querySelector('#edit-profile_picture').value = '';

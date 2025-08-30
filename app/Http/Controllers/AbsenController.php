@@ -15,31 +15,55 @@ class AbsenController extends Controller
     public function absen()
     {
         $title = 'Form Absensi';
-        $today = Carbon::today('Asia/Jakarta');
+        $today = Carbon::today();
 
         $absensiHariIni = Absensi::where('user_id', Auth::id())
-                                ->where('tanggal', $today->toDateString())
-                                ->first();
+                                 ->where('tanggal', $today->toDateString())
+                                 ->first();
 
-        // Kirim data ke view
-        return view('users.absen', compact('title', 'absensiHariIni'));
+        // Logika untuk mengambil rekap absensi bulan ini
+        $bulanIni = Carbon::now();
+        $absensiBulanIni = Absensi::where('user_id', Auth::id())
+                                    ->whereYear('tanggal', $bulanIni->year)
+                                    ->whereMonth('tanggal', $bulanIni->month)
+                                    ->get();
+
+        $rekapAbsen = [
+            'hadir' => $absensiBulanIni->where('status', 'hadir')->count(),
+            'sakit' => $absensiBulanIni->where('status', 'sakit')->count(),
+            'izin'  => $absensiBulanIni->where('status', 'izin')->count(),
+        ];
+
+        return view('users.absen', compact('title', 'absensiHariIni', 'rekapAbsen'));
     }
 
     /**
-     * Menyimpan data absensi yang baru.
+     * Menyimpan data absensi yang baru (Absen Masuk).
      */
     public function store(Request $request)
     {
         $request->validate([
             'status' => 'required|in:hadir,sakit,izin',
-            'keterangan' => 'required_if:status,sakit,izin|max:1000',
+            'keterangan' => 'nullable|string|max:1000',
             'lampiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:1048', // max 1MB
         ]);
 
-        $today = Carbon::today('Asia/Jakarta');
-        $now = Carbon::now('Asia/Jakarta');
+        // Validasi custom: Jika status sakit atau izin, keterangan atau lampiran wajib diisi.
+        if (in_array($request->status, ['sakit', 'izin'])) {
+            if (!$request->filled('keterangan') && !$request->hasFile('lampiran')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors([
+                        'keterangan' => 'Untuk status Sakit atau Izin, Keterangan atau Lampiran wajib diisi.',
+                        'lampiran' => ' ' // Memberi pesan error agar border merah muncul
+                    ]);
+            }
+        }
 
-        // validasi absen
+        $today = Carbon::today();
+        $now = Carbon::now();
+
+        // Validasi apakah pengguna sudah absen hari ini
         $sudahAbsen = Absensi::where('user_id', Auth::id())
                             ->where('tanggal', $today->toDateString())
                             ->exists();
@@ -64,4 +88,29 @@ class AbsenController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Terima kasih, absensi Anda berhasil direkam!');
     }
+
+    /**
+     * Menyimpan data absensi keluar (Absen Keluar).
+     */
+    public function updateKeluar(Request $request, Absensi $absensi)
+    {
+        // Pastikan pengguna yang login adalah pemilik absensi
+        if ($absensi->user_id !== Auth::id()) {
+            return redirect()->back()->with('error', 'Aksi tidak diizinkan.');
+        }
+
+        // Validasi
+        $request->validate([
+            'keterangan_keluar' => 'required|string|max:1000',
+        ]);
+
+        // Update data absensi
+        $absensi->update([
+            'jam_keluar' => Carbon::now()->toTimeString(),
+            'keterangan_keluar' => $request->keterangan_keluar,
+        ]);
+
+        return redirect()->route('absen')->with('success', 'Absen keluar berhasil direkam. Terima kasih!');
+    }
 }
+

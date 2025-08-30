@@ -7,11 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Absensi extends Model
 {
     use HasFactory;
-
-    // Tentukan nama tabel jika tidak mengikuti konvensi Laravel (absensis)
+    
     protected $table = 'absensi';
-
-    // Kolom yang boleh diisi secara massal (mass assignable)
     protected $fillable = [
         'user_id',
         'tanggal',
@@ -19,6 +16,8 @@ class Absensi extends Model
         'status',
         'keterangan',
         'lampiran',
+        'jam_keluar',
+        'keterangan_keluar',
     ];
 
     /**

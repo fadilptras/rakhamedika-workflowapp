@@ -19,6 +19,10 @@
                         <p class="font-semibold text-base text-gray-800">{{ Auth::user()->name }}</p>
                     </div>
                     <div>
+                        <label class="text-xs text-gray-500">Divisi</label>
+                        <p class="font-semibold text-base text-gray-800">{{ Auth::user()->divisi ?? '-' }}</p>
+                    </div>
+                    <div>
                         <label class="text-xs text-gray-500">Posisi</label>
                         <p class="font-semibold text-base text-gray-800">{{ Auth::user()->jabatan ?? '-' }}</p>
                     </div>
@@ -46,7 +50,7 @@
                         <i class="fas fa-calendar-alt text-2xl text-green-500 mb-2"></i>
                         <span class="font-semibold text-sm text-gray-700">Pengajuan Cuti</span>
                     </a>
-                    <a href="#" class="bg-gray-50 hover:bg-gray-100 p-2 rounded-lg text-center flex flex-col items-center justify-center aspect-square transition">
+                    <a href="{{ route('rekap_absen.index') }}" class="bg-gray-50 hover:bg-gray-100 p-2 rounded-lg text-center flex flex-col items-center justify-center aspect-square transition">
                         <i class="fas fa-history text-2xl text-yellow-500 mb-2"></i>
                         <span class="font-semibold text-sm text-gray-700">Rekap Absen</span>
                     </a>

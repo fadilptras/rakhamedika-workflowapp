@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete(); // Terhubung ke tabel users
             $table->date('tanggal');
             $table->time('jam_masuk');
-            $table->enum('status', ['hadir', 'sakit', 'izin']);
+            $table->enum('status', ['hadir', 'sakit', 'izin', 'cuti']);
             $table->text('keterangan')->nullable();
             $table->string('lampiran')->nullable(); // Untuk menyimpan path file
             $table->timestamps();

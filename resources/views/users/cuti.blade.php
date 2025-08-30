@@ -106,7 +106,7 @@
                         {{-- ALASAN CUTI --}}
                         <div>
                              <label for="alasan" class="block text-md font-semibold text-gray-800 mb-3">Alasan Cuti</label>
-                             <textarea id="alasan" name="alasan" rows="4" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('alasan') border-red-500 @enderror" placeholder="Jelaskan alasan Anda mengajukan cuti...">{{ old('alasan') }}</textarea>
+                             <textarea id="alasan" name="alasan" rows="4" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('alasan') border-red-500 @enderror" placeholder="Jelaskan alasan Anda mengajukan cuti...">{{ old('alasan') }}</textarea>
                         </div>
 
                         {{-- LAMPIRAN --}}
