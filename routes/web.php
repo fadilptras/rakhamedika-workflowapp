@@ -59,6 +59,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     
      // Rute untuk Rekap Absensi
     Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+    Route::get('/absensi/pdf', [AbsensiController::class, 'downloadPDF'])->name('absensi.pdf'); // <-- TAMBAHKAN INI
 
     // Rute untuk mengelola KARYAWAN (role='user')
     Route::prefix('employees')->name('employees.')->group(function () {

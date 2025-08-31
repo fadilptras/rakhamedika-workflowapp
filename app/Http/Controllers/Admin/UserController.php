@@ -16,48 +16,40 @@ class UserController extends Controller
     /**
      * Menampilkan daftar user berdasarkan role.
      */
-    // app/Http/Controllers/Admin/UserController.php
+    public function indexByRole($role)
+    {
+        if (!in_array($role, ['admin', 'user'])) {
+            abort(404);
+        }
 
-public function indexByRole($role)
-{
-    if (!in_array($role, ['admin', 'user'])) {
-        abort(404);
+        $users = User::where('role', $role)->latest()->paginate(10);
+        $viewName = $role === 'admin' ? 'admin.admin' : 'admin.karyawan';
+        $title = $role === 'admin' ? 'Kelola Admin' : 'Kelola Karyawan';
+
+        return view($viewName, [
+            'users' => $users,
+            'title' => $title,
+            'defaultRole' => $role
+        ]);
     }
-
-    $users = User::where('role', $role)->latest()->paginate(10);
-
-    // --- PERUBAHAN DIMULAI DI SINI ---
-
-    // 1. Tentukan nama view secara dinamis berdasarkan role
-    $viewName = $role === 'admin' ? 'admin.admin' : 'admin.karyawan';
-
-    // 2. Tentukan judul halaman secara dinamis
-    $title = $role === 'admin' ? 'Kelola Admin' : 'Kelola Karyawan';
-
-    // 3. Kembalikan view yang sesuai dengan data yang relevan
-    return view($viewName, [
-        'users' => $users,
-        'title' => $title,
-        'defaultRole' => $role
-    ]);
-    
-    // --- AKHIR DARI PERUBAHAN ---
-}
 
     /**
      * Simpan user baru.
      */
     public function store(Request $request)
     {
+        // Logika IF untuk 'divisi_lainnya' dan request->merge() telah DIHAPUS
+        // karena JavaScript di frontend sudah memastikan data yang dikirim benar.
         $validated = $request->validate([
-            'name'   => ['required', 'string', 'max:255'],
-            'email'  => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8'],
-            'role'   => ['required', Rule::in(['admin', 'user'])],
-            'jabatan' => 'nullable|string|max:255',
-            'tanggal_bergabung' => 'nullable|date',
-            'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'divisi' => 'nullable|string|max:255',
+            'name'                => ['required', 'string', 'max:255'],
+            'email'               => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password'            => ['required', 'string', 'min:8'],
+            'role'                => ['required', Rule::in(['admin', 'user'])],
+            'jabatan'             => 'nullable|string|max:255',
+            'tanggal_bergabung'   => 'nullable|date',
+            'profile_picture'     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            // Validasi disederhanakan. Controller hanya menerima satu field 'divisi'.
+            'divisi'              => 'nullable|string|max:255',
         ]);
 
         DB::transaction(function () use ($validated, $request) {
@@ -80,15 +72,17 @@ public function indexByRole($role)
      */
     public function update(Request $request, User $user)
     {
+        // Logika IF untuk 'divisi_lainnya' dan request->merge() juga DIHAPUS di sini.
         $validated = $request->validate([
-            'name'   => ['required', 'string', 'max:255'],
-            'email'  => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role'   => ['required', Rule::in(['admin', 'user'])],
-            'password' => ['nullable', 'string', 'min:8'],
-            'jabatan' => 'nullable|string|max:255',
-            'tanggal_bergabung' => 'nullable|date',
-            'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'divisi' => 'nullable|string|max:255',
+            'name'                => ['required', 'string', 'max:255'],
+            'email'               => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'role'                => ['required', Rule::in(['admin', 'user'])],
+            'password'            => ['nullable', 'string', 'min:8'],
+            'jabatan'             => 'nullable|string|max:255',
+            'tanggal_bergabung'   => 'nullable|date',
+            'profile_picture'     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            // Validasi disederhanakan.
+            'divisi'              => 'nullable|string|max:255',
         ]);
 
         DB::transaction(function () use ($request, $validated, $user) {
@@ -118,7 +112,7 @@ public function indexByRole($role)
      */
     public function destroy(User $user)
     {
-        // Cegah hapus admin utama
+        // Mencegah hapus admin utama (tidak ada perubahan di method ini)
         if ($user->email === 'admin@rakha.com') {
             return redirect()->back()->with('error', 'Aksi Ditolak! Akun admin utama tidak dapat dihapus.');
         }

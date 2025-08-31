@@ -3,14 +3,19 @@
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-white">{{ $title }}</h1>
+
+        {{-- tombol download --}}
+        <a href="{{ route('admin.absensi.pdf', request()->query()) }}" 
+           class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
+            <i class="fas fa-file-pdf mr-2"></i> Download PDF
+        </a>
     </div>
 
-    {{-- FORM FILTER --}}
+    {{-- filter --}}
     <div class="my-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
         <form method="GET" action="{{ route('admin.absensi.index') }}" id="filter-form">
             <div class="flex flex-wrap items-end gap-4">
                 
-                {{-- Filter Rentang Waktu --}}
                 <div>
                     <label for="filter_rentang" class="block text-sm font-medium text-zinc-300">Filter Waktu</label>
                     <select name="filter_rentang" id="filter_rentang" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -79,14 +84,18 @@
                         <option value="hadir" @selected(request('status') == 'hadir')>Hadir</option>
                         <option value="sakit" @selected(request('status') == 'sakit')>Sakit</option>
                         <option value="izin" @selected(request('status') == 'izin')>Izin</option>
+                        <option value="cuti" @selected(request('status') == 'cuti')>Cuti</option>
                     </select>
                 </div>
 
                 {{-- Tombol Aksi --}}
-                <div>
+                 <div class="flex items-end gap-2">
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
                         <i class="fas fa-filter mr-2"></i> Filter
                     </button>
+                    <a href="{{ route('admin.absensi.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors">
+                        Reset
+                    </a>
                 </div>
             </div>
         </form>
@@ -140,6 +149,10 @@
                             @elseif ($record->status == 'sakit')
                                 <span class="px-2 py-1 font-semibold leading-tight text-red-400 bg-red-500/10 rounded-full text-xs">
                                     Sakit
+                                </span>
+                            @elseif($record->status == 'cuti')
+                                <span class="px-2 py-1 font-semibold leading-tight text-purple-400 bg-purple-500/10 rounded-full text-xs">
+                                    Cuti
                                 </span>
                             @else
                                 <span class="px-2 py-1 font-semibold leading-tight text-amber-400 bg-amber-500/10 rounded-full text-xs">
@@ -249,4 +262,3 @@
     </script>
     @endpush
 </x-layout-admin>
-
