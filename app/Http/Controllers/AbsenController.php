@@ -45,7 +45,11 @@ class AbsenController extends Controller
         $request->validate([
             'status' => 'required|in:hadir,sakit,izin',
             'keterangan' => 'nullable|string|max:1000',
-            'lampiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:1048', // max 1MB
+            // Lampiran wajib jika status hadir. Untuk status lain, opsional.
+            'lampiran' => 'required_if:status,hadir|nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            // Latitude dan Longitude wajib jika status hadir.
+            'latitude' => 'required_if:status,hadir|nullable|string|max:255',
+            'longitude' => 'required_if:status,hadir|nullable|string|max:255',
         ]);
 
         // Validasi custom: Jika status sakit atau izin, keterangan atau lampiran wajib diisi.
@@ -55,7 +59,7 @@ class AbsenController extends Controller
                     ->withInput()
                     ->withErrors([
                         'keterangan' => 'Untuk status Sakit atau Izin, Keterangan atau Lampiran wajib diisi.',
-                        'lampiran' => ' ' // Memberi pesan error agar border merah muncul
+                        'lampiran' => ' '
                     ]);
             }
         }
@@ -63,7 +67,6 @@ class AbsenController extends Controller
         $today = Carbon::today();
         $now = Carbon::now();
 
-        // Validasi apakah pengguna sudah absen hari ini
         $sudahAbsen = Absensi::where('user_id', Auth::id())
                             ->where('tanggal', $today->toDateString())
                             ->exists();
@@ -84,6 +87,8 @@ class AbsenController extends Controller
             'status' => $request->status,
             'keterangan' => $request->keterangan,
             'lampiran' => $pathLampiran,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
         ]);
 
         return redirect()->route('dashboard')->with('success', 'Terima kasih, absensi Anda berhasil direkam!');
@@ -94,17 +99,14 @@ class AbsenController extends Controller
      */
     public function updateKeluar(Request $request, Absensi $absensi)
     {
-        // Pastikan pengguna yang login adalah pemilik absensi
         if ($absensi->user_id !== Auth::id()) {
             return redirect()->back()->with('error', 'Aksi tidak diizinkan.');
         }
 
-        // Validasi
         $request->validate([
             'keterangan_keluar' => 'required|string|max:1000',
         ]);
 
-        // Update data absensi
         $absensi->update([
             'jam_keluar' => Carbon::now()->toTimeString(),
             'keterangan_keluar' => $request->keterangan_keluar,
@@ -113,4 +115,3 @@ class AbsenController extends Controller
         return redirect()->route('absen')->with('success', 'Absen keluar berhasil direkam. Terima kasih!');
     }
 }
-

@@ -20,9 +20,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', 
+        'role',
         'profile_picture',
-        'jabatan',       
+        'jabatan',
         'tanggal_bergabung',
         'divisi',
     ];
@@ -47,7 +47,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'tanggal_bergabung' => 'date',
+            // PERUBAHAN: Menggunakan format Y-m-d untuk mencegah masalah timezone
+            'tanggal_bergabung' => 'date:Y-m-d',
         ];
     }
 }
+

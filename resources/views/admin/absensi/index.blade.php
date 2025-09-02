@@ -64,7 +64,7 @@
                     </select>
                 </div>
 
-                {{-- Filter Karyawan --}}
+                {{-- filter Karyawan --}}
                 <div>
                     <label for="user_id" class="block text-sm font-medium text-zinc-300">Karyawan</label>
                     <select name="user_id" id="user_id" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">

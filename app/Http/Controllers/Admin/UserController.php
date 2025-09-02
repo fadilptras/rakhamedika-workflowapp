@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 class UserController extends Controller
 {
     /**
-     * Menampilkan daftar user berdasarkan role.
+     * menampilkan user berdasarkan role
      */
     public function indexByRole($role)
     {
@@ -34,22 +35,19 @@ class UserController extends Controller
     }
 
     /**
-     * Simpan user baru.
+     * save user baru
      */
     public function store(Request $request)
     {
-        // Logika IF untuk 'divisi_lainnya' dan request->merge() telah DIHAPUS
-        // karena JavaScript di frontend sudah memastikan data yang dikirim benar.
         $validated = $request->validate([
-            'name'                => ['required', 'string', 'max:255'],
-            'email'               => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password'            => ['required', 'string', 'min:8'],
-            'role'                => ['required', Rule::in(['admin', 'user'])],
-            'jabatan'             => 'nullable|string|max:255',
-            'tanggal_bergabung'   => 'nullable|date',
-            'profile_picture'     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            // Validasi disederhanakan. Controller hanya menerima satu field 'divisi'.
-            'divisi'              => 'nullable|string|max:255',
+            'name'              => ['required', 'string', 'max:255'],
+            'email'             => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password'          => ['required', 'string', 'min:8'],
+            'role'              => ['required', Rule::in(['admin', 'user'])],
+            'jabatan'           => 'nullable|string|max:255',
+            'tanggal_bergabung' => 'nullable|date',
+            'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'divisi'            => 'nullable|string|max:255',
         ]);
 
         DB::transaction(function () use ($validated, $request) {
@@ -60,6 +58,11 @@ class UserController extends Controller
                     ->store('profile-pictures', 'public');
             }
 
+            // Jika tanggal bergabung tidak diisi saat membuat user baru, default ke hari ini
+            if (empty($validated['tanggal_bergabung'])) {
+                $validated['tanggal_bergabung'] = Carbon::now();
+            }
+
             User::create($validated);
         });
 
@@ -68,21 +71,19 @@ class UserController extends Controller
     }
 
     /**
-     * Update user.
+     * update user.
      */
     public function update(Request $request, User $user)
     {
-        // Logika IF untuk 'divisi_lainnya' dan request->merge() juga DIHAPUS di sini.
         $validated = $request->validate([
-            'name'                => ['required', 'string', 'max:255'],
-            'email'               => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role'                => ['required', Rule::in(['admin', 'user'])],
-            'password'            => ['nullable', 'string', 'min:8'],
-            'jabatan'             => 'nullable|string|max:255',
-            'tanggal_bergabung'   => 'nullable|date',
-            'profile_picture'     => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            // Validasi disederhanakan.
-            'divisi'              => 'nullable|string|max:255',
+            'name'              => ['required', 'string', 'max:255'],
+            'email'             => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'role'              => ['required', Rule::in(['admin', 'user'])],
+            'password'          => ['nullable', 'string', 'min:8'],
+            'jabatan'           => 'nullable|string|max:255',
+            'tanggal_bergabung' => 'nullable|date',
+            'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'divisi'            => 'nullable|string|max:255',
         ]);
 
         DB::transaction(function () use ($request, $validated, $user) {
@@ -99,6 +100,14 @@ class UserController extends Controller
                 $validated['profile_picture'] = $request->file('profile_picture')
                     ->store('profile-pictures', 'public');
             }
+
+            // --- PERUBAHAN UTAMA ADA DI SINI ---
+            // Cek jika tanggal bergabung dikirim dalam keadaan kosong (null).
+            // Jika ya, hapus dari array agar tidak diupdate.
+            if (empty($validated['tanggal_bergabung'])) {
+                unset($validated['tanggal_bergabung']);
+            }
+            // --- AKHIR PERUBAHAN ---
 
             $user->update($validated);
         });
@@ -130,3 +139,4 @@ class UserController extends Controller
         return redirect()->route($redirectRoute)->with('success', 'Akun berhasil dihapus.');
     }
 }
+
