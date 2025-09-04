@@ -5,27 +5,58 @@
         <div class="max-w-6xl mx-auto">
 
             @if ($absensiHariIni)
-                {{-- TAMPILAN JIKA SUDAH ABSEN MASUK (Tidak ada perubahan di sini) --}}
-                <div class="bg-white p-8 rounded-xl shadow-sm text-center">
-                    <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
-                    <h2 class="text-2xl font-bold text-gray-800">Anda Sudah Absen Hari Ini</h2>
-                    <p class="text-gray-600 mt-2">
-                        Status: <span class="font-semibold capitalize">{{ $absensiHariIni->status }}</span>
-                        pada jam {{ \Carbon\Carbon::parse($absensiHariIni->jam_masuk)->format('H:i') }}
-                    </p>
+                {{-- TAMPILAN JIKA SUDAH ABSEN --}}
+                <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
+                    <div class="flex flex-col md:flex-row items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Anda Sudah Absen Hari Ini</h2>
+                            <p class="text-gray-600 mt-1">
+                                Status Kehadiran: <span class="font-semibold capitalize">{{ $absensiHariIni->status }}</span>
+                            </p>
+                        </div>
+                        <a href="{{ route('dashboard') }}" class="mt-4 md:mt-0 text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
+                    </div>
 
-                    @if ($absensiHariIni->jam_keluar)
-                        <p class="text-gray-600 mt-1">
-                            Anda sudah absen keluar pada jam {{ \Carbon\Carbon::parse($absensiHariIni->jam_keluar)->format('H:i') }}.
-                        </p>
-                    @elseif ($absensiHariIni->status == 'hadir')
-                        <button type="button" id="btn-absen-keluar" class="mt-4 inline-block bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition">Absen Keluar</button>
-                    @endif
-
-                    <a href="{{ route('dashboard') }}" class="mt-6 block text-blue-600 hover:underline">Kembali ke Dashboard</a>
+                    {{-- Timeline Absensi --}}
+                    <div class="mt-6 border-t pt-6">
+                        <h3 class="font-bold text-lg text-gray-700 mb-4">Riwayat Absensi Hari Ini</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-green-500 rounded-full h-10 w-10 flex items-center justify-center text-white">
+                                    <i class="fas fa-sign-in-alt"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="font-semibold text-gray-800">Absen Masuk</p>
+                                    <p class="text-sm text-gray-500">Jam: {{ \Carbon\Carbon::parse($absensiHariIni->jam_masuk)->format('H:i') }} WIB</p>
+                                </div>
+                            </div>
+                            
+                            @if ($absensiHariIni->jam_keluar)
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 bg-red-500 rounded-full h-10 w-10 flex items-center justify-center text-white">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="font-semibold text-gray-800">Absen Keluar</p>
+                                        <p class="text-sm text-gray-500">Jam: {{ \Carbon\Carbon::parse($absensiHariIni->jam_keluar)->format('H:i') }} WIB</p>
+                                    </div>
+                                </div>
+                            @elseif($absensiHariIni->status == 'hadir')
+                                <div class="flex items-center">
+                                     <div class="flex-shrink-0 bg-gray-300 rounded-full h-10 w-10 flex items-center justify-center text-gray-600">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="font-semibold text-gray-500">Belum Absen Keluar</p>
+                                        <button type="button" id="btn-absen-keluar" class="text-sm text-blue-600 hover:underline">Klik di sini untuk absen keluar</button>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
-                {{-- MODAL UNTUK ABSEN KELUAR (Tidak ada perubahan di sini) --}}
+                {{-- MODAL UNTUK ABSEN KELUAR --}}
                 @if (is_null($absensiHariIni->jam_keluar) && $absensiHariIni->status == 'hadir')
                 <div id="modal-absen-keluar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
                     <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
@@ -49,6 +80,7 @@
                     </div>
                 </div>
                 @endif
+
 
             @else
                 {{-- TAMPILAN JIKA BELUM ABSEN --}}
@@ -104,16 +136,19 @@
                                         <textarea name="keterangan" id="keterangan" rows="5" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Ada keperluan keluarga.">{{ old('keterangan') }}</textarea>
                                     </div>
                                     <div class="md:col-span-2">
-                                        <div id="camera-container" class="hidden relative mb-4">
-                                            <video id="video" class="w-full h-auto rounded-lg bg-gray-200" autoplay></video>
+                                        <div id="camera-container" class="hidden relative aspect-video rounded-lg overflow-hidden">
+                                            <video id="video" class="w-full h-full object-cover" autoplay></video>
                                             <canvas id="canvas" class="hidden"></canvas>
-                                            <button type="button" id="snap" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white rounded-full h-16 w-16 flex items-center justify-center text-2xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                                <i class="fas fa-camera"></i>
-                                            </button>
+                                            
+                                            <div class="absolute inset-0 flex items-end justify-center p-4">
+                                                <button type="button" id="snap" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                                    <i class="fas fa-camera"></i>
+                                                </button>
+                                            </div>
                                         </div>
-
-                                       <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
-                                            <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center" id="upload-ui">
+                                        
+                                       <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                                            <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui">
                                                 <i id="upload-icon" class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
                                                 <p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Upload Lampiran</span></p>
                                             </div>
@@ -130,7 +165,7 @@
                             </div>
                         </div>
 
-                        {{-- KOLOM KANAN: REKAP BULANAN (Tidak ada perubahan di sini) --}}
+                        {{-- KOLOM KANAN: REKAP BULANAN --}}
                         <div class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-sm">
                              <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Rekap Bulan Ini</h2>
                              <p class="text-center text-gray-500 text-sm mb-6">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
@@ -177,34 +212,32 @@
 
         const formAbsen = document.getElementById('form-absen');
         if (formAbsen) {
+            // --- UI Elements ---
             const hiddenStatusInput = document.getElementById('status');
             const keteranganWajibSpan = document.getElementById('keterangan-wajib');
             const keteranganTextarea = document.getElementById('keterangan');
-            const cameraContainer = document.getElementById('camera-container');
             const uploadLabel = document.getElementById('upload-label');
             const fileInput = document.getElementById('lampiran');
             const submitButton = document.getElementById('submit-button');
+            const cameraContainer = document.getElementById('camera-container');
+            const uploadUI = document.getElementById('upload-ui');
 
-            const selectedStyles = {
-                hadir: 'bg-emerald-500 text-white border-emerald-500',
-                izin: 'bg-amber-500 text-white border-amber-500',
-                sakit: 'bg-red-500 text-white border-red-500'
-            };
-
+            // --- Camera Elements ---
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
             const snapButton = document.getElementById('snap');
+            
+            // --- Geolocation Elements ---
             const latitudeInput = document.getElementById('latitude');
             const longitudeInput = document.getElementById('longitude');
             let stream;
 
+            // --- FUNCTIONS ---
             async function startCamera() {
                 try {
                     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     video.srcObject = stream;
-                    video.onloadedmetadata = () => {
-                         snapButton.disabled = false;
-                    };
+                    video.onloadedmetadata = () => { snapButton.disabled = false; };
                     getLocation();
                 } catch (err) {
                     console.error("Error accessing camera: ", err);
@@ -215,16 +248,15 @@
             }
 
             function stopCamera() {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
+                if (stream) { stream.getTracks().forEach(track => track.stop()); }
                 snapButton.disabled = true;
+                cameraContainer.classList.add('hidden');
+                uploadLabel.classList.remove('hidden');
             }
 
             function getLocation() {
                 submitButton.disabled = true;
                 submitButton.textContent = 'Mencari Lokasi...';
-
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
@@ -246,8 +278,33 @@
                     submitButton.textContent = 'Kirim Absensi';
                 }
             }
+            
+            function setSuccessUI(fileName) {
+                uploadUI.innerHTML = `
+                    <div class="flex flex-col items-center justify-center text-center p-2 w-full">
+                        <i class="fas fa-check-circle text-3xl text-green-500"></i>
+                        <p class="mt-2 text-sm text-gray-700 font-semibold w-full truncate px-2" title="${fileName}">${fileName}</p>
+                        <button type="button" id="change-photo-btn" class="mt-2 text-xs text-blue-600 hover:underline font-medium">Ganti Foto/File</button>
+                    </div>`;
+                uploadLabel.classList.replace('border-dashed', 'border-solid');
+                uploadLabel.classList.add('border-green-500', 'bg-green-50');
+            }
+            
+            function resetUploadUI() {
+                fileInput.value = '';
+                uploadUI.innerHTML = `<i id="upload-icon" class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i><p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Upload Lampiran</span></p>`;
+                uploadLabel.classList.remove('border-solid', 'border-green-500', 'bg-green-50');
+                uploadLabel.classList.add('border-dashed', 'border-gray-300');
+            }
+
+            const selectedStyles = {
+                hadir: 'bg-emerald-500 text-white border-emerald-500',
+                izin: 'bg-amber-500 text-white border-amber-500',
+                sakit: 'bg-red-500 text-white border-red-500'
+            };
 
             function toggleUiForStatus(status) {
+                resetUploadUI();
                 if (status === 'hadir') {
                     keteranganWajibSpan.classList.add('hidden');
                     keteranganTextarea.disabled = true;
@@ -275,7 +332,8 @@
                 const activeButton = document.querySelector(`.status-btn[data-status="${status}"]`);
                 if (activeButton) activeButton.classList.add(...selectedStyles[status].split(' '));
             }
-
+            
+            // --- EVENT LISTENERS ---
             setActiveButton(hiddenStatusInput.value);
             toggleUiForStatus(hiddenStatusInput.value);
 
@@ -292,30 +350,36 @@
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
+                
                 canvas.toBlob(function(blob) {
                     const file = new File([blob], "absensi_" + Date.now() + ".png", { type: "image/png" });
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(file);
                     fileInput.files = dataTransfer.files;
-
-                    const uploadUI = document.getElementById('upload-ui');
-                    uploadLabel.classList.remove('hidden');
-                    cameraContainer.classList.add('hidden');
-                    uploadUI.innerHTML = `<i class="fas fa-check-circle text-3xl text-green-500"></i><p class="mt-2 text-sm text-gray-700 font-semibold">${file.name}</p>`;
-                    uploadLabel.classList.replace('border-dashed', 'border-solid');
-                    uploadLabel.classList.add('border-green-500', 'bg-green-50');
-
+                    setSuccessUI(file.name);
                     stopCamera();
                 }, 'image/png');
             });
 
             fileInput.addEventListener('change', function() {
-                if (hiddenStatusInput.value !== 'hadir' && this.files && this.files.length > 0) {
-                     const uploadUI = document.getElementById('upload-ui');
-                     uploadUI.innerHTML = `<i class="fas fa-check-circle text-3xl text-green-500"></i><p class="mt-2 text-sm text-gray-700 font-semibold">${this.files[0].name}</p>`;
-                     uploadLabel.classList.replace('border-dashed', 'border-solid');
-                     uploadLabel.classList.add('border-green-500', 'bg-green-50');
+                if (this.files && this.files.length > 0) {
+                     setSuccessUI(this.files[0].name);
+                }
+            });
+
+            uploadLabel.addEventListener('click', function(e) {
+                // Hanya jalankan jika tombol ganti foto yang di-klik
+                if (e.target.id === 'change-photo-btn') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (hiddenStatusInput.value === 'hadir') {
+                        // Jika status hadir, buka lagi kamera
+                        toggleUiForStatus('hadir');
+                    } else {
+                        // Jika status lain, reset UI agar bisa upload file lagi
+                        resetUploadUI();
+                    }
                 }
             });
         }
@@ -326,13 +390,11 @@
         if (modal) {
             const modalContent = modal.querySelector('.transform');
             const btnTutupModal = document.getElementById('btn-tutup-modal');
-
             function openModal() {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
                 setTimeout(() => modalContent.classList.remove('scale-95', 'opacity-0'), 10);
             }
-
             function closeModal() {
                 modalContent.classList.add('scale-95', 'opacity-0');
                 setTimeout(() => {
@@ -340,7 +402,6 @@
                     modal.classList.remove('flex');
                 }, 200);
             }
-
             if (btnAbsenKeluar) btnAbsenKeluar.addEventListener('click', openModal);
             if (btnTutupModal) btnTutupModal.addEventListener('click', closeModal);
         }
