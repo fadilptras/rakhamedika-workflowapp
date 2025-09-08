@@ -5,7 +5,7 @@
         <h1 class="text-2xl font-bold text-white">{{ $title }}</h1>
 
         {{-- tombol download --}}
-        <a href="{{ route('admin.absensi.pdf', request()->query()) }}" 
+        <a href="{{ route('admin.absensi.pdf', request()->query()) }}"
            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
             <i class="fas fa-file-pdf mr-2"></i> Download PDF
         </a>
@@ -69,7 +69,6 @@
                     <label for="user_id" class="block text-sm font-medium text-zinc-300">Karyawan</label>
                     <select name="user_id" id="user_id" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                         <option value="">Semua Karyawan</option>
-                        {{-- [MODIFIKASI] Tambahkan data-divisi pada setiap option --}}
                         @foreach($users as $user)
                             <option value="{{ $user->id }}" data-divisi="{{ $user->divisi }}" @selected(request('user_id') == $user->id)>{{ $user->name }}</option>
                         @endforeach
@@ -101,94 +100,119 @@
         </form>
     </div>
 
-    {{-- TABEL DATA --}}
-    <div class="bg-zinc-800 rounded-lg shadow-lg overflow-hidden border border-zinc-700">
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-zinc-300">
-                <thead class="bg-zinc-700 text-left text-xs font-semibold uppercase tracking-wider">
-                    <tr>
-                        <th class="px-5 py-3">Karyawan</th>
-                        <th class="px-5 py-3">Tanggal</th>
-                        <th class="px-5 py-3">Jam Masuk</th>
-                        <th class="px-5 py-3 text-center">Status</th>
-                        <th class="px-5 py-3">Keterangan</th>
-                        <th class="px-5 py-3 text-center">Lampiran</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-zinc-700">
-                    @forelse ($absensiRecords as $record)
-                    <tr class="hover:bg-zinc-700/50">
-                        <td class="px-5 py-4">
-                             <div class="flex items-center">
-                                <img src="{{ $record->user->profile_picture ? asset('storage/' . $record->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name ?? 'U').'&background=4f46e5&color=e0e7ff' }}"
-                                     alt="{{ $record->user->name ?? '' }}" class="w-10 h-10 rounded-full object-cover mr-4">
-                                <div>
-                                    <p class="font-semibold text-white">{{ $record->user->name ?? 'User Dihapus' }}</p>
-                                    <p class="text-sm text-zinc-400">{{ $record->user->divisi ?? '-' }}</p>
-                                </div>
+    {{-- Daftar Absensi (Format Tabel Lurus) --}}
+    <div class="overflow-x-auto bg-zinc-800 rounded-lg shadow-lg border border-zinc-700">
+        <table class="min-w-full text-sm text-left text-zinc-300">
+            <thead class="bg-zinc-700 text-xs uppercase font-semibold text-zinc-200">
+                <tr>
+                    <th class="px-4 py-3">Karyawan</th>
+                    <th class="px-4 py-3">Tanggal</th>
+                    <th class="px-4 py-3">Jam Masuk / Keluar</th>
+                    <th class="px-4 py-3">Status</th>
+                    <th class="px-4 py-3">Keterangan</th>
+                    <th class="px-4 py-3">Lampiran & Lokasi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-700">
+                @forelse ($absensiRecords as $record)
+                    <tr class="hover:bg-zinc-700/30">
+                        {{-- Karyawan --}}
+                        <td class="px-4 py-3 flex items-center gap-3">
+                            <img src="{{ $record->user->profile_picture ? asset('storage/' . $record->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name ?? 'U').'&background=4f46e5&color=e0e7ff' }}"
+                                 alt="{{ $record->user->name ?? '' }}" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <p class="font-semibold text-white">{{ $record->user->name ?? 'User Dihapus' }}</p>
+                                <p class="text-xs text-zinc-400">{{ $record->user->divisi ?? '-' }}</p>
                             </div>
                         </td>
-                        <td class="px-5 py-4 text-sm">
-                           {{ \Carbon\Carbon::parse($record->tanggal)->isoFormat('dddd, D MMMM YYYY') }}
+
+                        {{-- Tanggal --}}
+                        <td class="px-4 py-3">
+                            {{ \Carbon\Carbon::parse($record->tanggal)->isoFormat('dddd, D MMMM YYYY') }}
                         </td>
-                        <td class="px-5 py-4 text-sm">
+
+                        {{-- Jam Masuk & Keluar --}}
+                        <td class="px-4 py-3">
                             @if ($record->status == 'hadir' && $record->jam_masuk > '09:00:00')
-                                <div class="flex flex-col">
-                                    <span class="font-semibold text-red-400">{{ $record->jam_masuk }}</span>
-                                    <span class="text-xs text-red-500/80">Terlambat</span>
-                                </div>
+                                <span class="font-semibold text-red-400">{{ $record->jam_masuk }}</span>
+                                <span class="text-xs text-red-500/80 ml-1">(Terlambat)</span>
                             @else
-                                {{ $record->jam_masuk }}
+                                <span class="font-semibold text-white">{{ $record->jam_masuk }}</span>
+                            @endif
+                            @if ($record->jam_keluar)
+                                <br>
+                                <span class="text-zinc-400 text-xs">Keluar:</span>
+                                <span class="font-semibold text-white">{{ $record->jam_keluar }}</span>
                             @endif
                         </td>
-                        <td class="px-5 py-4 text-center">
-                            @if ($record->status == 'hadir')
-                                <span class="px-2 py-1 font-semibold leading-tight text-green-400 bg-green-500/10 rounded-full text-xs">
-                                    Hadir
-                                </span>
-                            @elseif ($record->status == 'sakit')
-                                <span class="px-2 py-1 font-semibold leading-tight text-red-400 bg-red-500/10 rounded-full text-xs">
-                                    Sakit
-                                </span>
-                            @elseif($record->status == 'cuti')
-                                <span class="px-2 py-1 font-semibold leading-tight text-purple-400 bg-purple-500/10 rounded-full text-xs">
-                                    Cuti
-                                </span>
-                            @else
-                                <span class="px-2 py-1 font-semibold leading-tight text-amber-400 bg-amber-500/10 rounded-full text-xs">
-                                    Izin
-                                </span>
+
+                        {{-- Status --}}
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs text-center capitalize
+                                @if($record->status == 'hadir') text-green-400 bg-green-500/10
+                                @elseif($record->status == 'sakit') text-red-400 bg-red-500/10
+                                @elseif($record->status == 'cuti') text-purple-400 bg-purple-500/10
+                                @else text-amber-400 bg-amber-500/10 @endif">
+                                {{ $record->status }}
+                            </span>
+                        </td>
+
+                        {{-- Keterangan --}}
+                        <td class="px-4 py-3">
+                            {{ $record->keterangan ?? '-' }}
+                            @if ($record->keterangan_keluar)
+                                <br><span class="text-xs text-zinc-400">Keluar:</span>
+                                <span>{{ $record->keterangan_keluar }}</span>
                             @endif
                         </td>
-                        <td class="px-5 py-4 text-sm">{{ $record->keterangan ?? '-' }}</td>
-                        <td class="px-5 py-4 text-center">
+
+                        {{-- Lampiran & Lokasi --}}
+                        <td class="px-4 py-3 space-y-1">
                             @if ($record->lampiran)
-                                <a href="{{ asset('storage/' . $record->lampiran) }}" target="_blank" 
-                                   class="text-indigo-400 hover:text-indigo-300 underline font-semibold text-sm">
-                                    Lihat File
+                                <a href="{{ asset('storage/' . $record->lampiran) }}" target="_blank"
+                                   class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
+                                    Lampiran Masuk
+                                </a><br>
+                            @endif
+                            @if ($record->lampiran_keluar)
+                                <a href="{{ asset('storage/' . $record->lampiran_keluar) }}" target="_blank"
+                                   class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
+                                    Lampiran Keluar
+                                </a><br>
+                            @endif
+                            @if ($record->latitude && $record->longitude)
+                                <a href="https://maps.google.com/?q={{ $record->latitude }},{{ $record->longitude }}" target="_blank"
+                                   class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
+                                    Lokasi Masuk
+                                </a><br>
+                            @endif
+                            @if ($record->latitude_keluar && $record->longitude_keluar)
+                                <a href="https://maps.google.com/?q={{ $record->latitude_keluar }},{{ $record->longitude_keluar }}" target="_blank"
+                                   class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
+                                    Lokasi Keluar
                                 </a>
-                            @else
-                                -
+                            @endif
+                            @if (!$record->lampiran && !$record->lampiran_keluar && !$record->latitude && !$record->longitude && !$record->latitude_keluar && !$record->longitude_keluar)
+                                <span>-</span>
                             @endif
                         </td>
                     </tr>
-                    @empty
+                @empty
                     <tr>
-                        <td colspan="6" class="text-center py-10 text-zinc-400">
+                        <td colspan="6" class="px-4 py-6 text-center text-zinc-400">
                             Tidak ada data absensi yang cocok dengan filter.
                         </td>
                     </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                @endforelse
+            </tbody>
+        </table>
     </div>
-    
+
     {{-- PAGINASI --}}
-    <div class="mt-8">
+    <div class="mt-6">
         {{ $absensiRecords->links() }}
     </div>
-    
+
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -201,7 +225,7 @@
 
             function toggleFilters() {
                 const selected = rentangFilter.value;
-                
+
                 harianFilter.classList.add('hidden');
                 bulananFilter.classList.add('hidden');
 
@@ -222,41 +246,30 @@
             rentangFilter.addEventListener('change', toggleFilters);
             toggleFilters();
 
-            // [BARU] LOGIKA UNTUK FILTER KARYAWAN BERDASARKAN DIVISI
+            // Filter karyawan berdasarkan divisi
             const divisiSelect = document.getElementById('divisi');
             const userSelect = document.getElementById('user_id');
-            // Simpan semua opsi karyawan dalam sebuah array agar tidak perlu query ulang
             const userOptions = Array.from(userSelect.options);
 
             function filterKaryawan() {
                 const selectedDivisi = divisiSelect.value;
                 const currentSelectedUser = userSelect.value;
 
-                // Kosongkan dulu dropdown karyawan
                 userSelect.innerHTML = '';
 
-                // Tambahkan kembali opsi karyawan yang sesuai
                 userOptions.forEach(option => {
-                    // Opsi "Semua Karyawan" selalu ditampilkan
                     if (option.value === '') {
                         userSelect.add(option.cloneNode(true));
                     }
-                    // Tampilkan karyawan jika divisinya cocok atau jika "Semua Divisi" dipilih
                     else if (selectedDivisi === '' || option.dataset.divisi === selectedDivisi) {
                         userSelect.add(option.cloneNode(true));
                     }
                 });
 
-                // Set kembali user yang terpilih jika masih ada di daftar yang baru
                 userSelect.value = currentSelectedUser;
-                // Jika user yang sebelumnya terpilih sudah tidak ada di daftar,
-                // maka value akan otomatis menjadi "" (Semua Karyawan)
             }
 
             divisiSelect.addEventListener('change', filterKaryawan);
-            
-            // Panggil fungsi saat halaman pertama kali dimuat
-            // untuk memastikan daftar karyawan sesuai dengan filter divisi yang mungkin sudah ada
             filterKaryawan();
         });
     </script>
