@@ -8,7 +8,7 @@ class EmailController extends Controller
 {
     public function email()
     {
-        $title = 'Email';
+        $title = 'Notifikasi';
         return view('users.Email', compact('title'));
     }
 }

@@ -253,7 +253,16 @@
             @if($statusSelesai)
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-xl font-bold text-gray-800 mb-6">Bukti Transfer & Invoice</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Berkas Pengajuan -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Surat Pengajuan</label>
+                        <div class="p-4 bg-gray-100 rounded-lg text-center">
+                            <p class="text-gray-500 italic">Pengajuan telah disetujui</p>
+                            <a href="#" class="mt-2 inline-block text-blue-600 hover:underline">Lihat Berkas Pengajuan</a>
+                            
+                        </div>
+                    </div>
                     <!-- Bukti Transfer -->
                     <div>
                         <label class="block text-gray-700 font-medium mb-2">Bukti Transfer</label>
