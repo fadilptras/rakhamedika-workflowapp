@@ -88,5 +88,30 @@
                 </div>
             </div>
         </div>
+
+            <!-- Bagian Bukti Transfer & Invoice (muncul setelah status Selesai) -->
+            @php
+                // Logika ini harus disesuaikan dengan data status pengajuan yang sebenarnya
+                // Anggap saja $statusSelesai bernilai true jika semua tahapan sudah di-ACC
+                $statusSelesai = true; 
+            @endphp
+            @if($statusSelesai)
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Dokumen Pengajuan</h2>
+                <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
+                    <!-- Berkas Pengajuan -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Dokumen Pengajuan</label>
+                        <div class="p-4 bg-gray-100 rounded-lg text-center">
+                            <p class="text-gray-500 italic">Dokumen telah disetujui</p>
+                            <a href="#" class="mt-2 inline-block text-blue-600 hover:underline">Lihat Dokumen</a>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>        
+        
     </div>
 </x-layout-users>
