@@ -27,7 +27,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('pengajuan_dana') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
+                        <a href="{{ route('pengajuan_dana.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
                             <i class="fas fa-coins text-xl"></i>
                         </a>
                     </li>

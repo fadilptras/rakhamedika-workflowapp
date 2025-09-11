@@ -3,19 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\PengajuanDana;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -27,29 +23,37 @@ class User extends Authenticatable
         'divisi',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            // PERUBAHAN: Menggunakan format Y-m-d untuk mencegah masalah timezone
             'tanggal_bergabung' => 'date:Y-m-d',
         ];
     }
-}
+    
+    // --- TAMBAHKAN RELASI INI ---
+    /**
+     * Get the fund requests for the user.
+     */
+    public function pengajuanDanas(): HasMany
+    {
+        return $this->hasMany(PengajuanDana::class, 'user_id');
+    }
 
+    // Jika ada relasi lain, tambahkan di sini
+    public function absensis(): HasMany
+    {
+        return $this->hasMany(Absensi::class);
+    }
+
+    public function cutis(): HasMany
+    {
+        return $this->hasMany(Cuti::class);
+    }
+}

@@ -44,7 +44,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/cuti', [CutiController::class, 'store'])->name('cuti.store');
 
     // Fitur Lainnya
-    Route::get('/pengajuan-dana', [PengajuanDanaController::class, 'pengajuan_dana'])->name('pengajuan_dana');
+    
+    // Pengajuan Dana
+    Route::get('/pengajuan-dana', [PengajuanDanaController::class, 'index'])->name('pengajuan_dana.index');
+    Route::post('/pengajuan-dana', [PengajuanDanaController::class, 'store'])->name('pengajuan_dana.store');
+    Route::get('/pengajuan-dana/{pengajuanDana}', [PengajuanDanaController::class, 'show'])->name('pengajuan_dana.show'); // Rute untuk halaman detail
+    
     Route::get('/pengajuan-dokumen', [PengajuanDokumenController::class, 'pengajuan_dokumen'])->name('pengajuan_dokumen');
     Route::get('/email', [EmailController::class, 'email'])->name('email');
     
