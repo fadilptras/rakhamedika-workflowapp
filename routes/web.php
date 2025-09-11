@@ -6,7 +6,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AbsenController;
 use App\Http\Controllers\PengajuanDanaController;
 use App\Http\Controllers\PengajuanDokumenController;
-use App\Http\Controllers\EmailController;
+use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\Admin\AbsensiController;
 use App\Http\Controllers\Admin\CutiController as AdminCutiController;
@@ -45,13 +45,15 @@ Route::middleware('auth')->group(function () {
 
     // Fitur Lainnya
     
-    // Pengajuan Dana
+    // Notifikasi
+    Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
+    
+    // ... (pastikan juga rute pengajuan dana sudah diperbarui seperti sebelumnya)
     Route::get('/pengajuan-dana', [PengajuanDanaController::class, 'index'])->name('pengajuan_dana.index');
     Route::post('/pengajuan-dana', [PengajuanDanaController::class, 'store'])->name('pengajuan_dana.store');
-    Route::get('/pengajuan-dana/{pengajuanDana}', [PengajuanDanaController::class, 'show'])->name('pengajuan_dana.show'); // Rute untuk halaman detail
+    Route::get('/pengajuan-dana/{pengajuanDana}', [PengajuanDanaController::class, 'show'])->name('pengajuan_dana.show');
     
     Route::get('/pengajuan-dokumen', [PengajuanDokumenController::class, 'pengajuan_dokumen'])->name('pengajuan_dokumen');
-    Route::get('/email', [EmailController::class, 'email'])->name('email');
     
     // Rekap Absensi Karyawan
     Route::get('/rekap-absen', [RekapAbsenController::class, 'index'])->name('rekap_absen.index');

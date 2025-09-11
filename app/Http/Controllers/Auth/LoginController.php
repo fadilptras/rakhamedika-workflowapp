@@ -13,7 +13,7 @@ class LoginController extends Controller
      */
     public function index()
     {
-        return view('auth.login'); // Kita akan buat view ini di Langkah 2
+        return view('auth.login');
     }
 
     /**
@@ -23,23 +23,33 @@ class LoginController extends Controller
     {
         // 1. Validasi input
         $credentials = $request->validate([
-            'email' => ['required', 'email'],               
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         // 2. Coba lakukan autentikasi
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-
-            // 3. Cek role dan redirect sesuai rolenya
             $user = Auth::user();
 
+            // --- Mulai logika notifikasi di sini ---
+            // Memuat notifikasi terbaru dan jumlah yang belum dibaca
+            $notifications = $user->notifications()->take(5)->get();
+            $unreadCount = $user->unreadNotifications->count();
+
+            // Menyimpan data notifikasi ke dalam session flash
+            // agar bisa diakses di halaman dashboard setelah redirect
+            session()->flash('notifications', $notifications);
+            session()->flash('unreadCount', $unreadCount);
+            // --- Akhir logika notifikasi ---
+
+            // 3. Cek role dan redirect sesuai rolenya
             if ($user->role === 'admin') {
                 return redirect()->route('admin.employees.index');
             }
 
             // Jika bukan admin, arahkan ke dashboard user
-            return redirect()->intended('/dashboard'); 
+            return redirect()->intended('/dashboard');
         }
 
         // 4. Jika gagal, kembali ke halaman login dengan pesan error
@@ -59,6 +69,6 @@ class LoginController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/login'); // Redirect ke halaman login setelah logout
+        return redirect('/login');
     }
 }

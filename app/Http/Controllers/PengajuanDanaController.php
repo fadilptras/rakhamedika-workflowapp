@@ -4,14 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PengajuanDana;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Notifications\PengajuanDanaNotification;
 
 class PengajuanDanaController extends Controller
 {
-    /**
-     * Menampilkan halaman formulir pengajuan dana dengan riwayat.
-     */
     public function index()
     {
         $title = 'Pengajuan Dana';
@@ -19,9 +18,6 @@ class PengajuanDanaController extends Controller
         return view('users.pengajuan-dana', compact('title', 'pengajuanDanas'));
     }
 
-    /**
-     * Menampilkan halaman detail pengajuan dana.
-     */
     public function show(PengajuanDana $pengajuanDana)
     {
         if (Auth::id() !== $pengajuanDana->user_id) {
@@ -34,12 +30,8 @@ class PengajuanDanaController extends Controller
         ]);
     }
     
-    /**
-     * Menyimpan data pengajuan dana yang baru.
-     */
     public function store(Request $request)
     {
-        // Logika validasi dan penyimpanan data yang sudah kita buat sebelumnya
         $validatedData = $request->validate([
             'judul_pengajuan' => 'required|string|max:255',
             'divisi' => 'required|string|max:255',
@@ -53,11 +45,13 @@ class PengajuanDanaController extends Controller
         ]);
     
         $rincian = [];
-        foreach ($request->input('rincian_deskripsi') as $key => $deskripsi) {
-            $rincian[] = [
-                'deskripsi' => $deskripsi,
-                'jumlah' => $request->input('rincian_jumlah')[$key],
-            ];
+        if ($request->has('rincian_deskripsi')) {
+            foreach ($request->input('rincian_deskripsi') as $key => $deskripsi) {
+                $rincian[] = [
+                    'deskripsi' => $deskripsi,
+                    'jumlah' => $request->input('rincian_jumlah')[$key],
+                ];
+            }
         }
     
         $pathFile = null;
@@ -65,7 +59,7 @@ class PengajuanDanaController extends Controller
             $pathFile = $request->file('file_pendukung')->store('lampiran_dana', 'public');
         }
     
-        PengajuanDana::create([
+        $pengajuanDana = PengajuanDana::create([
             'user_id' => Auth::id(),
             'judul_pengajuan' => $validatedData['judul_pengajuan'],
             'divisi' => $validatedData['divisi'],
@@ -75,7 +69,17 @@ class PengajuanDanaController extends Controller
             'rincian_dana' => $rincian,
             'lampiran' => $pathFile,
         ]);
-    
+
+        $approvers = User::where(function($query) {
+            $query->where('posisi', 'like', '%atasan%')
+                  ->orWhere('posisi', 'like', '%HRD%')
+                  ->orWhere('posisi', 'like', '%direktur%');
+        })->orWhereIn('role', ['admin'])->get(); 
+
+        foreach ($approvers as $approver) {
+            $approver->notify(new PengajuanDanaNotification($pengajuanDana));
+        }
+
         return redirect()->route('pengajuan_dana.index')->with('success', 'Pengajuan dana berhasil dikirim!');
     }
 }

@@ -82,18 +82,19 @@
                     </div>
                 </div>
 
-<div class="lg:col-span-5">
+        <div class="lg:col-span-5">
     <div class="bg-white p-4 rounded-lg shadow-md h-full">
         <div class="flex justify-between items-center mb-4">
             <h3 class="font-bold text-gray-800">Notifikasi</h3>
-            <a href="{{ route('email') }}" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors duration-200">
+            <a href="{{ route('notifikasi.index') }}" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors duration-200">
                 <span class="text-sm font-semibold">Lihat Semua</span>
                 <span class="relative">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                     </svg>
                     @php
-                        $unreadNotifications = 3; // Contoh: Ambil dari database
+                        // Ambil jumlah notifikasi dari database
+                        $unreadNotifications = Auth::user()->unreadNotifications->count();
                     @endphp
                     @if ($unreadNotifications > 0)
                         <span class="absolute top-0 right-0 inline-flex items-center justify-center h-4 w-4 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
@@ -104,20 +105,19 @@
             </a>
         </div>
         <div class="space-y-3">
-            <div class="flex items-start p-3 bg-blue-50 rounded-lg">
-                <i class="fas fa-check-circle text-blue-500 mt-1 mr-3"></i>
-                <div>
-                    <p class="font-semibold text-sm text-gray-800">Pengajuan Dana Disetujui</p>
-                    <p class="text-xs text-gray-500">Pengajuan dana untuk pembelian ATK telah disetujui oleh manajer.</p>
+            @forelse(Auth::user()->notifications->take(2) as $notification)
+            <a href="{{ $notification->data['url'] ?? '#' }}" class="block p-3 rounded-lg {{ $notification->read_at ? 'bg-gray-100' : 'bg-blue-50' }} hover:bg-gray-100 transition-colors duration-150">
+                <div class="flex items-start">
+                    <i class="fas {{ $notification->data['icon'] ?? 'fa-info-circle' }} text-xl {{ $notification->data['color'] ?? 'text-gray-500' }} mt-1 mr-3"></i>
+                    <div>
+                        <p class="font-semibold text-sm text-gray-800">{{ $notification->data['title'] ?? 'Notifikasi Baru' }}</p>
+                        <p class="text-xs text-gray-500">{{ $notification->data['message'] ?? 'Tidak ada detail' }}</p>
+                    </div>
                 </div>
-            </div>
-            <div class="flex items-start p-3 bg-yellow-50 rounded-lg">
-                <i class="fas fa-exclamation-triangle text-yellow-500 mt-1 mr-3"></i>
-                <div>
-                    <p class="font-semibold text-sm text-gray-800">Peringatan: Laporan Bulanan</p>
-                    <p class="text-xs text-gray-500">Jangan lupa untuk menyerahkan laporan bulanan sebelum akhir pekan ini.</p>
-                </div>
-            </div>
+            </a>
+            @empty
+            <p class="text-center text-gray-500 py-4">Tidak ada notifikasi baru.</p>
+            @endforelse
         </div>
     </div>
 </div>
