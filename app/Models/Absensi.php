@@ -19,7 +19,9 @@ class Absensi extends Model
         'longitude',
         'lampiran',
         'jam_keluar',
-        'keterangan_keluar',
+        'lampiran_keluar',
+        'latitude_keluar',
+        'longitude_keluar',
     ];
 
     /**
