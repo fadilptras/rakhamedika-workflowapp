@@ -20,7 +20,7 @@ class PengajuanDanaController extends Controller
 
     public function show(PengajuanDana $pengajuanDana)
     {
-        if (Auth::id() !== $pengajuanDana->user_id) {
+        if (Auth::id() !== $pengajuanDana->user_id && !in_array(Auth::user()->jabatan, ['atasan', 'HRD', 'direktur'])) {
             abort(403);
         }
 
@@ -69,17 +69,53 @@ class PengajuanDanaController extends Controller
             'rincian_dana' => $rincian,
             'lampiran' => $pathFile,
         ]);
-
+        
         $approvers = User::where(function($query) {
-            $query->where('posisi', 'like', '%atasan%')
-                  ->orWhere('posisi', 'like', '%HRD%')
-                  ->orWhere('posisi', 'like', '%direktur%');
-        })->orWhereIn('role', ['admin'])->get(); 
+            $query->where('jabatan', 'like', '%atasan%')
+                  ->orWhere('jabatan', 'like', '%hrd%')
+                  ->orWhere('jabatan', 'like', '%direktur%');
+        })->get();
 
         foreach ($approvers as $approver) {
             $approver->notify(new PengajuanDanaNotification($pengajuanDana));
         }
 
         return redirect()->route('pengajuan_dana.index')->with('success', 'Pengajuan dana berhasil dikirim!');
+    }
+
+    public function approve(Request $request, PengajuanDana $pengajuanDana)
+    {
+        $userJabatan = strtolower(Auth::user()->jabatan);
+        if (!in_array($userJabatan, ['atasan', 'hrd', 'direktur'])) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menyetujui pengajuan dana.');
+        }
+
+        $statusField = 'status_' . $userJabatan;
+        $catatanField = 'catatan_' . $userJabatan;
+
+        $pengajuanDana->update([
+            $statusField => 'disetujui',
+            $catatanField => $request->catatan_persetujuan ?? 'Disetujui',
+        ]);
+
+        return redirect()->route('pengajuan_dana.show', $pengajuanDana->id)->with('success', 'Pengajuan dana berhasil disetujui!');
+    }
+
+    public function reject(Request $request, PengajuanDana $pengajuanDana)
+    {
+        $userJabatan = strtolower(Auth::user()->jabatan);
+        if (!in_array($userJabatan, ['atasan', 'hrd', 'direktur'])) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menolak pengajuan dana.');
+        }
+        
+        $statusField = 'status_' . $userJabatan;
+        $catatanField = 'catatan_' . $userJabatan;
+
+        $pengajuanDana->update([
+            $statusField => 'ditolak',
+            $catatanField => $request->catatan_penolakan ?? 'Ditolak',
+        ]);
+
+        return redirect()->route('pengajuan_dana.show', $pengajuanDana->id)->with('success', 'Pengajuan dana berhasil ditolak!');
     }
 }

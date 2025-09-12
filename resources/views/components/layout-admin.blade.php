@@ -56,6 +56,13 @@
                             <span class="ml-3 font-semibold">Pengajuan Cuti</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
+                            {{ request()->routeIs('admin.cuti.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            <i class="fas fa-calendar-alt text-xl w-8 text-center"></i> 
+                            <span class="ml-3 font-semibold">Pengajuan Dana</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>

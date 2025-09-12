@@ -2,14 +2,14 @@
     <x-slot:title>{{ $title }}</x-slot:title>
 
     <div class="flex-1 overflow-auto">
-        <div class="container mx-auto p-6">
+        <div class="container mx-auto p-4 md:p-6">
             
-            <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-4 md:p-6 mb-8">
                 <h2 class="text-xl font-bold text-gray-800 mb-6">Form Pengajuan Dana</h2>
                 
                 <form action="{{ route('pengajuan_dana.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
                         <div>
                             <label class="block text-gray-700 font-medium mb-2" for="nama-pengaju">
                                 Nama Pemohon <span class="text-red-500">*</span>
@@ -76,11 +76,12 @@
                         <div class="hidden md:block"></div>
                     </div>
 
-                    <div class="md:col-span-2 mt-6">
+                    <div class="mt-6">
                         <label class="block text-gray-700 font-medium mb-2">
                             Rincian Penggunaan Dana <span class="text-red-500">*</span>
                         </label>
-                        <div class="overflow-x-auto">
+                        
+                        <div class="hidden md:block overflow-x-auto">
                             <table class="min-w-full border border-gray-200 text-sm rounded-lg">
                                 <thead class="bg-gray-100">
                                     <tr>
@@ -95,7 +96,7 @@
                                     <tr class="border-t-2 border-gray-300">
                                         <td class="px-4 py-2 font-bold text-gray-800 text-right">Total:</td>
                                         <td class="px-4 py-2 font-bold text-gray-800">
-                                            Rp <span id="total-dana">0</span>
+                                            Rp <span id="total-dana-desktop">0</span>
                                             <input type="hidden" id="jumlah-dana-total" name="jumlah_dana_total">
                                         </td>
                                         <td></td>
@@ -103,12 +104,23 @@
                                 </tfoot>
                             </table>
                         </div>
-                        <button id="tambah-baris-btn" type="button" class="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-4 rounded-lg transition duration-200">
+
+                        <div id="rincian-dana-container-mobile" class="block md:hidden space-y-4">
+                        </div>
+                        
+                        <div class="block md:hidden mt-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg border-2 border-gray-300">
+                                <span class="text-gray-700 font-bold">Total:</span>
+                                <span class="text-gray-800 font-bold">Rp <span id="total-dana-mobile">0</span></span>
+                            </div>
+                        </div>
+
+                        <button id="tambah-baris-btn" type="button" class="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-4 rounded-lg transition duration-200 w-full md:w-auto">
                             Tambah Baris
                         </button>
                     </div>
                     
-                    <div class="md:col-span-2 mt-6">
+                    <div class="mt-6">
                         <label class="block text-gray-700 font-medium mb-2" for="file-pendukung">
                             Upload File Pendukung
                         </label>
@@ -140,9 +152,10 @@
                 </form>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-4 md:p-6 mb-8">
                 <h2 class="text-xl font-bold text-gray-800 mb-6">Status Pengajuan</h2>
-                <div class="overflow-x-auto">
+                
+                <div class="hidden md:block overflow-x-auto">
                     <table class="min-w-full border border-gray-200 text-sm rounded-lg">
                         <thead class="bg-gray-100">
                             <tr>
@@ -180,9 +193,30 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="block md:hidden space-y-4">
+                    @forelse ($pengajuanDanas as $request)
+                    <div class="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-200">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="text-sm text-gray-500">{{ $request->created_at->format('d/m/Y') }}</div>
+                            @if ($request->status == 'diajukan')
+                                <span class="inline-block px-2 py-1 leading-none text-orange-600 bg-orange-100 rounded-full font-semibold uppercase tracking-wide text-xs">Diajukan</span>
+                            @elseif ($request->status == 'disetujui')
+                                <span class="inline-block px-2 py-1 leading-none text-green-600 bg-green-100 rounded-full font-semibold uppercase tracking-wide text-xs">Disetujui</span>
+                            @elseif ($request->status == 'ditolak')
+                                <span class="inline-block px-2 py-1 leading-none text-red-600 bg-red-100 rounded-full font-semibold uppercase tracking-wide text-xs">Ditolak</span>
+                            @endif
+                        </div>
+                        <div class="font-bold text-gray-800 text-lg mb-1">{{ $request->judul_pengajuan }}</div>
+                        <div class="text-gray-600 mb-4">Total: <span class="font-semibold">Rp {{ number_format($request->total_dana, 0, ',', '.') }}</span></div>
+                        <a href="{{ route('pengajuan_dana.show', $request->id) }}" class="text-blue-600 hover:underline text-sm font-medium">Lihat Detail</a>
+                    </div>
+                    @empty
+                    <div class="text-center text-gray-500 p-4">Belum ada pengajuan dana yang dibuat.</div>
+                    @endforelse
+                </div>
             </div>
-            
-            </div>
+        </div>
     </div>
 
     <script>
@@ -199,43 +233,73 @@
         });
 
         const tambahBarisBtn = document.getElementById('tambah-baris-btn');
-        const rincianDanaBody = document.getElementById('rincian-dana-body');
-        const totalDanaSpan = document.getElementById('total-dana');
+        const rincianDanaBodyDesktop = document.getElementById('rincian-dana-body');
+        const rincianDanaContainerMobile = document.getElementById('rincian-dana-container-mobile');
+        const totalDanaSpanDesktop = document.getElementById('total-dana-desktop');
+        const totalDanaSpanMobile = document.getElementById('total-dana-mobile');
         const jumlahDanaTotalInput = document.getElementById('jumlah-dana-total');
 
         function updateTotal() {
             let total = 0;
-            const jumlahInputs = document.querySelectorAll('.jumlah-input');
+            const jumlahInputs = document.querySelectorAll('input[name="rincian_jumlah[]"]');
             jumlahInputs.forEach(input => {
                 total += parseInt(input.value) || 0;
             });
-            totalDanaSpan.textContent = total.toLocaleString('id-ID');
+            const formattedTotal = total.toLocaleString('id-ID');
+            totalDanaSpanDesktop.textContent = formattedTotal;
+            totalDanaSpanMobile.textContent = formattedTotal;
             jumlahDanaTotalInput.value = total;
         }
 
         function addRow() {
-            const newRow = document.createElement('tr');
-            newRow.classList.add('border-t');
-            newRow.innerHTML = `
-                <td class="px-4 py-2">
-                    <input type="text" name="rincian_deskripsi[]" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Masukkan deskripsi pengeluaran" required>
-                </td>
-                <td class="px-4 py-2 relative">
-                    <input type="number" name="rincian_jumlah[]" class="w-full p-2 pl-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary jumlah-input" placeholder="0" required>
-                    <span class="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
-                </td>
-                <td class="px-4 py-2 text-center">
-                    <button type="button" class="text-red-500 hover:text-red-700 font-medium">Hapus</button>
-                </td>
-            `;
-            rincianDanaBody.appendChild(newRow);
-            newRow.querySelector('.jumlah-input').addEventListener('input', updateTotal);
-            newRow.querySelector('button').addEventListener('click', function() {
+            // Check screen size to determine where to append the new row
+            const isMobile = window.innerWidth < 768;
+            const container = isMobile ? rincianDanaContainerMobile : rincianDanaBodyDesktop;
+
+            const newRow = document.createElement(isMobile ? 'div' : 'tr');
+            if (isMobile) {
+                newRow.classList.add('bg-gray-50', 'rounded-lg', 'p-4', 'shadow-sm', 'border', 'border-gray-200');
+                newRow.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm text-gray-500 font-medium">Deskripsi Pengeluaran</label>
+                        <button type="button" class="text-red-500 hover:text-red-700 font-medium text-sm">Hapus</button>
+                    </div>
+                    <input type="text" name="rincian_deskripsi[]" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary mb-4" placeholder="Masukkan deskripsi pengeluaran" required>
+                    <label class="block text-sm text-gray-500 font-medium">Dana yang Dibutuhkan (Rp)</label>
+                    <div class="relative">
+                        <input type="number" name="rincian_jumlah[]" class="w-full p-2 pl-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary jumlah-input" placeholder="0" required>
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                    </div>
+                `;
+            } else {
+                newRow.classList.add('border-t');
+                newRow.innerHTML = `
+                    <td class="px-4 py-2">
+                        <input type="text" name="rincian_deskripsi[]" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Masukkan deskripsi pengeluaran" required>
+                    </td>
+                    <td class="px-4 py-2 relative">
+                        <input type="number" name="rincian_jumlah[]" class="w-full p-2 pl-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary jumlah-input" placeholder="0" required>
+                        <span class="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                    </td>
+                    <td class="px-4 py-2 text-center">
+                        <button type="button" class="text-red-500 hover:text-red-700 font-medium">Hapus</button>
+                    </td>
+                `;
+            }
+
+            container.appendChild(newRow);
+
+            const amountInput = newRow.querySelector('input[name="rincian_jumlah[]"]');
+            amountInput.addEventListener('input', updateTotal);
+
+            const deleteButton = newRow.querySelector('button');
+            deleteButton.addEventListener('click', function() {
                 newRow.remove();
                 updateTotal();
             });
         }
 
+        // Initial call to add the first row
         addRow();
 
         tambahBarisBtn.addEventListener('click', addRow);

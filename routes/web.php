@@ -11,6 +11,7 @@ use App\Http\Controllers\CutiController;
 use App\Http\Controllers\Admin\AbsensiController;
 use App\Http\Controllers\Admin\CutiController as AdminCutiController;
 use App\Http\Controllers\RekapAbsenController;
+use App\Http\Controllers\Admin\AdminPengajuanDanaController;
 
 // Route utama, langsung arahkan ke halaman login
 Route::get('/', fn() => redirect()->route('login'));
@@ -48,11 +49,13 @@ Route::middleware('auth')->group(function () {
     // Notifikasi
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
     
-    // ... (pastikan juga rute pengajuan dana sudah diperbarui seperti sebelumnya)
+    // Pengajuan Dana
     Route::get('/pengajuan-dana', [PengajuanDanaController::class, 'index'])->name('pengajuan_dana.index');
     Route::post('/pengajuan-dana', [PengajuanDanaController::class, 'store'])->name('pengajuan_dana.store');
     Route::get('/pengajuan-dana/{pengajuanDana}', [PengajuanDanaController::class, 'show'])->name('pengajuan_dana.show');
-    
+    Route::post('/pengajuan-dana/{pengajuanDana}/approve', [PengajuanDanaController::class, 'approve'])->name('pengajuan_dana.approve');
+    Route::post('/pengajuan-dana/{pengajuanDana}/reject', [PengajuanDanaController::class, 'reject'])->name('pengajuan_dana.reject');
+
     Route::get('/pengajuan-dokumen', [PengajuanDokumenController::class, 'pengajuan_dokumen'])->name('pengajuan_dokumen');
     
     // Rekap Absensi Karyawan
@@ -87,4 +90,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Manajemen Cuti
     Route::get('/cuti', [AdminCutiController::class, 'index'])->name('cuti.index');
     Route::patch('/cuti/{cuti}', [AdminCutiController::class, 'updateStatus'])->name('cuti.update');
+
+    // Rekap Pengajuan Dana
+    Route::prefix('pengajuan-dana')->name('pengajuan_dana.')->group(function () {
+        Route::get('/', [AdminPengajuanDanaController::class, 'index'])->name('index');
+        Route::get('/{pengajuanDana}', [AdminPengajuanDanaController::class, 'show'])->name('show');
+        Route::post('/{pengajuanDana}/approve', [AdminPengajuanDanaController::class, 'approve'])->name('approve');
+        Route::post('/{pengajuanDana}/reject', [AdminPengajuanDanaController::class, 'reject'])->name('reject');
+    });
 });
