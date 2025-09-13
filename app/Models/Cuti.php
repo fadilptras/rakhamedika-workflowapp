@@ -10,11 +10,6 @@ class Cuti extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'user_id',
         'jenis_cuti',
@@ -23,6 +18,10 @@ class Cuti extends Model
         'alasan',
         'lampiran',
         'status',
+        'status_manajer',
+        'status_hrd',
+        'catatan_manajer', // Tambahkan baris ini
+        'catatan_hrd',    // Tambahkan baris ini
     ];
 
     /**

@@ -49,6 +49,10 @@ Route::middleware('auth')->group(function () {
     // Cuti
     Route::get('/cuti', [CutiController::class, 'create'])->name('cuti');
     Route::post('/cuti', [CutiController::class, 'store'])->name('cuti.store');
+    // --- Rute Baru untuk Cuti ---
+    Route::get('/cuti/{id}', [CutiController::class, 'show'])->name('cuti.show');
+    Route::patch('/cuti/{cuti}/status', [CutiController::class, 'updateStatus'])->name('cuti.updateStatus');
+    // --- Akhir Rute Baru ---
 
     // Fitur Lainnya
     
@@ -69,7 +73,7 @@ Route::middleware('auth')->group(function () {
 
 });
 
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     
     Route::get('/', fn() => redirect()->route('admin.employees.index'));
     
@@ -95,6 +99,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     // Manajemen Cuti
     Route::get('/cuti', [AdminCutiController::class, 'index'])->name('cuti.index');
+    Route::get('/cuti/{cuti}', [AdminCutiController::class, 'show'])->name('cuti.show');
     Route::patch('/cuti/{cuti}', [AdminCutiController::class, 'updateStatus'])->name('cuti.update');
 
     // Rekap Pengajuan Dana
