@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('lokasi_absen', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_lokasi');
+            $table->string('nama')->nullable();
             $table->decimal('latitude', 10, 8);
             $table->decimal('longitude', 11, 8);
-            $table->integer('radius'); // dalam meter
+            $table->integer('radius')->default(50); // meter
             $table->timestamps();
         });
     }

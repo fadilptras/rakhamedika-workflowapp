@@ -3,6 +3,16 @@
 
     <div class="bg-gray-50 p-4 md:p-8 min-h-screen">
         <div class="max-w-6xl mx-auto">
+            @if(session('success'))
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md mb-4" role="alert">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-4" role="alert">
+                    {{ session('error') }}
+                </div>
+            @endif
 
             @if ($absensiHariIni)
                 {{-- TAMPILAN JIKA PENGGUNA SUDAH ABSEN MASUK --}}
@@ -29,7 +39,7 @@
                                     </div>
                                     <p class="text-3xl font-bold text-gray-800">{{ \Carbon\Carbon::parse($absensiHariIni->jam_masuk)->format('H:i') }} <span class="text-lg font-medium">WIB</span></p>
                                     @if($absensiHariIni->latitude && $absensiHariIni->longitude)
-                                        <a href="https://maps.google.com/?q={{ $absensiHariIni->latitude }},{{ $absensiHariIni->longitude }}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                                        <a href="http://maps.google.com/maps?q={{ $absensiHariIni->latitude }},{{ $absensiHariIni->longitude }}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
                                             <i class="fas fa-map-marker-alt mr-1"></i>Lihat Lokasi
                                         </a>
                                     @endif
@@ -45,7 +55,7 @@
                                         @if ($absensiHariIni->jam_keluar)
                                             <p class="text-3xl font-bold text-gray-800">{{ \Carbon\Carbon::parse($absensiHariIni->jam_keluar)->format('H:i') }} <span class="text-lg font-medium">WIB</span></p>
                                             @if($absensiHariIni->latitude_keluar && $absensiHariIni->longitude_keluar)
-                                                <a href="https://maps.google.com/?q={{ $absensiHariIni->latitude_keluar }},{{ $absensiHariIni->longitude_keluar }}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                                                <a href="http://maps.google.com/maps?q={{ $absensiHariIni->latitude_keluar }},{{ $absensiHariIni->longitude_keluar }}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
                                                     <i class="fas fa-map-marker-alt mr-1"></i>Lihat Lokasi
                                                 </a>
                                             @endif
@@ -60,6 +70,24 @@
                                     @endif
                                 </div>
                             </div>
+
+                            {{-- KOTAK ABSEN LEMBUR --}}
+                            @if ($absensiHariIni->jam_keluar && $absensiHariIni->status == 'hadir')
+                                @if (is_null($lemburHariIni))
+                                    <button type="button" id="btn-absen-lembur" class="w-full mt-6 bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition">
+                                        Absen Lembur Sekarang
+                                    </button>
+                                @elseif (is_null($lemburHariIni->jam_keluar_lembur))
+                                    <button type="button" id="btn-absen-keluar-lembur" class="w-full mt-6 bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition">
+                                        Absen Keluar Lembur Sekarang
+                                    </button>
+                                @else
+                                     <div class="mt-6 p-4 rounded-lg bg-green-100 text-green-700 font-semibold text-center">
+                                         Absensi Lembur Hari Ini Selesai.
+                                         <p class="text-xs font-normal">Waktu Lembur: {{ \Carbon\Carbon::parse($lemburHariIni->jam_masuk_lembur)->format('H:i') }} - {{ \Carbon\Carbon::parse($lemburHariIni->jam_keluar_lembur)->format('H:i') }}</p>
+                                     </div>
+                                @endif
+                            @endif
                         </div>
                     </div>
 
@@ -84,6 +112,16 @@
                                     <div class="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-file-alt"></i></div>
                                     <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Izin</p></div>
                                     <div class="text-lg font-bold text-amber-600">{{ $rekapAbsen['izin'] }}</div>
+                                </div>
+                                <div class="flex items-center bg-purple-50 p-4 rounded-lg">
+                                    <div class="flex-shrink-0 bg-purple-100 text-purple-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-plane-departure"></i></div>
+                                    <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Cuti</p></div>
+                                    <div class="text-lg font-bold text-purple-600">{{ $rekapAbsen['cuti'] }}</div>
+                                </div>
+                                <div class="flex items-center bg-rose-50 p-4 rounded-lg">
+                                    <div class="flex-shrink-0 bg-rose-100 text-rose-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-clock"></i></div>
+                                    <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Terlambat</p></div>
+                                    <div class="text-lg font-bold text-rose-600">{{ $rekapAbsen['terlambat'] }}</div>
                                 </div>
                             </div>
                         </div>
@@ -119,7 +157,7 @@
                 </div>
 
                 {{-- MODAL UNTUK ABSEN KELUAR --}}
-                @if (is_null($absensiHariIni->jam_keluar) && $absensiHariIni->status == 'hadir')
+                @if ($absensiHariIni && is_null($absensiHariIni->jam_keluar) && $absensiHariIni->status == 'hadir')
                 {{-- Data ID Absensi untuk JavaScript --}}
                 <div id="absensi-data" data-id="{{ $absensiHariIni->id }}"></div>
                 <div id="modal-absen-keluar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
@@ -250,6 +288,16 @@
                                         <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Izin</p></div>
                                         <div class="text-lg font-bold text-amber-600">{{ $rekapAbsen['izin'] }}</div>
                                     </div>
+                                    <div class="flex items-center bg-purple-50 p-4 rounded-lg">
+                                        <div class="flex-shrink-0 bg-purple-100 text-purple-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-plane-departure"></i></div>
+                                        <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Cuti</p></div>
+                                        <div class="text-lg font-bold text-purple-600">{{ $rekapAbsen['cuti'] }}</div>
+                                    </div>
+                                    <div class="flex items-center bg-rose-50 p-4 rounded-lg">
+                                        <div class="flex-shrink-0 bg-rose-100 text-rose-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-clock"></i></div>
+                                        <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Terlambat</p></div>
+                                        <div class="text-lg font-bold text-rose-600">{{ $rekapAbsen['terlambat'] }}</div>
+                                    </div>
                                 </div>
                             </div>
                             @if(isset($daftarRekan) && count($daftarRekan) > 0)
@@ -284,6 +332,130 @@
             @endif
         </div>
     </div>
+
+    {{-- MODAL UNTUK ABSEN KELUAR --}}
+    @if ($absensiHariIni && is_null($absensiHariIni->jam_keluar) && $absensiHariIni->status == 'hadir')
+    <div id="absensi-data" data-id="{{ $absensiHariIni->id }}"></div>
+    <div id="modal-absen-keluar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
+            <input type="hidden" name="latitude_keluar" id="latitude-keluar">
+            <input type="hidden" name="longitude_keluar" id="longitude-keluar">
+            
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
+                <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar.</p>
+                
+                <div class="mt-6">
+                    <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
+                    <div id="camera-container-keluar" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
+                        <video id="video-keluar" class="w-full h-full object-cover" autoplay></video>
+                        <canvas id="canvas-keluar" class="hidden"></canvas>
+                        <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                            <button type="button" id="snap-keluar" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <label for="lampiran-keluar" id="upload-label-keluar" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                        <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar">
+                            <i id="upload-icon-keluar" class="fas fa-camera text-3xl text-gray-400"></i>
+                            <p id="upload-text-keluar" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                        </div>
+                        <input name="lampiran_keluar" id="lampiran-keluar" type="file" class="hidden" accept="image/*" />
+                    </label>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
+                <button type="button" id="btn-tutup-modal" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                <button type="button" id="submit-button-keluar" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- MODAL UNTUK ABSEN LEMBUR --}}
+    @if ($absensiHariIni && $absensiHariIni->jam_keluar && is_null($lemburHariIni))
+    <div id="modal-absen-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
+            <input type="hidden" name="latitude_lembur" id="latitude-lembur">
+            <input type="hidden" name="longitude_lembur" id="longitude-lembur">
+            
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-800">Form Absen Lembur</h3>
+                <p class="text-gray-500 mt-1">Ambil foto selfie dan isi keterangan untuk memulai lembur.</p>
+                
+                <div class="mt-6">
+                    <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Lembur <span class="text-red-500">*</span></label>
+                    <div id="camera-container-lembur" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
+                        <video id="video-lembur" class="w-full h-full object-cover" autoplay></video>
+                        <canvas id="canvas-lembur" class="hidden"></canvas>
+                        <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                            <button type="button" id="snap-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <label for="lampiran-lembur" id="upload-label-lembur" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                        <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-lembur">
+                            <i id="upload-icon-lembur" class="fas fa-camera text-3xl text-gray-400"></i>
+                            <p id="upload-text-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                        </div>
+                        <input name="lampiran_masuk" id="lampiran-lembur" type="file" class="hidden" accept="image/*" />
+                    </label>
+                </div>
+
+                <div class="mt-4">
+                    <label for="keterangan-lembur" class="block text-md font-medium text-gray-700 mb-2">Keterangan Lembur <span class="text-red-500">*</span></label>
+                    <textarea id="keterangan-lembur" name="keterangan" rows="3" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Menyelesaikan laporan bulanan." required></textarea>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
+                <button type="button" id="btn-tutup-modal-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                <button type="button" id="submit-button-lembur" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400">Kirim Absen Lembur</button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- MODAL UNTUK ABSEN KELUAR LEMBUR --}}
+    @if ($lemburHariIni && is_null($lemburHariIni->jam_keluar_lembur))
+    <div id="lembur-data" data-id="{{ $lemburHariIni->id }}"></div>
+    <div id="modal-keluar-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
+            <input type="hidden" name="latitude_keluar_lembur" id="latitude-keluar-lembur">
+            <input type="hidden" name="longitude_keluar_lembur" id="longitude-keluar-lembur">
+            
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar Lembur</h3>
+                <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi selesai lembur.</p>
+                
+                <div class="mt-6">
+                    <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar Lembur <span class="text-red-500">*</span></label>
+                    <div id="camera-container-keluar-lembur" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
+                        <video id="video-keluar-lembur" class="w-full h-full object-cover" autoplay></video>
+                        <canvas id="canvas-keluar-lembur" class="hidden"></canvas>
+                        <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                            <button type="button" id="snap-keluar-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <label for="lampiran-keluar-lembur" id="upload-label-keluar-lembur" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                        <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar-lembur">
+                            <i id="upload-icon-keluar-lembur" class="fas fa-camera text-3xl text-gray-400"></i>
+                            <p id="upload-text-keluar-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                        </div>
+                        <input name="lampiran_keluar" id="lampiran-keluar-lembur" type="file" class="hidden" accept="image/*" />
+                    </label>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
+                <button type="button" id="btn-tutup-modal-keluar-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                <button type="button" id="submit-button-keluar-lembur" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 disabled:bg-gray-400">Kirim Absen Keluar Lembur</button>
+            </div>
+        </div>
+    </div>
+    @endif
 
     @push('scripts')
     <script>
@@ -685,6 +857,412 @@
 
             if (btnAbsenKeluar) btnAbsenKeluar.addEventListener('click', openModal);
             if (btnTutupModal) btnTutupModal.addEventListener('click', closeModal);
+        }
+
+        // --- LOGIKA BARU UNTUK ABSENSI LEMBUR ---
+
+        // Masuk Lembur
+        const btnAbsenLembur = document.getElementById('btn-absen-lembur');
+        const modalLembur = document.getElementById('modal-absen-lembur');
+        if(modalLembur) {
+            const modalContentLembur = modalLembur.querySelector('.transform');
+            const btnTutupModalLembur = document.getElementById('btn-tutup-modal-lembur');
+            const submitLemburBtn = document.getElementById('submit-button-lembur');
+            const latitudeLemburInput = document.getElementById('latitude-lembur');
+            const longitudeLemburInput = document.getElementById('longitude-lembur');
+            const cameraContainerLembur = document.getElementById('camera-container-lembur');
+            const uploadLabelLembur = document.getElementById('upload-label-lembur');
+            const fileInputLembur = document.getElementById('lampiran-lembur');
+            const videoLembur = document.getElementById('video-lembur');
+            const canvasLembur = document.getElementById('canvas-lembur');
+            const snapButtonLembur = document.getElementById('snap-lembur');
+            const uploadUiLembur = document.getElementById('upload-ui-lembur');
+            const keteranganLemburInput = document.getElementById('keterangan-lembur');
+            
+            let streamLembur;
+            let isLocationReadyLembur = false;
+            let isPhotoReadyLembur = false;
+
+            function setSuccessUILembur(fileName) {
+                uploadUiLembur.innerHTML = `<div class="flex flex-col items-center justify-center text-center p-2 w-full"><i class="fas fa-check-circle text-3xl text-green-500"></i><p class="mt-2 text-sm text-gray-700 font-semibold w-full truncate px-2" title="${fileName}">${fileName}</p><button type="button" id="change-photo-lembur-btn" class="mt-2 text-xs text-blue-600 hover:underline font-medium">Ganti</button></div>`;
+                uploadLabelLembur.classList.replace('border-dashed', 'border-solid');
+                uploadLabelLembur.classList.add('border-green-500', 'bg-green-50');
+            }
+
+            function resetUploadUILembur() {
+                fileInputLembur.value = '';
+                uploadUiLembur.innerHTML = `<i id="upload-icon-lembur" class="fas fa-camera text-3xl text-gray-400"></i><p id="upload-text-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>`;
+                uploadLabelLembur.classList.remove('border-solid', 'border-green-500', 'bg-green-50', 'hidden');
+                uploadLabelLembur.classList.add('border-dashed', 'border-gray-300');
+            }
+            
+            function checkFormReadinessLembur() {
+                if (isLocationReadyLembur && isPhotoReadyLembur && keteranganLemburInput.value.trim() !== '') {
+                    submitLemburBtn.disabled = false;
+                    submitLemburBtn.textContent = 'Kirim Absen Lembur';
+                } else {
+                    submitLemburBtn.disabled = true;
+                    submitLemburBtn.textContent = 'Mohon Isi Data Lengkap';
+                }
+            }
+
+            async function startCameraLembur() {
+                try {
+                    streamLembur = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    videoLembur.srcObject = streamLembur;
+                    videoLembur.onloadedmetadata = () => { snapButtonLembur.disabled = false; };
+                    cameraContainerLembur.classList.remove('hidden');
+                    uploadLabelLembur.classList.add('hidden');
+                } catch (err) {
+                    alert('Tidak bisa mengakses kamera untuk absen lembur.');
+                    resetUploadUILembur();
+                }
+            }
+
+            function stopCameraLembur() {
+                if (streamLembur) { streamLembur.getTracks().forEach(track => track.stop()); }
+                snapButtonLembur.disabled = true;
+            }
+
+            function getLocationLembur() {
+                submitLemburBtn.textContent = 'Mencari Lokasi...';
+                isLocationReadyLembur = false;
+                checkFormReadinessLembur();
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            latitudeLemburInput.value = position.coords.latitude;
+                            longitudeLemburInput.value = position.coords.longitude;
+                            isLocationReadyLembur = true;
+                            checkFormReadinessLembur();
+                        },
+                        () => {
+                            alert('Gagal mendapatkan lokasi untuk absen lembur.');
+                            isLocationReadyLembur = false;
+                            checkFormReadinessLembur();
+                        }, 
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                    );
+                }
+            }
+
+            snapButtonLembur.addEventListener("click", function() {
+                canvasLembur.width = videoLembur.videoWidth;
+                canvasLembur.height = videoLembur.videoHeight;
+                canvasLembur.getContext('2d').drawImage(videoLembur, 0, 0, canvasLembur.width, canvasLembur.height);
+                canvasLembur.toBlob(function(blob) {
+                    const file = new File([blob], "selfie_lembur_" + Date.now() + ".png", { type: "image/png" });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInputLembur.files = dataTransfer.files;
+                    
+                    stopCameraLembur();
+                    cameraContainerLembur.classList.add('hidden');
+                    uploadLabelLembur.classList.remove('hidden');
+                    setSuccessUILembur(file.name);
+
+                    isPhotoReadyLembur = true;
+                    checkFormReadinessLembur();
+                }, 'image/png');
+            });
+
+            keteranganLemburInput.addEventListener('input', checkFormReadinessLembur);
+
+            uploadLabelLembur.addEventListener('click', function(e) {
+                if (e.target.id === 'change-photo-lembur-btn') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isPhotoReadyLembur = false;
+                    checkFormReadinessLembur();
+                    cameraContainerLembur.classList.remove('hidden');
+                    uploadLabelLembur.classList.add('hidden');
+                    startCameraLembur();
+                } else if (fileInputLembur.files.length === 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    cameraContainerLembur.classList.remove('hidden');
+                    uploadLabelLembur.classList.add('hidden');
+                    startCameraLembur();
+                }
+            });
+
+            submitLemburBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('latitude_masuk', latitudeLemburInput.value);
+                formData.append('longitude_masuk', longitudeLemburInput.value);
+                formData.append('keterangan', keteranganLemburInput.value);
+                if (fileInputLembur.files.length > 0) {
+                    formData.append('lampiran_masuk', fileInputLembur.files[0]);
+                }
+                
+                submitLemburBtn.disabled = true;
+                submitLemburBtn.textContent = 'Memproses...';
+
+                try {
+                    const response = await fetch("{{ route('absen.lembur.store') }}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert(result.success);
+                        closeModalLembur();
+                        window.location.reload();
+                    } else {
+                        const errorMessages = Object.values(result.errors).flat().join('\n');
+                        alert('Terjadi kesalahan:\n' + errorMessages);
+                        submitLemburBtn.disabled = false;
+                        submitLemburBtn.textContent = 'Kirim Absen Lembur';
+                    }
+                } catch (error) {
+                    alert('Terjadi kesalahan pada koneksi atau server.');
+                    submitLemburBtn.disabled = false;
+                    submitLemburBtn.textContent = 'Kirim Absen Lembur';
+                }
+            });
+
+            btnTutupModalLembur.addEventListener('click', function() {
+                isLocationReadyLembur = false;
+                isPhotoReadyLembur = false;
+                resetUploadUILembur();
+                keteranganLemburInput.value = '';
+                checkFormReadinessLembur();
+            });
+
+            function openModalLembur() {
+                modalLembur.classList.remove('hidden');
+                modalLembur.classList.add('flex');
+                setTimeout(() => modalContentLembur.classList.remove('scale-95', 'opacity-0'), 10);
+                startCameraLembur();
+                getLocationLembur();
+            }
+
+            function closeModalLembur() {
+                modalContentLembur.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modalLembur.classList.add('hidden');
+                    modalLembur.classList.remove('flex');
+                    stopCameraLembur();
+                }, 200);
+            }
+
+            if (btnAbsenLembur) btnAbsenLembur.addEventListener('click', openModalLembur);
+            if (btnTutupModalLembur) btnTutupModalLembur.addEventListener('click', closeModalLembur);
+        }
+
+        // Keluar Lembur
+        const btnKeluarLembur = document.getElementById('btn-absen-keluar-lembur');
+        const modalKeluarLembur = document.getElementById('modal-keluar-lembur');
+        if(modalKeluarLembur) {
+            const lemburId = document.getElementById('lembur-data').dataset.id;
+
+            const modalContentKeluarLembur = modalKeluarLembur.querySelector('.transform');
+            const btnTutupModalKeluarLembur = document.getElementById('btn-tutup-modal-keluar-lembur');
+            const submitKeluarLemburBtn = document.getElementById('submit-button-keluar-lembur');
+            const latitudeKeluarLemburInput = document.getElementById('latitude-keluar-lembur');
+            const longitudeKeluarLemburInput = document.getElementById('longitude-keluar-lembur');
+            const cameraContainerKeluarLembur = document.getElementById('camera-container-keluar-lembur');
+            const uploadLabelKeluarLembur = document.getElementById('upload-label-keluar-lembur');
+            const fileInputKeluarLembur = document.getElementById('lampiran-keluar-lembur');
+            const videoKeluarLembur = document.getElementById('video-keluar-lembur');
+            const canvasKeluarLembur = document.getElementById('canvas-keluar-lembur');
+            const snapButtonKeluarLembur = document.getElementById('snap-keluar-lembur');
+            const uploadUiKeluarLembur = document.getElementById('upload-ui-keluar-lembur');
+            
+            let streamKeluarLembur;
+            let isLocationReadyKeluarLembur = false;
+            let isPhotoReadyKeluarLembur = false;
+
+            function setSuccessUIKeluarLembur(fileName) {
+                uploadUiKeluarLembur.innerHTML = `<div class="flex flex-col items-center justify-center text-center p-2 w-full"><i class="fas fa-check-circle text-3xl text-green-500"></i><p class="mt-2 text-sm text-gray-700 font-semibold w-full truncate px-2" title="${fileName}">${fileName}</p><button type="button" id="change-photo-keluar-lembur-btn" class="mt-2 text-xs text-blue-600 hover:underline font-medium">Ganti</button></div>`;
+                uploadLabelKeluarLembur.classList.replace('border-dashed', 'border-solid');
+                uploadLabelKeluarLembur.classList.add('border-green-500', 'bg-green-50');
+            }
+
+            function resetUploadUIKeluarLembur() {
+                fileInputKeluarLembur.value = '';
+                uploadUiKeluarLembur.innerHTML = `<i id="upload-icon-keluar-lembur" class="fas fa-camera text-3xl text-gray-400"></i><p id="upload-text-keluar-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>`;
+                uploadLabelKeluarLembur.classList.remove('border-solid', 'border-green-500', 'bg-green-50', 'hidden');
+                uploadLabelKeluarLembur.classList.add('border-dashed', 'border-gray-300');
+            }
+            
+            function checkFormReadinessKeluarLembur() {
+                if (isLocationReadyKeluarLembur && isPhotoReadyKeluarLembur) {
+                    submitKeluarLemburBtn.disabled = false;
+                    submitKeluarLemburBtn.textContent = 'Kirim Absen Keluar Lembur';
+                } else {
+                    submitKeluarLemburBtn.disabled = true;
+                    submitKeluarLemburBtn.textContent = 'Mohon Ambil Foto & Lokasi';
+                }
+            }
+
+            async function startCameraKeluarLembur() {
+                try {
+                    streamKeluarLembur = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    videoKeluarLembur.srcObject = streamKeluarLembur;
+                    videoKeluarLembur.onloadedmetadata = () => { snapButtonKeluarLembur.disabled = false; };
+                    cameraContainerKeluarLembur.classList.remove('hidden');
+                    uploadLabelKeluarLembur.classList.add('hidden');
+                } catch (err) {
+                    alert('Tidak bisa mengakses kamera untuk absen keluar lembur.');
+                    resetUploadUIKeluarLembur();
+                }
+            }
+
+            function stopCameraKeluarLembur() {
+                if (streamKeluarLembur) { streamKeluarLembur.getTracks().forEach(track => track.stop()); }
+                snapButtonKeluarLembur.disabled = true;
+            }
+
+            function getLocationKeluarLembur() {
+                submitKeluarLemburBtn.textContent = 'Mencari Lokasi...';
+                isLocationReadyKeluarLembur = false;
+                checkFormReadinessKeluarLembur();
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            latitudeKeluarLemburInput.value = position.coords.latitude;
+                            longitudeKeluarLemburInput.value = position.coords.longitude;
+                            isLocationReadyKeluarLembur = true;
+                            checkFormReadinessKeluarLembur();
+                        },
+                        () => {
+                            alert('Gagal mendapatkan lokasi untuk absen keluar lembur.');
+                            isLocationReadyKeluarLembur = false;
+                            checkFormReadinessKeluarLembur();
+                        }, 
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                    );
+                }
+            }
+            
+            snapButtonKeluarLembur.addEventListener("click", function() {
+                canvasKeluarLembur.width = videoKeluarLembur.videoWidth;
+                canvasKeluarLembur.height = videoKeluarLembur.videoHeight;
+                canvasKeluarLembur.getContext('2d').drawImage(videoKeluarLembur, 0, 0, canvasKeluarLembur.width, canvasKeluarLembur.height);
+                canvasKeluarLembur.toBlob(function(blob) {
+                    const file = new File([blob], "selfie_keluar_lembur_" + Date.now() + ".png", { type: "image/png" });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInputKeluarLembur.files = dataTransfer.files;
+                    
+                    stopCameraKeluarLembur();
+                    cameraContainerKeluarLembur.classList.add('hidden');
+                    uploadLabelKeluarLembur.classList.remove('hidden');
+                    setSuccessUIKeluarLembur(file.name);
+
+                    isPhotoReadyKeluarLembur = true;
+                    checkFormReadinessKeluarLembur();
+                }, 'image/png');
+            });
+
+            uploadLabelKeluarLembur.addEventListener('click', function(e) {
+                if (e.target.id === 'change-photo-keluar-lembur-btn') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isPhotoReadyKeluarLembur = false;
+                    checkFormReadinessKeluarLembur();
+                    cameraContainerKeluarLembur.classList.remove('hidden');
+                    uploadLabelKeluarLembur.classList.add('hidden');
+                    startCameraKeluarLembur();
+                } else if (fileInputKeluarLembur.files.length === 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    cameraContainerKeluarLembur.classList.remove('hidden');
+                    uploadLabelKeluarLembur.classList.add('hidden');
+                    startCameraKeluarLembur();
+                }
+            });
+
+            submitKeluarLemburBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('_method', 'PATCH');
+                formData.append('latitude_keluar', latitudeKeluarLemburInput.value);
+                formData.append('longitude_keluar', longitudeKeluarLemburInput.value);
+                if (fileInputKeluarLembur.files.length > 0) {
+                    formData.append('lampiran_keluar', fileInputKeluarLembur.files[0]);
+                }
+                
+                submitKeluarLemburBtn.disabled = true;
+                submitKeluarLemburBtn.textContent = 'Memproses...';
+
+                if (!lemburId) {
+                     alert('ID lembur tidak ditemukan. Silakan refresh halaman.');
+                     submitKeluarLemburBtn.disabled = false;
+                     submitKeluarLemburBtn.textContent = 'Kirim Absen Keluar Lembur';
+                     return;
+                }
+                const url = `/absen/lembur/keluar/${lemburId}`;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert(result.success);
+                        closeModalKeluarLembur();
+                        window.location.reload();
+                    } else {
+                        const errorMessages = Object.values(result.errors).flat().join('\n');
+                        alert('Terjadi kesalahan:\n' + errorMessages);
+                        submitKeluarLemburBtn.disabled = false;
+                        submitKeluarLemburBtn.textContent = 'Kirim Absen Keluar Lembur';
+                    }
+                } catch (error) {
+                    alert('Terjadi kesalahan pada koneksi atau server.');
+                    submitKeluarLemburBtn.disabled = false;
+                    submitKeluarLemburBtn.textContent = 'Kirim Absen Keluar Lembur';
+                }
+            });
+
+            btnTutupModalKeluarLembur.addEventListener('click', function() {
+                isLocationReadyKeluarLembur = false;
+                isPhotoReadyKeluarLembur = false;
+                resetUploadUIKeluarLembur();
+                checkFormReadinessKeluarLembur();
+            });
+
+            function openModalKeluarLembur() {
+                modalKeluarLembur.classList.remove('hidden');
+                modalKeluarLembur.classList.add('flex');
+                setTimeout(() => modalContentKeluarLembur.classList.remove('scale-95', 'opacity-0'), 10);
+                startCameraKeluarLembur();
+                getLocationKeluarLembur();
+            }
+
+            function closeModalKeluarLembur() {
+                modalContentKeluarLembur.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modalKeluarLembur.classList.add('hidden');
+                    modalKeluarLembur.classList.remove('flex');
+                    stopCameraKeluarLembur();
+                }, 200);
+            }
+
+            if (btnKeluarLembur) btnKeluarLembur.addEventListener('click', openModalKeluarLembur);
+            if (btnTutupModalKeluarLembur) btnTutupModalKeluarLembur.addEventListener('click', closeModalKeluarLembur);
         }
     });
     </script>

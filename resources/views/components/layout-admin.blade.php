@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Admin Dashboard' }}</title>
+    
+    {{-- Tailwind CSS & Font Awesome --}}
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    {{-- Alpine.js untuk fitur dropdown --}}
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <style>
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #27272a; }
@@ -39,15 +45,42 @@
                             <span class="ml-3 font-semibold">Kelola Admin</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('admin.absensi.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
-                            {{ request()->routeIs('admin.absensi.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                    <li x-data="{ open: {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lokasi.*') ? 'true' : 'false' }} }">
+                        <a @click.prevent="open = !open" href="#" 
+                            class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
+                            {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lokasi.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
                             
-                            {{-- Ikon bisa diganti sesuai selera, misal fa-calendar-check --}}
                             <i class="fas fa-calendar-check text-xl w-8 text-center"></i> 
                             
-                            <span class="ml-3 font-semibold">Kelola Absen</span>
+                            <span class="ml-3 font-semibold flex-1">Kelola Absen</span>
+                            <i class="fas fa-chevron-down text-sm transition-transform" :class="open ? 'rotate-180' : ''"></i>
                         </a>
+                        
+                        <div x-show="open" x-collapse>
+                            <ul class="ml-12 mt-2 space-y-1">
+                                <li>
+                                    <a href="{{ route('admin.absensi.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
+                                        {{ request()->routeIs('admin.absensi.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Rekap Absen
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.lokasi.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
+                                        {{ request()->routeIs('admin.lokasi.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Lokasi Absen
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.lembur.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
+                                        {{ request()->routeIs('admin.lokasi.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Rekap Lembur
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
                     <li>
                         <a href="{{ route('admin.cuti.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
@@ -58,8 +91,8 @@
                     </li>
                     <li>
                         <a href="{{ route('admin.pengajuan_dana.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
-                            {{ request()->routeIs('admin.cuti.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-                            <i class="fas fa-calendar-alt text-xl w-8 text-center"></i> 
+                            {{ request()->routeIs('admin.pengajuan_dana.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            <i class="fas fa-coins text-xl w-8 text-center"></i> 
                             <span class="ml-3 font-semibold">Pengajuan Dana</span>
                         </a>
                     </li>

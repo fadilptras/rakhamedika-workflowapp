@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\AbsensiController;
 use App\Http\Controllers\Admin\CutiController as AdminCutiController;
 use App\Http\Controllers\RekapAbsenController;
 use App\Http\Controllers\Admin\AdminPengajuanDanaController;
+use App\Http\Controllers\Admin\LokasiAbsenController;   
+use App\Http\Controllers\Admin\AdminLemburController; // <-- Tambahkan ini
 
 // Route utama, langsung arahkan ke halaman login
 Route::get('/', fn() => redirect()->route('login'));
@@ -37,8 +39,12 @@ Route::middleware('auth')->group(function () {
     // Absensi
     Route::get('/absen', [AbsenController::class, 'absen'])->name('absen');
     Route::post('/absen', [AbsenController::class, 'store'])->name('absen.store');
-
     Route::patch('/absen/keluar/{absensi}', [AbsenController::class, 'updateKeluar'])->name('absen.keluar');
+
+    // --- TAMBAHAN BARU UNTUK FITUR LEMBUR ---
+    Route::post('/absen/lembur', [AbsenController::class, 'storeLembur'])->name('absen.lembur.store');
+    Route::patch('/absen/lembur/keluar/{lembur}', [AbsenController::class, 'updateLemburKeluar'])->name('absen.lembur.keluar');
+    // --- AKHIR TAMBAHAN ---
 
     // Cuti
     Route::get('/cuti', [CutiController::class, 'create'])->name('cuti');
@@ -69,7 +75,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     
      // Rute untuk Rekap Absensi
     Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
-    Route::get('/absensi/pdf', [AbsensiController::class, 'downloadPDF'])->name('absensi.pdf'); // <-- TAMBAHKAN INI
+    Route::get('/absensi/pdf', [AbsensiController::class, 'downloadPDF'])->name('absensi.pdf');
 
     // Rute untuk mengelola KARYAWAN (role='user')
     Route::prefix('employees')->name('employees.')->group(function () {
@@ -98,4 +104,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::post('/{pengajuanDana}/approve', [AdminPengajuanDanaController::class, 'approve'])->name('approve');
         Route::post('/{pengajuanDana}/reject', [AdminPengajuanDanaController::class, 'reject'])->name('reject');
     });
+
+    Route::resource('lokasi', LokasiAbsenController::class);
+
+    // --- TAMBAHAN BARU: REKAP LEMBUR ADMIN ---
+    Route::get('/lembur', [AdminLemburController::class, 'index'])->name('lembur.index');
+    // --- AKHIR TAMBAHAN ---
 });

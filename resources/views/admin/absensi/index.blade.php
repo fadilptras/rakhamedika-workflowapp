@@ -69,7 +69,7 @@
                     <label for="user_id" class="block text-sm font-medium text-zinc-300">Karyawan</label>
                     <select name="user_id" id="user_id" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                         <option value="">Semua Karyawan</option>
-                        @foreach($users as $user)
+                        @foreach($allUsers as $user)
                             <option value="{{ $user->id }}" data-divisi="{{ $user->divisi }}" @selected(request('user_id') == $user->id)>{{ $user->name }}</option>
                         @endforeach
                     </select>
@@ -84,6 +84,8 @@
                         <option value="sakit" @selected(request('status') == 'sakit')>Sakit</option>
                         <option value="izin" @selected(request('status') == 'izin')>Izin</option>
                         <option value="cuti" @selected(request('status') == 'cuti')>Cuti</option>
+                        <option value="terlambat" @selected(request('status') == 'terlambat')>Terlambat</option>
+                        <option value="tidak_hadir" @selected(request('status') == 'tidak_hadir')>Tidak Hadir</option>
                     </select>
                 </div>
 
@@ -100,6 +102,14 @@
         </form>
     </div>
 
+    {{-- Total Jam Terlambat --}}
+    @if(isset($totalLate) && $totalLate !== '0 detik')
+    <div class="mb-6 p-4 bg-yellow-500/10 text-yellow-400 rounded-lg border border-yellow-500/30 font-semibold">
+        Total Waktu Terlambat: <span class="font-bold">{{ $totalLate }}</span>
+    </div>
+    @endif
+
+
     {{-- Daftar Absensi (Format Tabel Lurus) --}}
     <div class="overflow-x-auto bg-zinc-800 rounded-lg shadow-lg border border-zinc-700">
         <table class="min-w-full text-sm text-left text-zinc-300">
@@ -108,6 +118,7 @@
                     <th class="px-4 py-3">Karyawan</th>
                     <th class="px-4 py-3">Tanggal</th>
                     <th class="px-4 py-3">Jam Masuk / Keluar</th>
+                    <th class="px-4 py-3">Jam Telat</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3">Keterangan</th>
                     <th class="px-4 py-3">Lampiran & Lokasi</th>
@@ -115,10 +126,46 @@
             </thead>
             <tbody class="divide-y divide-zinc-700">
                 @forelse ($absensiRecords as $record)
+                    @php
+                        // Logika untuk menampilkan status dan badge
+                        $statusBadgeColor = 'bg-gray-500/10 text-gray-400';
+                        $statusText = 'Belum Absen';
+
+                        if ($record->status == 'hadir') {
+                             if (property_exists($record, 'isLate') && $record->isLate) {
+                                 $statusText = 'Terlambat';
+                                 $statusBadgeColor = 'bg-red-500/10 text-red-400';
+                             } else {
+                                 $statusText = 'Hadir';
+                                 $statusBadgeColor = 'bg-green-500/10 text-green-400';
+                             }
+                        } elseif ($record->status == 'sakit') {
+                            $statusText = 'Sakit';
+                            $statusBadgeColor = 'bg-red-500/10 text-red-400';
+                        } elseif ($record->status == 'izin') {
+                            $statusText = 'Izin';
+                            $statusBadgeColor = 'bg-amber-500/10 text-amber-400';
+                        } elseif ($record->status == 'cuti') {
+                            $statusText = 'Cuti';
+                            $statusBadgeColor = 'bg-purple-500/10 text-purple-400';
+                        } elseif ($record->status == 'tidak_hadir') {
+                             $statusText = 'Tidak Hadir';
+                             $statusBadgeColor = 'bg-red-500/10 text-red-400';
+                        }
+
+                        // Logika jam telat
+                        $jamTelat = '-';
+                        if ($statusText === 'Terlambat') {
+                           $jamMasuk = \Carbon\Carbon::parse($record->tanggal . ' ' . $record->jam_masuk);
+                           $jamMulaiKerja = \Carbon\Carbon::parse($record->tanggal . ' ' . $standardWorkHour);
+                           $telatMenit = $jamMasuk->diffInMinutes($jamMulaiKerja);
+                           $jamTelat = \Carbon\CarbonInterval::minutes($telatMenit)->cascade()->forHumans(['short' => true]);
+                        }
+                    @endphp
                     <tr class="hover:bg-zinc-700/30">
                         {{-- Karyawan --}}
                         <td class="px-4 py-3 flex items-center gap-3">
-                            <img src="{{ $record->user->profile_picture ? asset('storage/' . $record->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name ?? 'U').'&background=4f46e5&color=e0e7ff' }}"
+                            <img src="{{ isset($record->user->profile_picture) ? asset('storage/' . $record->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name ?? 'U').'&background=4f46e5&color=e0e7ff' }}"
                                  alt="{{ $record->user->name ?? '' }}" class="w-10 h-10 rounded-full object-cover">
                             <div>
                                 <p class="font-semibold text-white">{{ $record->user->name ?? 'User Dihapus' }}</p>
@@ -131,36 +178,36 @@
                             {{ \Carbon\Carbon::parse($record->tanggal)->isoFormat('dddd, D MMMM YYYY') }}
                         </td>
 
-                        {{-- Jam Masuk & Keluar --}}
+                        {{-- Jam Masuk / Keluar --}}
                         <td class="px-4 py-3">
-                            @if ($record->status == 'hadir' && $record->jam_masuk > '09:00:00')
-                                <span class="font-semibold text-red-400">{{ $record->jam_masuk }}</span>
-                                <span class="text-xs text-red-500/80 ml-1">(Terlambat)</span>
-                            @else
+                            @if ($record->jam_masuk)
                                 <span class="font-semibold text-white">{{ $record->jam_masuk }}</span>
+                            @else
+                                <span class="font-semibold text-zinc-400">-</span>
                             @endif
-                            @if ($record->jam_keluar)
+                            @if (isset($record->jam_keluar) && $record->jam_keluar)
                                 <br>
                                 <span class="text-zinc-400 text-xs">Keluar:</span>
                                 <span class="font-semibold text-white">{{ $record->jam_keluar }}</span>
                             @endif
                         </td>
 
+                        {{-- Jam Telat --}}
+                        <td class="px-4 py-3">
+                            <span class="font-semibold text-red-400">{{ $jamTelat }}</span>
+                        </td>
+
                         {{-- Status --}}
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs text-center capitalize
-                                @if($record->status == 'hadir') text-green-400 bg-green-500/10
-                                @elseif($record->status == 'sakit') text-red-400 bg-red-500/10
-                                @elseif($record->status == 'cuti') text-purple-400 bg-purple-500/10
-                                @else text-amber-400 bg-amber-500/10 @endif">
-                                {{ $record->status }}
+                            <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs text-center capitalize {{ $statusBadgeColor }}">
+                                {{ $statusText }}
                             </span>
                         </td>
 
                         {{-- Keterangan --}}
                         <td class="px-4 py-3">
                             {{ $record->keterangan ?? '-' }}
-                            @if ($record->keterangan_keluar)
+                            @if (isset($record->keterangan_keluar) && $record->keterangan_keluar)
                                 <br><span class="text-xs text-zinc-400">Keluar:</span>
                                 <span>{{ $record->keterangan_keluar }}</span>
                             @endif
@@ -168,38 +215,47 @@
 
                         {{-- Lampiran & Lokasi --}}
                         <td class="px-4 py-3 space-y-1">
-                            @if ($record->lampiran)
+                            @php
+                                $hasLink = false;
+                            @endphp
+
+                            @if (isset($record->lampiran) && $record->lampiran)
                                 <a href="{{ asset('storage/' . $record->lampiran) }}" target="_blank"
                                    class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
                                     Lampiran Masuk
                                 </a><br>
+                                @php $hasLink = true; @endphp
                             @endif
-                            @if ($record->lampiran_keluar)
+                            @if (isset($record->lampiran_keluar) && $record->lampiran_keluar)
                                 <a href="{{ asset('storage/' . $record->lampiran_keluar) }}" target="_blank"
                                    class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
                                     Lampiran Keluar
                                 </a><br>
+                                @php $hasLink = true; @endphp
                             @endif
-                            @if ($record->latitude && $record->longitude)
+                            @if (isset($record->latitude) && $record->latitude && $record->longitude)
                                 <a href="https://maps.google.com/?q={{ $record->latitude }},{{ $record->longitude }}" target="_blank"
                                    class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
                                     Lokasi Masuk
                                 </a><br>
+                                @php $hasLink = true; @endphp
                             @endif
-                            @if ($record->latitude_keluar && $record->longitude_keluar)
+                            @if (isset($record->latitude_keluar) && $record->latitude_keluar && $record->longitude_keluar)
                                 <a href="https://maps.google.com/?q={{ $record->latitude_keluar }},{{ $record->longitude_keluar }}" target="_blank"
                                    class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
                                     Lokasi Keluar
                                 </a>
+                                @php $hasLink = true; @endphp
                             @endif
-                            @if (!$record->lampiran && !$record->lampiran_keluar && !$record->latitude && !$record->longitude && !$record->latitude_keluar && !$record->longitude_keluar)
+
+                            @if (!$hasLink)
                                 <span>-</span>
                             @endif
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-6 text-center text-zinc-400">
+                        <td colspan="7" class="px-4 py-6 text-center text-zinc-400">
                             Tidak ada data absensi yang cocok dengan filter.
                         </td>
                     </tr>

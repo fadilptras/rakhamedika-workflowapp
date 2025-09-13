@@ -37,7 +37,6 @@ class User extends Authenticatable
         ];
     }
     
-    // --- TAMBAHKAN RELASI INI ---
     /**
      * Get the fund requests for the user.
      */
@@ -46,7 +45,6 @@ class User extends Authenticatable
         return $this->hasMany(PengajuanDana::class, 'user_id');
     }
 
-    // Jika ada relasi lain, tambahkan di sini
     public function absensis(): HasMany
     {
         return $this->hasMany(Absensi::class);
@@ -55,5 +53,11 @@ class User extends Authenticatable
     public function cutis(): HasMany
     {
         return $this->hasMany(Cuti::class);
+    }
+    
+    // --- TAMBAHAN BARU: RELASI KE TABEL LEMBUR ---
+    public function lemburs(): HasMany
+    {
+        return $this->hasMany(Lembur::class);
     }
 }

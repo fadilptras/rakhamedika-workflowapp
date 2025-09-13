@@ -26,18 +26,44 @@
                 <th>Nama Karyawan</th>
                 <th>Tanggal</th>
                 <th>Jam Masuk</th>
+                <th>Jam Telat</th>
                 <th>Status</th>
                 <th>Keterangan</th>
             </tr>
         </thead>
         <tbody>
             @foreach($absensiRecords as $index => $record)
+            @php
+                // Logika untuk menampilkan status dan badge
+                $statusText = 'Belum Absen';
+                $jamTelat = '-';
+                if ($record->status == 'hadir') {
+                     if (property_exists($record, 'isLate') && $record->isLate) {
+                         $statusText = 'Terlambat';
+                         $jamMasuk = \Carbon\Carbon::parse($record->tanggal . ' ' . $record->jam_masuk);
+                         $jamMulaiKerja = \Carbon\Carbon::parse($record->tanggal . ' ' . $standardWorkHour);
+                         $telatMenit = $jamMasuk->diffInMinutes($jamMulaiKerja);
+                         $jamTelat = \Carbon\CarbonInterval::minutes($telatMenit)->cascade()->forHumans(['short' => true]);
+                     } else {
+                         $statusText = 'Hadir';
+                     }
+                } elseif ($record->status == 'sakit') {
+                    $statusText = 'Sakit';
+                } elseif ($record->status == 'izin') {
+                    $statusText = 'Izin';
+                } elseif ($record->status == 'cuti') {
+                    $statusText = 'Cuti';
+                } elseif ($record->status == 'tidak_hadir') {
+                     $statusText = 'Tidak Hadir';
+                }
+            @endphp
             <tr>
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $record->user->name ?? 'User Dihapus' }}</td>
                 <td>{{ \Carbon\Carbon::parse($record->tanggal)->isoFormat('D MMMM YYYY') }}</td>
-                <td>{{ $record->jam_masuk }}</td>
-                <td style="text-transform: capitalize;">{{ $record->status }}</td>
+                <td>{{ $record->jam_masuk ?? '-' }}</td>
+                <td>{{ $jamTelat }}</td>
+                <td style="text-transform: capitalize;">{{ $statusText }}</td>
                 <td>{{ $record->keterangan ?? '-' }}</td>
             </tr>
             @endforeach
