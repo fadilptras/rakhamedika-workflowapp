@@ -52,8 +52,7 @@ Route::middleware('auth')->group(function () {
     // --- Rute Baru untuk Cuti ---
     Route::get('/cuti/{cuti}', [CutiController::class, 'show'])->name('cuti.show');
     Route::match(['PUT', 'PATCH'], '/cuti/{cuti}/status', [CutiController::class, 'updateStatus'])->name('cuti.updateStatus');
-    // --- Akhir Rute Baru ---
-
+    Route::post('/cuti/{cuti}/cancel', [CutiController::class, 'cancel'])->name('cuti.cancel');
     // Fitur Lainnya
     
     // Notifikasi

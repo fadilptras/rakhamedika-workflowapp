@@ -35,6 +35,11 @@
                                 <i class="fas fa-check-circle fa-fw mr-3"></i>
                                 Pengajuan Anda telah disetujui.
                             </p>
+                        @elseif($cuti->status == 'dibatalkan')
+                             <p class="flex items-center text-base font-medium text-gray-600">
+                                <i class="fas fa-ban fa-fw mr-3"></i>
+                                Pengajuan ini telah Anda batalkan.
+                            </p>
                         @else
                             <p class="flex items-center text-base font-medium text-red-600">
                                 <i class="fas fa-times-circle fa-fw mr-3"></i>
@@ -106,33 +111,44 @@
                     @endif
 
                     {{-- Tombol Aksi untuk Approver --}}
-                    @if ($cuti->status == 'diajukan' && auth()->id() == $approver?->id)
-                        <div class="pt-6 border-t border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Tindakan Persetujuan</h3>
-                            <form action="{{ route('cuti.updateStatus', $cuti) }}" method="POST">
-                                @csrf
-                                
-                                {{-- PERBAIKAN DI SINI --}}
-                                @method('PATCH')
-
-                                <div class="space-y-4">
-                                    <div>
-                                        <label for="catatan" class="block text-sm font-medium text-gray-700 mb-1">Catatan (Opsional)</label>
-                                        <textarea name="catatan" id="catatan" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                    @can('update', $cuti)
+                        @if ($cuti->status == 'diajukan')
+                            <div class="pt-6 border-t border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Tindakan Persetujuan</h3>
+                                <form action="{{ route('cuti.updateStatus', $cuti) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label for="catatan" class="block text-sm font-medium text-gray-700 mb-1">Catatan (Opsional)</label>
+                                            <textarea name="catatan" id="catatan" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                                        </div>
+                                        <div class="flex items-center gap-4">
+                                            <button type="submit" name="status" value="disetujui" class="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
+                                                <i class="fas fa-check mr-2"></i>Setujui
+                                            </button>
+                                            <button type="submit" name="status" value="ditolak" class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
+                                                <i class="fas fa-times mr-2"></i>Tolak
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-4">
-                                        <button type="submit" name="status" value="disetujui" class="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
-                                            <i class="fas fa-check mr-2"></i>Setujui
-                                        </button>
-                                        <button type="submit" name="status" value="ditolak" class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
-                                            <i class="fas fa-times mr-2"></i>Tolak
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    @endif
+                                </form>
+                            </div>
+                        @endif
+                    @endcan
 
+                    {{-- Tombol Aksi untuk Karyawan (Pembatalan) --}}
+                    @can('cancel', $cuti)
+                    <div class="pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Tindakan Lain</h3>
+                        <form action="{{ route('cuti.cancel', $cuti) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pengajuan cuti ini?');">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700">
+                                <i class="fas fa-ban mr-2"></i>Batalkan Pengajuan Cuti
+                            </button>
+                        </form>
+                    </div>
+                    @endcan
                 </div>
             </div>
         </div>
