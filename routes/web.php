@@ -50,7 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/cuti', [CutiController::class, 'create'])->name('cuti');
     Route::post('/cuti', [CutiController::class, 'store'])->name('cuti.store');
     // --- Rute Baru untuk Cuti ---
-    Route::get('/cuti/{id}', [CutiController::class, 'show'])->name('cuti.show');
+    Route::get('/cuti/{cuti}', [CutiController::class, 'show'])->name('cuti.show');
     Route::patch('/cuti/{cuti}/status', [CutiController::class, 'updateStatus'])->name('cuti.updateStatus');
     // --- Akhir Rute Baru ---
 
