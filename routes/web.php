@@ -51,7 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/cuti', [CutiController::class, 'store'])->name('cuti.store');
     // --- Rute Baru untuk Cuti ---
     Route::get('/cuti/{cuti}', [CutiController::class, 'show'])->name('cuti.show');
-    Route::patch('/cuti/{cuti}/status', [CutiController::class, 'updateStatus'])->name('cuti.updateStatus');
+    Route::match(['PUT', 'PATCH'], '/cuti/{cuti}/status', [CutiController::class, 'updateStatus'])->name('cuti.updateStatus');
     // --- Akhir Rute Baru ---
 
     // Fitur Lainnya

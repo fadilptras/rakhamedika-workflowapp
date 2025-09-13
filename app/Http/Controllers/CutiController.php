@@ -53,17 +53,22 @@ class CutiController extends Controller
      * Menampilkan halaman detail pengajuan cuti.
      */
     public function show(Cuti $cuti)
-    {
-        // Pastikan hanya pemilik atau approver yang bisa melihat
-        $user = Auth::user();
-        if ($user->id !== $cuti->user_id && !in_array($user->jabatan, ['Manajer', 'HRD'])) {
-            abort(403);
-        }
-        
-        return view('users.detail-cuti', [
-            'title' => 'Detail Pengajuan Cuti',
-            'cuti' => $cuti,
-        ]);
+{
+    $user = Auth::user();
+    
+    // Logika untuk menentukan approver
+    $approver = $this->getApprover($cuti->user);
+
+    // HRD dan approver bisa melihat detail, selain itu hanya pemilik cuti
+    if ($user->id !== $cuti->user_id && $user->jabatan !== 'HRD' && (!$approver || $user->id !== $approver->id)) {
+        abort(403, 'Anda tidak memiliki hak akses untuk melihat halaman ini.');
+    }
+    
+    return view('users.detail-cuti', [
+        'title' => 'Detail Pengajuan Cuti',
+        'cuti' => $cuti,
+        'approver' => $approver // Kirim data approver ke view
+    ]);
     }
 
     /**
@@ -105,8 +110,6 @@ class CutiController extends Controller
         $cuti = Cuti::create([
             'user_id' => Auth::id(),
             'status' => 'diajukan',
-            'status_manajer' => 'diajukan',
-            'status_hrd' => 'diajukan',
             'jenis_cuti' => $validatedData['jenis_cuti'],
             'tanggal_mulai' => $validatedData['tanggal_mulai'],
             'tanggal_selesai' => $validatedData['tanggal_selesai'],
@@ -114,15 +117,18 @@ class CutiController extends Controller
             'lampiran' => $pathLampiran,
         ]);
 
-        // Ambil manajer dan HRD untuk dikirim notifikasi berdasarkan jabatan
-        $manajer = User::where('jabatan', 'Manajer')->first();
+        // --- LOGIKA NOTIFIKASI BARU ---
+        // 1. Cari approver (Kepala Divisi atau Direktur)
+        $approver = $this->getApprover($user);
+
+        // 2. Cari HRD
         $hrd = User::where('jabatan', 'HRD')->first();
 
-        // Kirim notifikasi ke manajer dan HRD
-        if ($manajer) {
-            $manajer->notify(new CutiNotification($cuti));
+        // 3. Kirim notifikasi
+        if ($approver) {
+            $approver->notify(new CutiNotification($cuti));
         }
-        if ($hrd) {
+        if ($hrd && (!$approver || $hrd->id !== $approver->id)) { // Hindari notif ganda jika approver adalah HRD
             $hrd->notify(new CutiNotification($cuti));
         }
 
@@ -139,52 +145,33 @@ class CutiController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        $user = Auth::user();
-        $isApproved = $request->status === 'disetujui';
-        
-        // Menambahkan validasi agar yang boleh approve hanya Manajer dan HRD
-        if (!in_array($user->jabatan, ['Manajer', 'HRD'])) {
-            abort(403, 'Anda tidak memiliki hak akses untuk menyetujui pengajuan cuti.');
+        $currentUser = Auth::user();
+        $pemohon = $cuti->user;
+
+        // --- LOGIKA PERSETUJUAN BARU ---
+        // 1. Tentukan siapa approver yang seharusnya
+        $requiredApprover = $this->getApprover($pemohon);
+
+        // 2. Validasi:
+        // - Pastikan ada approver yang ditugaskan.
+        // - Pastikan user yang login adalah approver yang benar.
+        // - HRD tidak bisa approve.
+        if (!$requiredApprover || $currentUser->id !== $requiredApprover->id) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengubah status pengajuan ini.');
         }
 
-        // Jika HRD menolak, langsung tolak pengajuan
-        if ($user->jabatan === 'HRD' && $request->status === 'ditolak') {
-            $cuti->update([
-                'status_hrd' => 'ditolak',
-                'catatan_hrd' => $request->catatan ?? 'Ditolak',
-                'status' => 'ditolak',
-            ]);
-            return redirect()->route('cuti.show', $cuti)->with('success', 'Pengajuan cuti telah ditolak oleh HRD.');
+        if ($currentUser->jabatan === 'HRD') {
+             abort(403, 'HRD tidak memiliki hak untuk menyetujui atau menolak pengajuan.');
         }
 
-        // Perbarui status sesuai jabatan
-        if ($user->jabatan === 'Manajer' && $cuti->status_manajer === 'diajukan') {
-            $cuti->update([
-                'status_manajer' => $request->status,
-                'catatan_manajer' => $request->catatan ?? ($isApproved ? 'Disetujui' : 'Ditolak'),
-            ]);
-        } elseif ($user->jabatan === 'HRD' && $cuti->status_hrd === 'diajukan') {
-            $cuti->update([
-                'status_hrd' => $request->status,
-                'catatan_hrd' => $request->catatan ?? ($isApproved ? 'Disetujui' : 'Ditolak'),
-            ]);
-        } else {
-            return redirect()->route('cuti.show', $cuti)->with('error', 'Aksi tidak diizinkan atau pengajuan cuti sudah diproses.');
-        }
+        // 3. Update status
+        $cuti->update([
+            'status' => $request->status,
+            'catatan_approval' => $request->catatan,
+        ]);
 
-        $cuti->refresh(); // Ambil data terbaru setelah di-update
-
-        // Jika salah satu menolak, status akhir langsung ditolak.
-        if ($cuti->status_manajer === 'ditolak' || $cuti->status_hrd === 'ditolak') {
-            $cuti->update(['status' => 'ditolak']);
-            return redirect()->route('cuti.show', $cuti)->with('success', 'Pengajuan cuti telah ditolak.');
-        }
-
-        // Cek apakah keduanya sudah menyetujui
-        if ($cuti->status_manajer === 'disetujui' && $cuti->status_hrd === 'disetujui') {
-            $cuti->update(['status' => 'disetujui']);
-
-            // Otomatisasi absensi jika disetujui
+        // 4. Jika disetujui, otomatisasi absensi
+        if ($request->status === 'disetujui') {
             $period = CarbonPeriod::create($cuti->tanggal_mulai, $cuti->tanggal_selesai);
             foreach ($period as $date) {
                 Absensi::updateOrCreate(
@@ -199,10 +186,33 @@ class CutiController extends Controller
                     ]
                 );
             }
-            return redirect()->route('cuti.show', $cuti)->with('success', 'Pengajuan cuti berhasil disetujui oleh Manajer dan HRD.');
+            return redirect()->route('cuti.show', $cuti)->with('success', 'Pengajuan cuti berhasil disetujui.');
         }
 
-        return redirect()->route('cuti.show', $cuti)->with('success', 'Status pengajuan cuti berhasil diperbarui.');
+        return redirect()->route('cuti.show', $cuti)->with('success', 'Pengajuan cuti telah ditolak.');
+    }
+
+    /**
+     * Helper function untuk mencari approver.
+     * @param User $user User yang mengajukan cuti
+     * @return User|null
+     */
+    private function getApprover(User $user): ?User
+    {
+        $approver = null;
+        // Cari kepala divisi jika user punya divisi
+        if ($user->divisi) {
+            $approver = User::where('divisi', $user->divisi)
+                            ->where('jabatan', 'like', 'Kepala%')
+                            ->first();
+        }
+
+        // Jika tidak ada kepala divisi, cari Direktur
+        if (!$approver) {
+            $approver = User::where('jabatan', 'Direktur')->first();
+        }
+
+        return $approver;
     }
 
     /**

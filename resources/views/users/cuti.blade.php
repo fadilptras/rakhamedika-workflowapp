@@ -7,15 +7,25 @@
     <div class="bg-gray-50 p-4 md:p-8 min-h-screen">
         <div class="max-w-7xl mx-auto space-y-8">
 
-            {{-- HEADER HALAMAN DAN TOMBOL PENGAJUAN BARU --}}
+            {{-- ======================= PERUBAHAN DI SINI ======================= --}}
+            {{-- HEADER HALAMAN DAN TOMBOL-TOMBOL --}}
             <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-                <h1 class="text-3xl font-bold text-gray-900">Pengajuan Cuti</h1>
-                <a href="#form-pengajuan" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200">
-                    <i class="fas fa-plus mr-2"></i> Ajukan Cuti Baru
+                {{-- Tombol Kembali ke Dashboard yang lebih keren --}}
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-200 rounded-lg shadow-sm transition-all duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                    Kembali
+                </a>
+                
+                {{-- Tombol Pengajuan Baru --}}
+                <a href="#form-pengajuan" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200">
+                    <i class="fas fa-plus"></i>
+                    Ajukan Cuti Baru
                 </a>
             </div>
+            {{-- ===================== AKHIR PERUBAHAN ===================== --}}
 
-            {{-- RIWAYAT PENGAJUAN CUTI DALAM BENTUK TABEL --}}
+
+            {{-- RIWAYAT PENGAJUAN CUTI --}}
             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Riwayat Pengajuan Cuti</h2>
                 
@@ -24,11 +34,8 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Pengajuan</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Cuti</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durasi</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Akhir</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Persetujuan Manajer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Persetujuan HRD</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durasi Cuti</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
@@ -36,8 +43,10 @@
                             @forelse ($cutiRequests as $cuti)
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ \Carbon\Carbon::parse($cuti->created_at)->format('d M Y') }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">{{ $cuti->jenis_cuti }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($cuti->tanggal_selesai)) + 1 }} hari</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d M Y') }} - {{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d M Y') }}
+                                    <span class="text-gray-500">({{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($cuti->tanggal_selesai)) + 1 }} hari)</span>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                         @if($cuti->status == 'disetujui') bg-green-100 text-green-800
@@ -46,29 +55,13 @@
                                         {{ ucfirst($cuti->status) }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        @if($cuti->status_manajer == 'disetujui') bg-green-100 text-green-800
-                                        @elseif($cuti->status_manajer == 'ditolak') bg-red-100 text-red-800
-                                        @else bg-yellow-100 text-yellow-800 @endif">
-                                        {{ ucfirst($cuti->status_manajer) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        @if($cuti->status_hrd == 'disetujui') bg-green-100 text-green-800
-                                        @elseif($cuti->status_hrd == 'ditolak') bg-red-100 text-red-800
-                                        @else bg-yellow-100 text-yellow-800 @endif">
-                                        {{ ucfirst($cuti->status_hrd) }}
-                                    </span>
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <a href="{{ route('cuti.show', $cuti) }}" class="text-blue-600 hover:underline">Lihat Detail</a>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">Belum ada riwayat pengajuan cuti.</td>
+                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">Belum ada riwayat pengajuan cuti.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -81,7 +74,7 @@
                 <form action="{{ route('cuti.store') }}" method="POST" enctype="multipart/form-data" class="w-full lg:w-2/3">
                     @csrf
                     <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm space-y-7">
-                        <h2 class="text-2xl font-bold text-gray-900">Formulir Pengajuan Cuti</h2>
+                        <h2 class="text-2xl font-bold text-gray-900">Formulir Pengajuan Cuti Tahunan</h2>
 
                         {{-- Menampilkan pesan error validasi global --}}
                         @if ($errors->any())
@@ -94,21 +87,10 @@
                                 </ul>
                             </div>
                         @endif
-
-                        <div>
-                            <label class="block text-md font-semibold text-gray-800 mb-3">Jenis Cuti</label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <input type="radio" name="jenis_cuti" id="cuti_tahunan" value="tahunan" class="hidden custom-radio" checked>
-                                    <label for="cuti_tahunan" class="custom-radio-label flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer">
-                                        <i class="fas fa-plane-departure text-xl text-sky-500 mr-4"></i>
-                                        <span class="font-semibold text-gray-800 flex-1">Cuti Tahunan</span>
-                                        <div class="radio-circle"></div>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
                         
+                        {{-- Input Jenis Cuti (tersembunyi karena hanya ada satu) --}}
+                        <input type="hidden" name="jenis_cuti" value="tahunan">
+
                         <div>
                             <label class="block text-md font-semibold text-gray-800 mb-3">Pilih Tanggal</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -18,10 +18,7 @@ class Cuti extends Model
         'alasan',
         'lampiran',
         'status',
-        'status_manajer',
-        'status_hrd',
-        'catatan_manajer', // Tambahkan baris ini
-        'catatan_hrd',    // Tambahkan baris ini
+        'catatan_approval', // Kolom baru
     ];
 
     /**
