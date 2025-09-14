@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Dashboard' }}</title>
+    <link rel="icon" href="{{ asset('asset/images/logorakha.png') }}" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -80,9 +81,12 @@
                         <i class="fas fa-bars text-xl"></i>
                     </button>
                     
-                    <a href="/" class="text-white text-lg font-bold">
-                        PT RAKHA MEDIKA NUSANTARA
-                    </a>
+                    <div class="flex items-center justify-center flex-1 lg:justify-start">
+                        <img src="{{ asset('asset/images/logorakha.png') }}" alt="Logo" class="h-8 w-8 mr-2">
+                        <span class="text-white text-lg font-bold">
+                            PT RAKHA MEDIKA NUSANTARA
+                        </span>
+                    </div>
                 </div>
             </div>
         </nav>

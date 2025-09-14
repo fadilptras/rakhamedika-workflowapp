@@ -790,6 +790,7 @@
                 e.stopPropagation();
 
                 const formData = new FormData();
+                formData.append('_method', 'PATCH'); // <--- PERBAIKAN DI SINI
                 formData.append('latitude_keluar', latitudeKeluarInput.value);
                 formData.append('longitude_keluar', longitudeKeluarInput.value);
                 if (fileInputKeluar.files.length > 0) {
@@ -817,15 +818,15 @@
                         }
                     });
 
+                    // Penanganan respons yang lebih baik
+                    const result = await response.json();
                     if (response.ok) {
-                        const result = await response.json();
                         alert(result.success);
                         closeModal();
                         window.location.reload();
                     } else {
-                        const errorText = await response.text();
-                        console.error("Server Error Response:", errorText);
-                        alert('Terjadi kesalahan dari server. Cek console browser (F12) untuk detail.');
+                        const errorMessages = Object.values(result.errors || {error: [result.error]}).flat().join('\n');
+                        alert('Terjadi kesalahan:\n' + errorMessages);
                         submitKeluarBtn.disabled = false;
                         submitKeluarBtn.textContent = 'Kirim Absen Keluar';
                     }
@@ -1274,6 +1275,6 @@
             if (btnTutupModalKeluarLembur) btnTutupModalKeluarLembur.addEventListener('click', closeModalKeluarLembur);
         }
     });
-    </script>
+</script>
     @endpush
 </x-layout-users>
