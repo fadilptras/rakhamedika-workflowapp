@@ -39,7 +39,7 @@ Route::middleware('auth')->group(function () {
     // Absensi
     Route::get('/absen', [AbsenController::class, 'absen'])->name('absen');
     Route::post('/absen', [AbsenController::class, 'store'])->name('absen.store');
-    Route::patch('/absen/keluar/{absensi}', [AbsenController::class, 'updateKeluar'])->name('absen.keluar.update');
+    Route::patch('/absen/keluar/{absensi}', [AbsenController::class, 'updateKeluar'])->name('absen.keluar');
 
     // --- TAMBAHAN BARU UNTUK FITUR LEMBUR ---
     Route::post('/absen/lembur', [AbsenController::class, 'storeLembur'])->name('absen.lembur.store');
@@ -108,9 +108,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{pengajuanDana}/approve', [AdminPengajuanDanaController::class, 'approve'])->name('approve');
         Route::post('/{pengajuanDana}/reject', [AdminPengajuanDanaController::class, 'reject'])->name('reject');
     });
-
-
-    // --- TAMBAHAN BARU: REKAP LEMBUR ADMIN ---
+    
     Route::get('/lembur', [AdminLemburController::class, 'index'])->name('lembur.index');
-    // --- AKHIR TAMBAHAN ---
 });

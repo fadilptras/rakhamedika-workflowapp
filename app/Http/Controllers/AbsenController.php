@@ -151,10 +151,10 @@ class AbsenController extends Controller
     public function updateKeluar(Request $request, Absensi $absensi)
     {
         $request->validate([
-            'lampiran_keluar'   => 'required|file|mimes:jpg,jpeg,png|max:2048',
-            'latitude_keluar'   => 'required|string',
-            'longitude_keluar'  => 'required|string',
-            'keterangan_keluar' => 'nullable|string|max:1000',
+            'lampiran_keluar'    => 'required|file|mimes:jpg,jpeg,png|max:2048',
+            'latitude_keluar'    => 'required|string',
+            'longitude_keluar'   => 'required|string',
+            'keterangan_keluar'  => 'nullable|string|max:1000',
         ]);
 
         if ($absensi->user_id !== Auth::id()) {
@@ -185,16 +185,16 @@ class AbsenController extends Controller
     {
         $request->validate([
             'keterangan' => 'nullable|string|max:1000',
-            'lampiran_masuk'   => 'required|file|mimes:jpg,jpeg,png|max:2048',
-            'latitude_masuk'   => 'required|string|max:255',
-            'longitude_masuk'  => 'required|string|max:255',
+            'lampiran_masuk'    => 'required|file|mimes:jpg,jpeg,png|max:2048',
+            'latitude_masuk'    => 'required|string|max:255',
+            'longitude_masuk'   => 'required|string|max:255',
         ]);
 
         $user = Auth::user();
         $today = today()->toDateString();
         $absensiHariIni = Absensi::where('user_id', $user->id)
-                                    ->where('tanggal', $today)
-                                    ->first();
+                                         ->where('tanggal', $today)
+                                         ->first();
 
         if (!$absensiHariIni || !$absensiHariIni->jam_keluar) {
             return response()->json(['error' => 'Anda harus absen pulang terlebih dahulu untuk memulai lembur.'], 403);
@@ -214,9 +214,9 @@ class AbsenController extends Controller
             'tanggal'   => $today,
             'jam_masuk_lembur' => now()->toTimeString(),
             'keterangan'=> $request->keterangan,
-            'lampiran_masuk'  => $pathLampiranMasuk,
-            'latitude_masuk'  => $request->latitude_masuk,
-            'longitude_masuk' => $request->longitude_masuk,
+            'lampiran_masuk'   => $pathLampiranMasuk,
+            'latitude_masuk'   => $request->latitude_masuk,
+            'longitude_masuk'  => $request->longitude_masuk,
         ]);
 
         return response()->json(['success' => 'Absensi lembur masuk berhasil direkam!']);
@@ -227,34 +227,38 @@ class AbsenController extends Controller
      */
     public function updateLemburKeluar(Request $request, Lembur $lembur)
     {
+        // Validasi data yang diterima dari form
         $request->validate([
-            'keterangan_keluar' => 'nullable|string|max:1000',
-            'lampiran_keluar'   => 'required|file|mimes:jpg,jpeg,png|max:2048',
-            'latitude_keluar'   => 'required|string',
-            'longitude_keluar'  => 'required|string',
+            // Tidak ada keterangan keluar di form absen keluar lembur, jadi hapus validasi ini jika tidak digunakan
+            // 'keterangan_keluar' => 'nullable|string|max:1000',
+            'lampiran_keluar'    => 'required|file|mimes:jpg,jpeg,png|max:2048',
+            'latitude_keluar'    => 'required|string',
+            'longitude_keluar'   => 'required|string',
         ]);
-
+    
+        // Cek otorisasi pengguna
         if ($lembur->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Aksi tidak diizinkan.'], 403);
+            return redirect()->route('absen')->with('error', 'Aksi tidak diizinkan.');
         }
         
+        // Cek apakah sudah absen keluar lembur
         if ($lembur->jam_keluar_lembur) {
-            return response()->json(['error' => 'Anda sudah melakukan absensi keluar lembur.'], 403);
+            return redirect()->route('absen')->with('error', 'Anda sudah melakukan absensi keluar lembur.');
         }
         
         $pathLampiranKeluar = null;
         if ($request->hasFile('lampiran_keluar')) {
             $pathLampiranKeluar = $request->file('lampiran_keluar')->store('lampiran_lembur_keluar', 'public');
         }
-
+    
+        // Update data lembur
         $lembur->update([
             'jam_keluar_lembur' => now()->toTimeString(),
-            'lampiran_keluar'   => $pathLampiranKeluar,
-            'latitude_keluar'   => $request->latitude_keluar,
-            'longitude_keluar'  => $request->longitude_keluar,
-            'keterangan'        => $lembur->keterangan . ($request->keterangan_keluar ? ' | Keluar: ' . $request->keterangan_keluar : ''),
+            'lampiran_keluar'    => $pathLampiranKeluar,
+            'latitude_keluar'    => $request->latitude_keluar,
+            'longitude_keluar'   => $request->longitude_keluar,
         ]);
-
-        return response()->json(['success' => 'Absen keluar lembur berhasil direkam. Terima kasih!']);
+    
+        return redirect()->route('absen')->with('success', 'Absen keluar lembur berhasil direkam. Terima kasih!');
     }
 }
