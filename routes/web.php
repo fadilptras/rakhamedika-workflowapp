@@ -12,7 +12,7 @@ use App\Http\Controllers\Admin\AbsensiController;
 use App\Http\Controllers\Admin\CutiController as AdminCutiController;
 use App\Http\Controllers\RekapAbsenController;
 use App\Http\Controllers\Admin\AdminPengajuanDanaController;
-use App\Http\Controllers\Admin\LokasiAbsenController;   
+use App\Http\Controllers\Admin\LokasiAbsenController;
 use App\Http\Controllers\Admin\AdminLemburController; // <-- Tambahkan ini
 
 // Route utama, langsung arahkan ke halaman login
@@ -108,6 +108,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{pengajuanDana}/approve', [AdminPengajuanDanaController::class, 'approve'])->name('approve');
         Route::post('/{pengajuanDana}/reject', [AdminPengajuanDanaController::class, 'reject'])->name('reject');
     });
+
 
     // --- TAMBAHAN BARU: REKAP LEMBUR ADMIN ---
     Route::get('/lembur', [AdminLemburController::class, 'index'])->name('lembur.index');

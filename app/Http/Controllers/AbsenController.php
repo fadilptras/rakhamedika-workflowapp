@@ -150,23 +150,18 @@ class AbsenController extends Controller
      */
     public function updateKeluar(Request $request, Absensi $absensi)
     {
-        // Gunakan Validator untuk mengontrol respons
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'lampiran_keluar'   => 'required|file|mimes:jpg,jpeg,png|max:2048',
             'latitude_keluar'   => 'required|string',
             'longitude_keluar'  => 'required|string',
             'keterangan_keluar' => 'nullable|string|max:1000',
         ]);
-        
-        // Cek jika validasi gagal
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
 
         if ($absensi->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Aksi tidak diizinkan.'], 403);
+            return back()->with('error', 'Aksi tidak diizinkan.');
         }
 
+        // Simpan lampiran
         $pathLampiranKeluar = null;
         if ($request->hasFile('lampiran_keluar')) {
             $pathLampiranKeluar = $request->file('lampiran_keluar')->store('lampiran_absensi_keluar', 'public');
@@ -180,7 +175,7 @@ class AbsenController extends Controller
             'longitude_keluar'  => $request->longitude_keluar,
         ]);
 
-        return response()->json(['success' => 'Absen keluar berhasil direkam. Terima kasih!']);
+        return redirect()->route('absen')->with('success', 'Absensi keluar berhasil direkam!');
     }
 
     /**

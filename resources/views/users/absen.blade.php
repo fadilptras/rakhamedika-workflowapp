@@ -13,6 +13,16 @@
                     {{ session('error') }}
                 </div>
             @endif
+            @if ($errors->any())
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-4" role="alert">
+                    <p class="font-bold">Terjadi Kesalahan</p>
+                    <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>- {{ $error }}</li>
+                    @endforeach
+                    </ul>
+                </div>
+            @endif
 
             @if ($absensiHariIni)
                 {{-- TAMPILAN JIKA PENGGUNA SUDAH ABSEN MASUK --}}
@@ -162,48 +172,49 @@
                 <div id="absensi-data" data-id="{{ $absensiHariIni->id }}"></div>
                 <div id="modal-absen-keluar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
                     <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
-                        <input type="hidden" name="latitude_keluar" id="latitude-keluar">
-                        <input type="hidden" name="longitude_keluar" id="longitude-keluar">
-                        
-                        <div class="p-6">
-                            <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
-                            <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar.</p>
+                        <form action="{{ route('absen.keluar', $absensiHariIni->id) }}" method="POST" enctype="multipart/form-data" id="form-absen-keluar">
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="latitude_keluar" id="latitude-keluar">
+                            <input type="hidden" name="longitude_keluar" id="longitude-keluar">
                             
-                            <div class="mt-6">
-                                <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
-                                <div id="camera-container-keluar" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                                    <video id="video-keluar" class="w-full h-full object-cover" autoplay></video>
-                                    <canvas id="canvas-keluar" class="hidden"></canvas>
-                                    <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                                        <button type="button" id="snap-keluar" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                            <i class="fas fa-camera"></i>
-                                        </button>
+                            <div class="p-6">
+                                <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
+                                <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar.</p>
+                                
+                                <div class="mt-6">
+                                    <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
+                                    <div id="camera-container-keluar" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
+                                        <video id="video-keluar" class="w-full h-full object-cover" autoplay></video>
+                                        <canvas id="canvas-keluar" class="hidden"></canvas>
+                                        <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                            <button type="button" id="snap-keluar" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                                <i class="fas fa-camera"></i>
+                                            </button>
+                                        </div>
                                     </div>
+                                    <label for="lampiran-keluar" id="upload-label-keluar" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                                        <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar">
+                                            <i id="upload-icon-keluar" class="fas fa-camera text-3xl text-gray-400"></i>
+                                            <p id="upload-text-keluar" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                                        </div>
+                                        <input name="lampiran_keluar" id="lampiran-keluar" type="file" class="hidden" accept="image/*" />
+                                    </label>
                                 </div>
-                                <label for="lampiran-keluar" id="upload-label-keluar" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
-                                    <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar">
-                                        <i id="upload-icon-keluar" class="fas fa-camera text-3xl text-gray-400"></i>
-                                        <p id="upload-text-keluar" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
-                                    </div>
-                                    <input name="lampiran_keluar" id="lampiran-keluar" type="file" class="hidden" accept="image/*" />
-                                </label>
                             </div>
-                        </div>
-                        <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-                            <button type="button" id="btn-tutup-modal" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                            <button type="button" id="submit-button-keluar" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
-                        </div>
+                            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
+                                <button type="button" id="btn-tutup-modal" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                                <button type="submit" id="submit-button-keluar" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
                 @endif
             @else
                 {{-- TAMPILAN JIKA BELUM ABSEN --}}
-
-                {{-- ======================= PENAMBAHAN DI SINI ======================= --}}
                 <div class="flex justify-end mb-4">
                     <a href="{{ route('dashboard') }}" class="text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
                 </div>
-                {{-- ===================== AKHIR PENAMBAHAN ===================== --}}
                 
                 <form action="{{ route('absen.store') }}" method="POST" enctype="multipart/form-data" id="form-absen">
                     @csrf
@@ -373,13 +384,13 @@
                 </div>
             </div>
             <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-                <button type="button" id="btn-tutup-modal" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                <button type="button" id="btn-tutup-modal-keluar" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
                 <button type="button" id="submit-button-keluar" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
             </div>
         </div>
     </div>
     @endif
-
+    
     {{-- MODAL UNTUK ABSEN LEMBUR --}}
     @if ($absensiHariIni && $absensiHariIni->jam_keluar && is_null($lemburHariIni))
     <div id="modal-absen-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
@@ -649,16 +660,16 @@
             setActiveButton(hiddenStatusInput.value);
             toggleUiForStatus(hiddenStatusInput.value);
         }
-
+        
+        // Logika untuk Absen Keluar (non-AJAX)
         const btnAbsenKeluar = document.getElementById('btn-absen-keluar');
         const modal = document.getElementById('modal-absen-keluar');
-        if (modal) {
-            // --- Variabel untuk ID absensi --
-            const absensiId = document.getElementById('absensi-data').dataset.id;
-
+        if (btnAbsenKeluar && modal) {
+            const formKeluar = document.getElementById('form-absen-keluar');
             const modalContent = modal.querySelector('.transform');
             const btnTutupModal = document.getElementById('btn-tutup-modal');
-            const submitKeluarBtn = document.getElementById('submit-button-keluar');
+
+            // Logika kamera dan GPS untuk absen keluar
             const latitudeKeluarInput = document.getElementById('latitude-keluar');
             const longitudeKeluarInput = document.getElementById('longitude-keluar');
             const cameraContainerKeluar = document.getElementById('camera-container-keluar');
@@ -668,7 +679,8 @@
             const canvasKeluar = document.getElementById('canvas-keluar');
             const snapButtonKeluar = document.getElementById('snap-keluar');
             const uploadUiKeluar = document.getElementById('upload-ui-keluar');
-            
+            const submitKeluarBtn = document.getElementById('submit-button-keluar');
+
             let streamKeluar;
             let isLocationReadyKeluar = false;
             let isPhotoReadyKeluar = false;
@@ -690,7 +702,7 @@
                 uploadLabelKeluar.classList.remove('border-solid', 'border-green-500', 'bg-green-50', 'hidden');
                 uploadLabelKeluar.classList.add('border-dashed', 'border-gray-300');
             }
-            
+
             function checkFormReadinessKeluar() {
                 if (isLocationReadyKeluar && isPhotoReadyKeluar) {
                     submitKeluarBtn.disabled = false;
@@ -700,7 +712,7 @@
                     submitKeluarBtn.textContent = 'Mohon Ambil Foto & Lokasi';
                 }
             }
-
+            
             async function startCameraKeluar() {
                 try {
                     streamKeluar = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
@@ -785,67 +797,6 @@
                 }
             });
 
-            submitKeluarBtn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const formData = new FormData();
-                formData.append('_method', 'PATCH'); // <--- PERBAIKAN DI SINI
-                formData.append('latitude_keluar', latitudeKeluarInput.value);
-                formData.append('longitude_keluar', longitudeKeluarInput.value);
-                if (fileInputKeluar.files.length > 0) {
-                    formData.append('lampiran_keluar', fileInputKeluar.files[0]);
-                }
-                
-                submitKeluarBtn.disabled = true;
-                submitKeluarBtn.textContent = 'Memproses...';
-
-                if (!absensiId) {
-                     alert('ID absensi tidak ditemukan. Silakan refresh halaman.');
-                     submitKeluarBtn.disabled = false;
-                     submitKeluarBtn.textContent = 'Kirim Absen Keluar';
-                     return;
-                }
-                const url = `/absen/keluar/${absensiId}`;
-
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json',
-                        }
-                    });
-
-                    // Penanganan respons yang lebih baik
-                    const result = await response.json();
-                    if (response.ok) {
-                        alert(result.success);
-                        closeModal();
-                        window.location.reload();
-                    } else {
-                        const errorMessages = Object.values(result.errors || {error: [result.error]}).flat().join('\n');
-                        alert('Terjadi kesalahan:\n' + errorMessages);
-                        submitKeluarBtn.disabled = false;
-                        submitKeluarBtn.textContent = 'Kirim Absen Keluar';
-                    }
-                } catch (error) {
-                    console.error("Fetch Error:", error);
-                    alert('Terjadi kesalahan pada koneksi atau server. Cek console browser (F12) untuk detail.');
-                    submitKeluarBtn.disabled = false;
-                    submitKeluarBtn.textContent = 'Kirim Absen Keluar';
-                }
-            });
-
-            btnTutupModal.addEventListener('click', function() {
-                isLocationReadyKeluar = false;
-                isPhotoReadyKeluar = false;
-                resetUploadUIKeluar();
-                checkFormReadinessKeluar();
-                closeModal();
-            });
-
             function openModal() {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
@@ -860,6 +811,10 @@
                     modal.classList.add('hidden');
                     modal.classList.remove('flex');
                     stopCameraKeluar();
+                    resetUploadUIKeluar();
+                    isLocationReadyKeluar = false;
+                    isPhotoReadyKeluar = false;
+                    checkFormReadinessKeluar();
                 }, 200);
             }
 
@@ -867,7 +822,7 @@
             if (btnTutupModal) btnTutupModal.addEventListener('click', closeModal);
         }
 
-        // --- LOGIKA BARU UNTUK ABSENSI LEMBUR ---
+        // --- LOGIKA BARU UNTUK ABSENSI LEMBUR (AJAX) ---
 
         // Masuk Lembur
         const btnAbsenLembur = document.getElementById('btn-absen-lembur');
@@ -1000,6 +955,7 @@
                 e.stopPropagation();
 
                 const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
                 formData.append('latitude_masuk', latitudeLemburInput.value);
                 formData.append('longitude_masuk', longitudeLemburInput.value);
                 formData.append('keterangan', keteranganLemburInput.value);
@@ -1199,6 +1155,7 @@
                 e.stopPropagation();
 
                 const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
                 formData.append('_method', 'PATCH');
                 formData.append('latitude_keluar', latitudeKeluarLemburInput.value);
                 formData.append('longitude_keluar', longitudeKeluarLemburInput.value);
@@ -1275,6 +1232,6 @@
             if (btnTutupModalKeluarLembur) btnTutupModalKeluarLembur.addEventListener('click', closeModalKeluarLembur);
         }
     });
-</script>
+    </script>
     @endpush
 </x-layout-users>
