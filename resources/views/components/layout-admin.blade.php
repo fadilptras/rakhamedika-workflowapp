@@ -66,16 +66,9 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ route('admin.lokasi.index') }}" 
-                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
-                                        {{ request()->routeIs('admin.lokasi.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
-                                        Lokasi Absen
-                                    </a>
-                                </li>
-                                <li>
                                     <a href="{{ route('admin.lembur.index') }}" 
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
-                                        {{ request()->routeIs('admin.lokasi.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        {{ request()->routeIs('admin.lembur.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
                                         Rekap Lembur
                                     </a>
                                 </li>

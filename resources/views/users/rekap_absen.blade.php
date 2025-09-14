@@ -11,17 +11,20 @@
     <div class="p-4 md:p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
             
-            {{-- Header --}}
-            <div class="mb-6">
-                <h2 class="text-3xl font-bold text-gray-800">Riwayat Absensi Saya</h2>
-                <p class="text-gray-500">Lihat kembali catatan kehadiran Anda per periode.</p>
+            {{-- ======================= PERUBAHAN DI SINI ======================= --}}
+            {{-- Header dan Tombol Kembali --}}
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">Riwayat Absensi Saya</h2>
+                    <p class="text-gray-500">Lihat kembali catatan kehadiran Anda per periode.</p>
+                </div>
+                <a href="{{ route('dashboard') }}" class="text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
             </div>
+            {{-- ===================== AKHIR PERUBAHAN ===================== --}}
 
             
             {{-- Form Filter --}}
             <div class="bg-white p-4 rounded-xl shadow-md mb-6">
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-200 rounded-lg shadow-sm transition-all duration-200">
-                <i class="fas fa-arrow-left"></i>Kembali</a>
                 <form method="GET" action="{{ route('rekap_absen.index') }}">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div class="md:col-span-2">

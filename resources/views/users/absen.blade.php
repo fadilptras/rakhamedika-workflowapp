@@ -26,11 +26,6 @@
                                     Status Kehadiran Anda: <span class="font-semibold capitalize">{{ $absensiHariIni->status }}</span>
                                 </p>
                             </div>
-
-                            <div class="mt-4 md:mt-0">
-                                <x-back-button />
-                            </div>
-
                             <a href="{{ route('dashboard') }}" class="mt-4 md:mt-0 text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
                         </div>
                         
@@ -65,9 +60,6 @@
                                                 </a>
                                             @endif
                                         @else
-                                            <div class="mb-4">
-                                                <x-back-button />
-                                            </div>
                                             <p class="text-3xl font-bold text-gray-400">--:--</p>
                                         @endif
                                     </div>
@@ -138,7 +130,7 @@
                         @if(isset($daftarRekan) && count($daftarRekan) > 0)
                         <div class="bg-white p-6 rounded-xl shadow-sm">
                             <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
-                                Absensi Tim Divisi
+                                Absensi Tim Divisi {{ Auth::user()->divisi }}
                             </h2>
                             <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
                                 @foreach($daftarRekan as $rekan)
@@ -206,6 +198,13 @@
                 @endif
             @else
                 {{-- TAMPILAN JIKA BELUM ABSEN --}}
+
+                {{-- ======================= PENAMBAHAN DI SINI ======================= --}}
+                <div class="flex justify-end mb-4">
+                    <a href="{{ route('dashboard') }}" class="text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
+                </div>
+                {{-- ===================== AKHIR PENAMBAHAN ===================== --}}
+                
                 <form action="{{ route('absen.store') }}" method="POST" enctype="multipart/form-data" id="form-absen">
                     @csrf
                     <input type="hidden" name="latitude" id="latitude">
@@ -311,7 +310,7 @@
                             @if(isset($daftarRekan) && count($daftarRekan) > 0)
                             <div class="bg-white p-6 rounded-xl shadow-sm">
                                 <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
-                                    Absensi Anggota Tim
+                                    Absensi Tim Divisi {{ Auth::user()->divisi }}
                                 </h2>
                                 <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
                                     @foreach($daftarRekan as $rekan)
@@ -791,8 +790,6 @@
                 e.stopPropagation();
 
                 const formData = new FormData();
-                formData.append('_token', '{{ csrf_token() }}');
-                formData.append('_method', 'PATCH');
                 formData.append('latitude_keluar', latitudeKeluarInput.value);
                 formData.append('longitude_keluar', longitudeKeluarInput.value);
                 if (fileInputKeluar.files.length > 0) {
@@ -802,38 +799,39 @@
                 submitKeluarBtn.disabled = true;
                 submitKeluarBtn.textContent = 'Memproses...';
 
-                // --- PERBAIKAN: Memastikan ID absensi tersedia sebelum membuat URL ---
                 if (!absensiId) {
                      alert('ID absensi tidak ditemukan. Silakan refresh halaman.');
                      submitKeluarBtn.disabled = false;
                      submitKeluarBtn.textContent = 'Kirim Absen Keluar';
                      return;
                 }
-                const url = `/absen/keluar/${absensiId}`; // Menggunakan ID yang diambil dari data attribute
+                const url = `/absen/keluar/${absensiId}`;
 
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
                         body: formData,
                         headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
                         }
                     });
 
-                    const result = await response.json();
-
                     if (response.ok) {
+                        const result = await response.json();
                         alert(result.success);
                         closeModal();
                         window.location.reload();
                     } else {
-                        const errorMessages = Object.values(result.errors).flat().join('\n');
-                        alert('Terjadi kesalahan:\n' + errorMessages);
+                        const errorText = await response.text();
+                        console.error("Server Error Response:", errorText);
+                        alert('Terjadi kesalahan dari server. Cek console browser (F12) untuk detail.');
                         submitKeluarBtn.disabled = false;
                         submitKeluarBtn.textContent = 'Kirim Absen Keluar';
                     }
                 } catch (error) {
-                    alert('Terjadi kesalahan pada koneksi atau server.');
+                    console.error("Fetch Error:", error);
+                    alert('Terjadi kesalahan pada koneksi atau server. Cek console browser (F12) untuk detail.');
                     submitKeluarBtn.disabled = false;
                     submitKeluarBtn.textContent = 'Kirim Absen Keluar';
                 }
@@ -844,6 +842,7 @@
                 isPhotoReadyKeluar = false;
                 resetUploadUIKeluar();
                 checkFormReadinessKeluar();
+                closeModal();
             });
 
             function openModal() {
@@ -1000,7 +999,6 @@
                 e.stopPropagation();
 
                 const formData = new FormData();
-                formData.append('_token', '{{ csrf_token() }}');
                 formData.append('latitude_masuk', latitudeLemburInput.value);
                 formData.append('longitude_masuk', longitudeLemburInput.value);
                 formData.append('keterangan', keteranganLemburInput.value);
@@ -1016,7 +1014,8 @@
                         method: 'POST',
                         body: formData,
                         headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
                         }
                     });
 
@@ -1027,7 +1026,7 @@
                         closeModalLembur();
                         window.location.reload();
                     } else {
-                        const errorMessages = Object.values(result.errors).flat().join('\n');
+                        const errorMessages = Object.values(result.errors || {error: [result.error]}).flat().join('\n');
                         alert('Terjadi kesalahan:\n' + errorMessages);
                         submitLemburBtn.disabled = false;
                         submitLemburBtn.textContent = 'Kirim Absen Lembur';
@@ -1045,6 +1044,7 @@
                 resetUploadUILembur();
                 keteranganLemburInput.value = '';
                 checkFormReadinessLembur();
+                closeModalLembur();
             });
 
             function openModalLembur() {
@@ -1198,7 +1198,6 @@
                 e.stopPropagation();
 
                 const formData = new FormData();
-                formData.append('_token', '{{ csrf_token() }}');
                 formData.append('_method', 'PATCH');
                 formData.append('latitude_keluar', latitudeKeluarLemburInput.value);
                 formData.append('longitude_keluar', longitudeKeluarLemburInput.value);
@@ -1222,7 +1221,8 @@
                         method: 'POST',
                         body: formData,
                         headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
                         }
                     });
 
@@ -1233,7 +1233,7 @@
                         closeModalKeluarLembur();
                         window.location.reload();
                     } else {
-                        const errorMessages = Object.values(result.errors).flat().join('\n');
+                        const errorMessages = Object.values(result.errors || {error: [result.error]}).flat().join('\n');
                         alert('Terjadi kesalahan:\n' + errorMessages);
                         submitKeluarLemburBtn.disabled = false;
                         submitKeluarLemburBtn.textContent = 'Kirim Absen Keluar Lembur';
@@ -1250,6 +1250,7 @@
                 isPhotoReadyKeluarLembur = false;
                 resetUploadUIKeluarLembur();
                 checkFormReadinessKeluarLembur();
+                closeModalKeluarLembur();
             });
 
             function openModalKeluarLembur() {

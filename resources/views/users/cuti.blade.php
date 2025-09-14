@@ -9,12 +9,9 @@
 
             {{-- ======================= PERUBAHAN DI SINI ======================= --}}
             {{-- HEADER HALAMAN DAN TOMBOL-TOMBOL --}}
-            <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-                {{-- Tombol Kembali ke Dashboard yang lebih keren --}}
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-200 rounded-lg shadow-sm transition-all duration-200">
-                    <i class="fas fa-arrow-left"></i>
-                    Kembali
-                </a>
+            <div class="flex flex-col items-end space-y-2">
+                {{-- Tombol Kembali ke Dashboard --}}
+                <a href="{{ route('dashboard') }}" class="text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
                 
                 {{-- Tombol Pengajuan Baru --}}
                 <a href="#form-pengajuan" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200">
