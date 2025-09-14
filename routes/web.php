@@ -109,8 +109,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{pengajuanDana}/reject', [AdminPengajuanDanaController::class, 'reject'])->name('reject');
     });
 
-    Route::resource('lokasi', LokasiAbsenController::class);
-
     // --- TAMBAHAN BARU: REKAP LEMBUR ADMIN ---
     Route::get('/lembur', [AdminLemburController::class, 'index'])->name('lembur.index');
     // --- AKHIR TAMBAHAN ---

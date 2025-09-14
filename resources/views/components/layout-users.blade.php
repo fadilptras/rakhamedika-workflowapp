@@ -6,20 +6,31 @@
     <title>{{ $title ?? 'Dashboard' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Menambahkan transisi yang lebih halus untuk transform */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100 font-sans h-screen flex">
+<body class="bg-gray-100 font-sans">
+
+    {{-- Overlay untuk latar belakang saat sidebar terbuka --}}
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden"></div>
 
     {{-- Sidebar --}}
-    <div id="sidebar" class="bg-blue-500 text-white h-full flex flex-col w-20 transition-all duration-300 ease-in-out">
-    
-        <div class="p-4 border-b border-blue-400 flex items-center justify-center h-[68px]">
+    {{-- Diubah: Lebar kembali ke w-20, teks dihapus, item kembali ke tengah --}}
+    <div id="sidebar" class="bg-blue-600 text-white h-full flex flex-col w-20 fixed top-0 left-0 z-30 transform -translate-x-full">
+        
+        <div class="p-4 border-b border-blue-500 flex items-center justify-center h-[68px]">
             <i class="fas fa-clinic-medical text-3xl"></i>
         </div>
-    
+        
         <div class="flex-grow overflow-y-auto">
             <nav class="p-4 pt-6">
                 <ul class="space-y-4">
+                    {{-- Diubah: Kembali hanya ikon di tengah --}}
                     <li>
                         <a href="{{ route('dashboard') }}" class="flex items-center justify-center p-3 rounded-lg transition-colors duration-200 
                             {{ request()->routeIs('dashboard') ? 'bg-blue-800 shadow-lg' : 'hover:bg-blue-700/50' }}">
@@ -44,8 +55,8 @@
                 </ul>
             </nav>
         </div>
-    
-        <div class="p-4 border-t border-blue-400 space-y-4">
+        
+        <div class="p-4 border-t border-blue-500 space-y-4">
             <a href="#" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
                 <i class="fas fa-user-cog text-xl"></i>
             </a>
@@ -61,12 +72,17 @@
     <div class="flex-1 flex flex-col">
         
         {{-- Navbar --}}
-        <nav class="w-full bg-[#1153b4]">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="py-4">
-                <a href="/" class="text-white text-lg font-bold">
-                    PT RAKHA MEDIKA NUSANTARA
-                </a>
+        <nav class="w-full bg-[#1153b4] shadow-md sticky top-0 z-10">
+            <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="py-4 flex items-center">
+                    {{-- Tombol untuk membuka sidebar --}}
+                    <button id="sidebar-toggle" class="text-white mr-4 p-2 rounded-md hover:bg-blue-700 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    
+                    <a href="/" class="text-white text-lg font-bold">
+                        PT RAKHA MEDIKA NUSANTARA
+                    </a>
                 </div>
             </div>
         </nav>
@@ -80,12 +96,35 @@
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto">
+        <main class="flex-1 overflow-y-auto p-6">
             {{ $slot }}
-        </div>
+        </main>
 
     </div>
 
+    {{-- JavaScript untuk fungsionalitas sidebar (Tidak ada perubahan di sini) --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('sidebar');
+            const toggleButton = document.getElementById('sidebar-toggle');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            }
+
+            toggleButton.addEventListener('click', function (e) {
+                e.stopPropagation();
+                toggleSidebar();
+            });
+
+            overlay.addEventListener('click', function () {
+                toggleSidebar();
+            });
+        });
+    </script>
+    
     @stack('scripts')
 
 </body>
