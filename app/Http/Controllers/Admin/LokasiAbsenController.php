@@ -3,76 +3,57 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\LokasiAbsen;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class LokasiAbsenController extends Controller
 {
     /**
-     * Menampilkan daftar semua lokasi absen.
+     * Menampilkan halaman pengaturan lokasi absensi.
+     * Halaman ini akan menampilkan form untuk mengedit satu-satunya lokasi kantor.
      */
     public function index()
     {
-        $lokasi = LokasiAbsen::all();
+        // Ambil data lokasi yang pertama, atau buat objek baru jika belum ada.
+        // Ini memastikan view selalu menerima objek dan tidak akan error.
+        $lokasi = LokasiAbsen::firstOrNew(['id' => 1]);
+        
         return view('admin.lokasi.index', compact('lokasi'));
     }
 
     /**
-     * Menyimpan lokasi absen baru.
+     * Menyimpan atau memperbarui data lokasi absensi.
+     * Hanya ada satu data yang akan dikelola.
      */
     public function store(Request $request)
     {
+        // Validasi input dari form
         $request->validate([
-            'nama_lokasi' => 'required|string',
-            'latitude' => ['required', 'numeric', Rule::unique('lokasi_absen', 'latitude')->where('longitude', $request->longitude)],
-            'longitude' => 'required|numeric',
-            'radius_meter' => 'required|integer|min:1',
+            'nama_lokasi' => 'required|string|max:255',
+            'latitude'    => 'required|numeric',
+            'longitude'   => 'required|numeric',
+            'radius_meter'=> 'required|integer|min:10', // Radius minimal 10 meter
+        ], [
+            'nama_lokasi.required' => 'Nama lokasi wajib diisi.',
+            'latitude.required'    => 'Latitude tidak valid. Pastikan link Google Maps benar.',
+            'longitude.required'   => 'Longitude tidak valid. Pastikan link Google Maps benar.',
+            'radius_meter.required'=> 'Radius absen wajib diisi.',
+            'radius_meter.min'     => 'Radius absen minimal adalah 10 meter.',
         ]);
-    
-        LokasiAbsen::create([
-            'nama' => $request->nama_lokasi,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'radius' => $request->radius_meter,
-        ]);
-    
-        return redirect()->route('admin.lokasi.index')->with('success', 'Lokasi berhasil disimpan.');
-    }
-    
-    /**
-     * Memperbarui lokasi absen yang sudah ada.
-     */
-    public function update(Request $request, LokasiAbsen $lokasi)
-    {
-        $request->validate([
-            'nama_lokasi' => 'required|string',
-            'latitude' => ['required', 'numeric', Rule::unique('lokasi_absen', 'latitude')->ignore($lokasi->id)->where('longitude', $request->longitude)],
-            'longitude' => 'required|numeric',
-            'radius_meter' => 'required|integer|min:1',
-        ]);
-    
-        $lokasi->update([
-            'nama' => $request->nama_lokasi,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'radius' => $request->radius_meter,
-        ]);
-    
-        return redirect()->route('admin.lokasi.index')->with('success', 'Lokasi berhasil diperbarui.');
-    }
 
-    /**
-     * Menghapus lokasi absen.
-     */
-    public function destroy(LokasiAbsen $lokasi)
-    {
-        try {
-            $lokasi->delete();
-            return redirect()->route('admin.lokasi.index')->with('success', 'Lokasi berhasil dihapus.');
-        } catch (\Exception $e) {
-            return redirect()->route('admin.lokasi.index')->with('error', 'Terjadi kesalahan saat menghapus lokasi.');
-        }
+        // Gunakan updateOrCreate untuk mengelola satu baris data secara efisien.
+        // Ini akan mencari lokasi dengan ID 1, jika ada di-update, jika tidak maka dibuat.
+        LokasiAbsen::updateOrCreate(
+            ['id' => 1], // Kunci pencarian
+            [
+                'nama_lokasi' => $request->nama_lokasi,
+                'latitude'    => $request->latitude,
+                'longitude'   => $request->longitude,
+                'radius_meter'=> $request->radius_meter,
+            ]
+        );
+
+        // Kembali ke halaman sebelumnya dengan pesan sukses
+        return redirect()->back()->with('success', 'Pengaturan lokasi absensi berhasil diperbarui!');
     }
 }

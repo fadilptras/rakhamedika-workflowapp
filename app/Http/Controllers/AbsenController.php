@@ -49,15 +49,21 @@ class AbsenController extends Controller
         
         // Hitung total keterlambatan
         $totalLateMinutes = 0;
+        $standardWorkHour = Carbon::parse('08:00:00'); // Jadikan objek Carbon
+
         foreach ($absensiBulanIni as $record) {
-             if ($record->status == 'hadir' && $record->jam_masuk > $standardWorkHour) {
+            // Gunakan Carbon untuk perbandingan yang andal
+            if ($record->status == 'hadir' && $record->jam_masuk) {
                 $jamMasuk = Carbon::parse($record->jam_masuk);
-                $jamMulaiKerja = Carbon::parse($record->tanggal . ' ' . $standardWorkHour);
-                $minutesLate = $jamMasuk->diffInMinutes($jamMulaiKerja);
                 
-                // Hanya hitung jika tidak melewati batas
-                if ($minutesLate <= $lateThresholdMinutes) {
-                    $totalLateMinutes += $minutesLate;
+                // Cek jika jam masuk lebih besar dari jam standar
+                if ($jamMasuk->gt($standardWorkHour)) {
+                    $minutesLate = $jamMasuk->diffInMinutes($standardWorkHour);
+                    
+                    // Hanya hitung jika tidak melewati batas toleransi
+                    if ($minutesLate <= $lateThresholdMinutes) {
+                        $totalLateMinutes += $minutesLate;
+                    }
                 }
             }
         }
@@ -71,28 +77,40 @@ class AbsenController extends Controller
         $rekapAbsen['cuti'] = $totalCutiTerpakai;
 
 
-        // 4. Daftar rekan satu divisi & status absensinya hari ini
-        $daftarRekan = [];
-        if ($user->divisi) {
-            $rekanSatuDivisi = User::where('divisi', $user->divisi)
-                ->where('id', '!=', $user->id)
-                ->get();
+            // 4. Daftar rekan satu divisi & status absensinya hari ini
+    $daftarRekan = [];
+    $user = Auth::user(); // Pastikan user sudah di-load
+    $jabatanUser = $user->jabatan; // Ambil jabatan user
 
-            $absensiRekanHariIni = Absensi::whereIn('user_id', $rekanSatuDivisi->pluck('id'))
-                ->where('tanggal', $today->toDateString())
-                ->get()
-                ->keyBy('user_id');
+    // Tentukan daftar pengguna yang akan ditampilkan berdasarkan jabatan
+    if (in_array($jabatanUser, ['HRD', 'Manajer', 'Direktur'])) {
+        // Jika HRD, Manajer, atau Direktur, tampilkan semua karyawan lain
+        $rekanDilihat = User::where('id', '!=', $user->id)->get();
+    } else if ($user->divisi) {
+        // Jika tidak, tampilkan hanya rekan satu divisi
+        $rekanDilihat = User::where('divisi', $user->divisi)
+            ->where('id', '!=', $user->id)
+            ->get();
+    } else {
+        $rekanDilihat = collect(); // Kosongkan jika tidak punya divisi & bukan atasan
+    }
 
-            foreach ($rekanSatuDivisi as $rekan) {
-                $statusAbsensi = $absensiRekanHariIni->get($rekan->id);
-                $daftarRekan[] = (object) [
-                    'user'   => $rekan,
-                    'status' => $statusAbsensi ? $statusAbsensi->status : 'Belum Absen'
-                ];
-            }
+    if ($rekanDilihat->isNotEmpty()) {
+        $absensiRekanHariIni = Absensi::whereIn('user_id', $rekanDilihat->pluck('id'))
+            ->where('tanggal', $today->toDateString())
+            ->get()
+            ->keyBy('user_id');
+
+        foreach ($rekanDilihat as $rekan) {
+            $statusAbsensi = $absensiRekanHariIni->get($rekan->id);
+            $daftarRekan[] = (object) [
+                'user'   => $rekan,
+                'status' => $statusAbsensi ? $statusAbsensi->status : 'Belum Absen'
+            ];
         }
+    }
 
-        return view('users.absen', compact('title', 'absensiHariIni', 'lemburHariIni', 'rekapAbsen', 'daftarRekan'));
+    return view('users.absen', compact('title', 'absensiHariIni', 'lemburHariIni', 'rekapAbsen', 'daftarRekan'));
     }
 
     /**
@@ -108,12 +126,10 @@ class AbsenController extends Controller
             'longitude'  => 'nullable|string|max:255',
         ]);
 
-        // Cegah absen ganda
         if (Absensi::where('user_id', Auth::id())->where('tanggal', today()->toDateString())->exists()) {
             return redirect()->route('absen')->with('error', 'Anda sudah melakukan absensi hari ini.');
         }
 
-        // Jika sakit/izin → butuh keterangan/lampiran
         if (in_array($request->status, ['sakit', 'izin'])) {
             if (!$request->filled('keterangan') && !$request->hasFile('lampiran')) {
                 return redirect()->back()->withInput()
@@ -121,13 +137,11 @@ class AbsenController extends Controller
             }
         }
         
-        /*
-        // Menonaktifkan sementara pengecekan lokasi
-        // Jika hadir → wajib cek lokasi & radius
-        if ($request->status === 'hadir') {
+        // Jika hadir → wajib cek lokasi & radius, KECUALI UNTUK DIVISI MARKETING
+        if ($request->status === 'hadir' && Auth::user()->divisi !== 'Marketing') {
             $lokasiKantor = LokasiAbsen::first();
             if (!$lokasiKantor) {
-                return redirect()->back()->with('error', 'Lokasi kantor belum diatur admin.');
+                return redirect()->back()->with('error', 'Lokasi kantor belum diatur oleh admin.');
             }
 
             if (!$request->latitude || !$request->longitude) {
@@ -141,13 +155,11 @@ class AbsenController extends Controller
                 $lokasiKantor->longitude
             );
 
-            if ($jarak > $lokasiKantor->radius) {
-                return redirect()->back()->with('error', 'Anda berada di luar area kantor. (Jarak: ' . round($jarak) . ' m)');
+            if ($jarak > $lokasiKantor->radius_meter) {
+                return redirect()->back()->with('error', 'Anda berada di luar radius lokasi kantor yang diizinkan. (Jarak: ' . round($jarak) . ' m)');
             }
         }
-        */
 
-        // Simpan lampiran
         $pathLampiran = null;
         if ($request->hasFile('lampiran')) {
             $pathLampiran = $request->file('lampiran')->store('lampiran_absensi', 'public');
@@ -183,23 +195,22 @@ class AbsenController extends Controller
             return response()->json(['error' => 'Aksi tidak diizinkan.'], 403);
         }
         
-        /*
-        // Menonaktifkan sementara pengecekan lokasi
-        // Validasi lokasi kantor saat absen keluar
-        $lokasiKantor = LokasiAbsen::first();
-        if ($lokasiKantor) {
-            $jarak = $this->hitungJarak(
-                $request->latitude_keluar,
-                $request->longitude_keluar,
-                $lokasiKantor->latitude,
-                $lokasiKantor->longitude
-            );
+        // Validasi lokasi kantor saat absen keluar, KECUALI UNTUK DIVISI MARKETING
+        if (Auth::user()->divisi !== 'Marketing') {
+            $lokasiKantor = LokasiAbsen::first();
+            if ($lokasiKantor) {
+                $jarak = $this->hitungJarak(
+                    $request->latitude_keluar,
+                    $request->longitude_keluar,
+                    $lokasiKantor->latitude,
+                    $lokasiKantor->longitude
+                );
 
-            if ($jarak > $lokasiKantor->radius) {
-                return response()->json(['error' => 'Anda berada di luar area kantor saat absen keluar. (Jarak: ' . round($jarak) . ' m)'], 422);
+                if ($jarak > $lokasiKantor->radius_meter) {
+                    return response()->json(['error' => 'Anda berada di luar radius lokasi kantor saat absen keluar. (Jarak: ' . round($jarak) . ' m)'], 422);
+                }
             }
         }
-        */
 
         $pathLampiranKeluar = null;
         if ($request->hasFile('lampiran_keluar')) {
@@ -235,35 +246,32 @@ class AbsenController extends Controller
                                  ->where('tanggal', $today)
                                  ->first();
 
-        // Cek apakah user sudah absen pulang hari ini
         if (!$absensiHariIni || !$absensiHariIni->jam_keluar) {
             return response()->json(['error' => 'Anda harus absen pulang terlebih dahulu untuk memulai lembur.'], 403);
         }
 
-        // Cegah absen lembur ganda
         if (Lembur::where('user_id', $user->id)->where('tanggal', $today)->exists()) {
             return response()->json(['error' => 'Anda sudah melakukan absensi lembur masuk hari ini.'], 403);
         }
 
-        /*
-        // Menonaktifkan sementara pengecekan lokasi
-        // Cek lokasi
-        $lokasiKantor = LokasiAbsen::first();
-        if (!$lokasiKantor) {
-            return response()->json(['error' => 'Lokasi kantor belum diatur admin.'], 422);
-        }
+        // Cek lokasi, KECUALI UNTUK DIVISI MARKETING
+        if ($user->divisi !== 'Marketing') {
+            $lokasiKantor = LokasiAbsen::first();
+            if (!$lokasiKantor) {
+                return response()->json(['error' => 'Lokasi kantor belum diatur oleh admin.'], 422);
+            }
 
-        $jarak = $this->hitungJarak(
-            $request->latitude_masuk,
-            $request->longitude_masuk,
-            $lokasiKantor->latitude,
-            $lokasiKantor->longitude
-        );
+            $jarak = $this->hitungJarak(
+                $request->latitude_masuk,
+                $request->longitude_masuk,
+                $lokasiKantor->latitude,
+                $lokasiKantor->longitude
+            );
 
-        if ($jarak > $lokasiKantor->radius) {
-            return response()->json(['error' => 'Anda berada di luar area kantor saat absen lembur. (Jarak: ' . round($jarak) . ' m)'], 422);
+            if ($jarak > $lokasiKantor->radius_meter) {
+                return response()->json(['error' => 'Anda berada di luar radius lokasi kantor saat absen lembur. (Jarak: ' . round($jarak) . ' m)'], 422);
+            }
         }
-        */
 
         $pathLampiranMasuk = null;
         if ($request->hasFile('lampiran_masuk')) {
@@ -303,23 +311,22 @@ class AbsenController extends Controller
             return response()->json(['error' => 'Anda sudah melakukan absensi keluar lembur.'], 403);
         }
         
-        /*
-        // Menonaktifkan sementara pengecekan lokasi
-        // Cek lokasi
-        $lokasiKantor = LokasiAbsen::first();
-        if ($lokasiKantor) {
-            $jarak = $this->hitungJarak(
-                $request->latitude_keluar,
-                $request->longitude_keluar,
-                $lokasiKantor->latitude,
-                $lokasiKantor->longitude
-            );
+        // Cek lokasi, KECUALI UNTUK DIVISI MARKETING
+        if (Auth::user()->divisi !== 'Marketing') {
+            $lokasiKantor = LokasiAbsen::first();
+            if ($lokasiKantor) {
+                $jarak = $this->hitungJarak(
+                    $request->latitude_keluar,
+                    $request->longitude_keluar,
+                    $lokasiKantor->latitude,
+                    $lokasiKantor->longitude
+                );
 
-            if ($jarak > $lokasiKantor->radius) {
-                return response()->json(['error' => 'Anda berada di luar area kantor saat absen keluar lembur. (Jarak: ' . round($jarak) . ' m)'], 422);
+                if ($jarak > $lokasiKantor->radius_meter) {
+                    return response()->json(['error' => 'Anda berada di luar radius lokasi kantor saat absen keluar lembur. (Jarak: ' . round($jarak) . ' m)'], 422);
+                }
             }
         }
-        */
 
         $pathLampiranKeluar = null;
         if ($request->hasFile('lampiran_keluar')) {
@@ -342,6 +349,9 @@ class AbsenController extends Controller
      */
     private function hitungJarak($lat1, $lon1, $lat2, $lon2)
     {
+        if (is_null($lat1) || is_null($lon1) || is_null($lat2) || is_null($lon2)) {
+            return false;
+        }
         $R = 6371000; // radius bumi (meter)
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);

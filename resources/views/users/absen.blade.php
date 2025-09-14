@@ -26,6 +26,11 @@
                                     Status Kehadiran Anda: <span class="font-semibold capitalize">{{ $absensiHariIni->status }}</span>
                                 </p>
                             </div>
+
+                            <div class="mt-4 md:mt-0">
+                                <x-back-button />
+                            </div>
+
                             <a href="{{ route('dashboard') }}" class="mt-4 md:mt-0 text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
                         </div>
                         
@@ -60,6 +65,9 @@
                                                 </a>
                                             @endif
                                         @else
+                                            <div class="mb-4">
+                                                <x-back-button />
+                                            </div>
                                             <p class="text-3xl font-bold text-gray-400">--:--</p>
                                         @endif
                                     </div>
@@ -130,7 +138,7 @@
                         @if(isset($daftarRekan) && count($daftarRekan) > 0)
                         <div class="bg-white p-6 rounded-xl shadow-sm">
                             <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
-                                Absensi Tim Divisi {{ Auth::user()->divisi }}
+                                Absensi Tim Divisi
                             </h2>
                             <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
                                 @foreach($daftarRekan as $rekan)
@@ -303,7 +311,7 @@
                             @if(isset($daftarRekan) && count($daftarRekan) > 0)
                             <div class="bg-white p-6 rounded-xl shadow-sm">
                                 <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
-                                    Absensi Tim Divisi {{ Auth::user()->divisi }}
+                                    Absensi Anggota Tim
                                 </h2>
                                 <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
                                     @foreach($daftarRekan as $rekan)
