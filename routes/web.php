@@ -39,7 +39,7 @@ Route::middleware('auth')->group(function () {
     // Absensi
     Route::get('/absen', [AbsenController::class, 'absen'])->name('absen');
     Route::post('/absen', [AbsenController::class, 'store'])->name('absen.store');
-    Route::patch('/absen/keluar/{absensi}', [AbsenController::class, 'updateKeluar'])->name('absen.keluar');
+    Route::patch('/absen/keluar/{absensi}', [AbsenController::class, 'updateKeluar'])->name('absen.keluar.update');
 
     // --- TAMBAHAN BARU UNTUK FITUR LEMBUR ---
     Route::post('/absen/lembur', [AbsenController::class, 'storeLembur'])->name('absen.lembur.store');
