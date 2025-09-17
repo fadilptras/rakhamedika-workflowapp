@@ -58,7 +58,7 @@
         </div>
         
         <div class="p-4 border-t border-blue-500 space-y-4">
-            <a href="#" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
+            <a href="{{ route('profil.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
                 <i class="fas fa-user-cog text-xl"></i>
             </a>
             <form action="{{ route('logout') }}" method="POST">
@@ -84,7 +84,7 @@
                     <div class="flex items-center justify-center flex-1 lg:justify-start">
                         <img src="{{ asset('asset/images/logorakha.png') }}" alt="Logo" class="h-8 w-8 mr-2">
                         <span class="text-white text-lg font-bold">
-                            PT RAKHA MEDIKA NUSANTARA
+                            PT RAKHA NUSANTARA MEDIKA
                         </span>
                     </div>
                 </div>
@@ -92,7 +92,7 @@
         </nav>
         
         {{-- Header --}}
-        <header class="bg-white shadow-sm p-2 flex justify-between items-center px-4 sm:px-6 lg:px-8">
+        <header class="bg-blue-100 shadow-sm p-2 flex justify-between items-center px-4 sm:px-6 lg:px-8">
             <div class="py-2">
                 <a href="/" class="text-black text-lg font-bold">
                         {{ $title }}

@@ -14,9 +14,14 @@
             {{ session('success') }}
         </div>
     @endif
-    @if (session('error'))
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-4" role="alert">
-            {{ session('error') }}
+    @if ($errors->any())
+        <div class="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 text-sm rounded-md" role="alert">
+            <p class="font-bold">Terjadi Kesalahan</p>
+            <ul class="mt-1 list-disc list-inside">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
@@ -172,7 +177,7 @@
             <h2 class="text-xl font-bold mb-6 text-white">Edit Data Karyawan</h2>
             <form id="edit-form" method="POST" enctype="multipart/form-data">
                 @csrf
-                @method('PUT')
+                <input type="hidden" name="user_id" id="edit-user-id">
                 <input type="hidden" name="role" value="user">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -382,7 +387,11 @@
                         const selectDivisi = form.querySelector('#edit-divisi-select');
                         const inputDivisi = form.querySelector('#edit-divisi-input');
 
-                        form.action = `/admin/employees/${user.id}`;
+                        // Ubah baris ini untuk rute baru
+                        form.action = `{{ route('admin.employees.update') }}`; 
+
+                        // Tambahkan baris ini untuk mengisi ID pengguna
+                        form.querySelector('#edit-user-id').value = user.id;
                         form.querySelector('#edit-name').value = user.name;
                         form.querySelector('#edit-email').value = user.email;
                         form.querySelector('#edit-password').value = '';

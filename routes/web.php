@@ -14,6 +14,7 @@ use App\Http\Controllers\RekapAbsenController;
 use App\Http\Controllers\Admin\AdminPengajuanDanaController;
 use App\Http\Controllers\Admin\LokasiAbsenController;
 use App\Http\Controllers\Admin\AdminLemburController; // <-- Tambahkan ini
+use App\Http\Controllers\ProfileController;
 
 // Route utama, langsung arahkan ke halaman login
 Route::get('/', fn() => redirect()->route('login'));
@@ -58,6 +59,9 @@ Route::middleware('auth')->group(function () {
     // Notifikasi
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
     
+    Route::get('/profile', [ProfileController::class, 'editProfile'])->name('profil.index');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profil.update');
+    
     // Pengajuan Dana
     Route::get('/pengajuan-dana', [PengajuanDanaController::class, 'index'])->name('pengajuan_dana.index');
     Route::post('/pengajuan-dana', [PengajuanDanaController::class, 'store'])->name('pengajuan_dana.store');
@@ -84,7 +88,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::prefix('employees')->name('employees.')->group(function () {
         Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'user')->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
-        Route::put('/{user}', [UserController::class, 'update'])->name('update');
+        Route::post('/update', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
     });
 
@@ -92,7 +96,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::prefix('admins')->name('admins.')->group(function () {
         Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'admin')->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
-        Route::put('/{user}', [UserController::class, 'update'])->name('update');
+        Route::post('/update', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
     });
 

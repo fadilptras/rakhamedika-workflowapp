@@ -24,16 +24,20 @@
                 </div>
             @endif
 
+            {{-- Mengubah tata letak untuk mode belum absen dan sudah absen --}}
             @if ($absensiHariIni)
                 {{-- TAMPILAN JIKA PENGGUNA SUDAH ABSEN MASUK --}}
                 <div class="flex flex-col lg:flex-row gap-8">
                     {{-- KOLOM KIRI: STATUS ABSENSI PENGGUNA --}}
                     <div class="w-full lg:w-2/3 bg-white p-6 md:p-8 rounded-xl shadow-sm">
-                        <div class="flex flex-col md:flex-row items-center justify-between">
+                        <div class="flex flex-col md:flex-row items-start justify-between px-0">
                             <div>
                                 <h2 class="text-2xl font-bold text-gray-800">Absensi Hari Ini</h2>
                                 <p class="text-gray-600 mt-1">
-                                    Status Kehadiran Anda: <span class="font-semibold capitalize">{{ $absensiHariIni->status }}</span>
+                                    Status Kehadiran Anda : <span class="font-semibold capitalize">{{ $absensiHariIni->status }}</span>
+                                </p>
+                                <p class="text-gray-600 mt-0">
+                                    Keterangan : <span class="font-semibold capitalize">{{ $absensiHariIni->keterangan }}</span>
                                 </p>
                             </div>
                             <a href="{{ route('dashboard') }}" class="mt-4 md:mt-0 text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
@@ -107,31 +111,30 @@
                         <div class="bg-white p-6 rounded-xl shadow-sm">
                             <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Rekap Bulan Ini</h2>
                             <p class="text-center text-gray-500 text-sm mb-6">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
-                            <div class="space-y-4">
-                                <div class="flex items-center bg-emerald-50 p-4 rounded-lg">
-                                    <div class="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-check"></i></div>
-                                    <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Hadir</p></div>
-                                    <div class="text-lg font-bold text-emerald-600">{{ $rekapAbsen['hadir'] }}</div>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div class="bg-green-100 p-4 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-sm text-green-700">Hadir</p>
+                                    <div class="text-base font-bold text-green-700">{{ $rekapAbsen['hadir'] }}</div>
                                 </div>
-                                <div class="flex items-center bg-red-50 p-4 rounded-lg">
-                                    <div class="flex-shrink-0 bg-red-100 text-red-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-medkit"></i></div>
-                                    <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Sakit</p></div>
-                                    <div class="text-lg font-bold text-red-600">{{ $rekapAbsen['sakit'] }}</div>
+                                <div class="bg-red-100 p-4 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-sm text-red-700">Sakit</p>
+                                    <div class="text-base font-bold text-red-700">{{ $rekapAbsen['sakit'] }}</div>
                                 </div>
-                                <div class="flex items-center bg-amber-50 p-4 rounded-lg">
-                                    <div class="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-file-alt"></i></div>
-                                    <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Izin</p></div>
-                                    <div class="text-lg font-bold text-amber-600">{{ $rekapAbsen['izin'] }}</div>
+                                <div class="bg-yellow-100 p-4 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-sm text-yellow-700">Izin</p>
+                                    <div class="text-base font-bold text-yellow-700">{{ $rekapAbsen['izin'] }}</div>
                                 </div>
-                                <div class="flex items-center bg-purple-50 p-4 rounded-lg">
-                                    <div class="flex-shrink-0 bg-purple-100 text-purple-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-plane-departure"></i></div>
-                                    <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Cuti</p></div>
-                                    <div class="text-lg font-bold text-purple-600">{{ $rekapAbsen['cuti'] }}</div>
+                                <div class="bg-blue-100 p-4 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-sm text-blue-700">Cuti</p>
+                                    <div class="text-base font-bold text-blue-700">{{ $rekapAbsen['cuti'] }}</div>
                                 </div>
-                                <div class="flex items-center bg-rose-50 p-4 rounded-lg">
-                                    <div class="flex-shrink-0 bg-rose-100 text-rose-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-clock"></i></div>
-                                    <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Terlambat</p></div>
-                                    <div class="text-lg font-bold text-rose-600">{{ $rekapAbsen['terlambat'] }}</div>
+                                <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-sm text-gray-700">Tidak Hadir</p>
+                                    <div class="text-base font-bold text-gray-700">{{ $rekapAbsen['tidak hadir'] }}</div>
+                                </div>
+                                <div class="bg-orange-100 p-4 rounded-lg text-center">
+                                    <p class="font-semibold text-xs text-orange-700">Terlambat Hadir</p>
+                                    <div class="text-base font-bold text-orange-700 mt-1">{{ $rekap['terlambat'] }}</div>
                                 </div>
                             </div>
                         </div>
@@ -140,7 +143,7 @@
                         @if(isset($daftarRekan) && count($daftarRekan) > 0)
                         <div class="bg-white p-6 rounded-xl shadow-sm">
                             <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
-                                Absensi Tim Divisi {{ Auth::user()->divisi }}
+                                Absensi Tim 
                             </h2>
                             <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
                                 @foreach($daftarRekan as $rekan)
@@ -166,162 +169,83 @@
                     </div>
                 </div>
 
-                {{-- MODAL UNTUK ABSEN KELUAR --}}
-                @if ($absensiHariIni && is_null($absensiHariIni->jam_keluar) && $absensiHariIni->status == 'hadir')
-                {{-- Data ID Absensi untuk JavaScript --}}
-                <div id="absensi-data" data-id="{{ $absensiHariIni->id }}"></div>
-                <div id="modal-absen-keluar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-                    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
-                        <form action="{{ route('absen.keluar', $absensiHariIni->id) }}" method="POST" enctype="multipart/form-data" id="form-absen-keluar">
-                            @csrf
-                            @method('PATCH')
-                            <input type="hidden" name="latitude_keluar" id="latitude-keluar">
-                            <input type="hidden" name="longitude_keluar" id="longitude-keluar">
-                            
-                            <div class="p-6">
-                                <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
-                                <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar.</p>
-                                
-                                <div class="mt-6">
-                                    <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
-                                    <div id="camera-container-keluar" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                                        <video id="video-keluar" class="w-full h-full object-cover" autoplay></video>
-                                        <canvas id="canvas-keluar" class="hidden"></canvas>
-                                        <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                                            <button type="button" id="snap-keluar" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                                <i class="fas fa-camera"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <label for="lampiran-keluar" id="upload-label-keluar" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
-                                        <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar">
-                                            <i id="upload-icon-keluar" class="fas fa-camera text-3xl text-gray-400"></i>
-                                            <p id="upload-text-keluar" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
-                                        </div>
-                                        <input name="lampiran_keluar" id="lampiran-keluar" type="file" class="hidden" accept="image/*" />
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-                                <button type="button" id="btn-tutup-modal" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                                <button type="submit" id="submit-button-keluar" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                @endif
             @else
-                {{-- TAMPILAN JIKA BELUM ABSEN --}}
-                <div class="flex justify-end mb-4">
-                    <a href="{{ route('dashboard') }}" class="text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
-                </div>
-                
-                <form action="{{ route('absen.store') }}" method="POST" enctype="multipart/form-data" id="form-absen">
-                    @csrf
-                    <input type="hidden" name="latitude" id="latitude">
-                    <input type="hidden" name="longitude" id="longitude">
+                @if (isset($unfinishedAbsensi) && $unfinishedAbsensi)
+                    {{-- TAMPILAN JIKA ADA ABSEN KELUAR HARI SEBELUMNYA YANG BELUM SELESAI --}}
                     <div class="flex flex-col lg:flex-row gap-8">
-                        <div class="w-full lg:w-2/3 bg-white p-6 rounded-xl shadow-sm space-y-6">
-                            @if ($errors->any())
-                                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
-                                    <p class="font-bold">Terjadi Kesalahan</p>
-                                    <ul>
-                                    @foreach ($errors->all() as $error)
-                                        <li>- {{ $error }}</li>
-                                    @endforeach
-                                    </ul>
-                                </div>
-                            @endif
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div class="bg-gray-100 p-4 rounded-lg">
-                                    <label class="text-sm text-gray-500">Hari & Tanggal</label>
-                                    <p class="font-bold text-lg text-gray-800">{{ \Carbon\Carbon::now()->translatedFormat('l, j F Y') }}</p>
-                                </div>
-                                <div class="bg-gray-100 p-4 rounded-lg">
-                                    <label class="text-sm text-gray-500">Jam Saat Ini</label>
-                                    <p class="font-bold text-lg text-gray-800" id="jam-realtime"></p>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-md font-medium text-gray-700 mb-3">Pilih Status Kehadiran</label>
-                                <input type="hidden" name="status" id="status" value="hadir">
-                                <div class="grid grid-cols-3 gap-3 mt-2" id="status-buttons">
-                                    <button type="button" data-status="hadir" class="status-btn border font-semibold py-3 rounded-lg transition-all duration-200">Hadir</button>
-                                    <button type="button" data-status="izin" class="status-btn border font-semibold py-3 rounded-lg transition-all duration-200">Izin</button>
-                                    <button type="button" data-status="sakit" class="status-btn border font-semibold py-3 rounded-lg transition-all duration-200">Sakit</button>
-                                </div>
-                            </div>
-                            <div>
-                                <label for="keterangan" class="block text-md font-medium text-gray-700 mb-3">
-                                    Keterangan & Lampiran <span id="keterangan-wajib" class="text-red-500 font-normal hidden">*</span>
-                                </label>
-                                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                                    <div class="md:col-span-3">
-                                        <textarea name="keterangan" id="keterangan" rows="5" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Ada keperluan keluarga.">{{ old('keterangan') }}</textarea>
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <div id="camera-container" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                                            <video id="video" class="w-full h-full object-cover" autoplay></video>
-                                            <canvas id="canvas" class="hidden"></canvas>
-                                            <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                                                <button type="button" id="snap" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                                    <i class="fas fa-camera"></i>
-                                                </button>
-                                            </div>
+                        <div class="w-full lg:w-2/3 bg-white p-6 md:p-8 rounded-xl shadow-sm">
+                            <h2 class="text-2xl font-bold text-gray-800">Selesaikan Absen Keluar Sebelumnya</h2>
+                            <p class="text-gray-600 mt-2">
+                                Anda belum melakukan absen keluar untuk tanggal **{{ \Carbon\Carbon::parse($unfinishedAbsensi->tanggal)->translatedFormat('l, j F Y') }}**.
+                                Silakan lengkapi data absensi Anda untuk melanjutkan.
+                            </p>
+
+                            <div class="mt-6 border-t pt-6">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {{-- KOTAK JAM MASUK HARI SEBELUMNYA --}}
+                                    <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                                        <div class="flex items-center text-emerald-800 mb-2">
+                                            <i class="fas fa-sign-in-alt mr-2"></i>
+                                            <p class="font-semibold">Absen Masuk (Hari Sebelumnya)</p>
                                         </div>
-                                        <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
-                                            <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui">
-                                                <i id="upload-icon" class="fas fa-camera text-3xl text-gray-400"></i>
-                                                <p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                                        <p class="text-3xl font-bold text-gray-800">{{ \Carbon\Carbon::parse($unfinishedAbsensi->jam_masuk)->format('H:i') }} <span class="text-lg font-medium">WIB</span></p>
+                                    </div>
+                                    
+                                    {{-- FORM ABSEN KELUAR HARI SEBELUMNYA --}}
+                                    <div class="bg-rose-50 p-4 rounded-lg border border-rose-200 flex flex-col justify-between">
+                                        <div>
+                                            <div class="flex items-center text-rose-800 mb-2">
+                                                <i class="fas fa-sign-out-alt mr-2"></i>
+                                                <p class="font-semibold">Absen Keluar (Sekarang)</p>
                                             </div>
-                                            <input name="lampiran" id="lampiran" type="file" class="hidden" accept="image/*,application/pdf" />
-                                        </label>
+                                            <p class="text-3xl font-bold text-gray-400">--:--</p>
+                                        </div>
+                                        <button type="button" id="btn-absen-keluar-unfinished" data-id="{{ $unfinishedAbsensi->id }}" class="w-full mt-3 bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition text-sm">
+                                            Absen Keluar Sekarang
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="pt-2">
-                                <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                                    Kirim Absensi
-                                </button>
                             </div>
                         </div>
-
+                        
+                        {{-- KOLOM KANAN: REKAP BULANAN --}}
                         <div class="w-full lg:w-1/3 space-y-8">
                             <div class="bg-white p-6 rounded-xl shadow-sm">
                                 <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Rekap Bulan Ini</h2>
                                 <p class="text-center text-gray-500 text-sm mb-6">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
-                                <div class="space-y-4">
-                                    <div class="flex items-center bg-emerald-50 p-4 rounded-lg">
-                                        <div class="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-check"></i></div>
-                                        <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Hadir</p></div>
-                                        <div class="text-lg font-bold text-emerald-600">{{ $rekapAbsen['hadir'] }}</div>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div class="bg-green-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-green-700">Hadir</p>
+                                        <div class="text-base font-bold text-green-700">{{ $rekapAbsen['hadir'] }}</div>
                                     </div>
-                                    <div class="flex items-center bg-red-50 p-4 rounded-lg">
-                                        <div class="flex-shrink-0 bg-red-100 text-red-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-medkit"></i></div>
-                                        <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Sakit</p></div>
-                                        <div class="text-lg font-bold text-red-600">{{ $rekapAbsen['sakit'] }}</div>
+                                    <div class="bg-red-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-red-700">Sakit</p>
+                                        <div class="text-base font-bold text-red-700">{{ $rekapAbsen['sakit'] }}</div>
                                     </div>
-                                    <div class="flex items-center bg-amber-50 p-4 rounded-lg">
-                                        <div class="flex-shrink-0 bg-amber-100 text-amber-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-file-alt"></i></div>
-                                        <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Izin</p></div>
-                                        <div class="text-lg font-bold text-amber-600">{{ $rekapAbsen['izin'] }}</div>
+                                    <div class="bg-yellow-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-yellow-700">Izin</p>
+                                        <div class="text-base font-bold text-yellow-700">{{ $rekapAbsen['izin'] }}</div>
                                     </div>
-                                    <div class="flex items-center bg-purple-50 p-4 rounded-lg">
-                                        <div class="flex-shrink-0 bg-purple-100 text-purple-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-plane-departure"></i></div>
-                                        <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Cuti</p></div>
-                                        <div class="text-lg font-bold text-purple-600">{{ $rekapAbsen['cuti'] }}</div>
+                                    <div class="bg-blue-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-blue-700">Cuti</p>
+                                        <div class="text-base font-bold text-blue-700">{{ $rekapAbsen['cuti'] }}</div>
                                     </div>
-                                    <div class="flex items-center bg-rose-50 p-4 rounded-lg">
-                                        <div class="flex-shrink-0 bg-rose-100 text-rose-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-clock"></i></div>
-                                        <div class="ml-4 flex-grow"><p class="font-semibold text-gray-700">Terlambat</p></div>
-                                        <div class="text-lg font-bold text-rose-600">{{ $rekapAbsen['terlambat'] }}</div>
+                                    <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-gray-700">Tidak Hadir</p>
+                                        <div class="text-base font-bold text-gray-700">{{ $rekapAbsen['tidak hadir'] }}</div>
+                                    </div>
+                                    <div class="bg-orange-100 p-4 rounded-lg text-center">
+                                        <p class="font-semibold text-xs text-orange-700">Terlambat Hadir</p>
+                                        <div class="text-base font-bold text-orange-700 mt-1">{{ $rekapAbsen['terlambat'] }}</div>
                                     </div>
                                 </div>
                             </div>
+
+                            {{-- DAFTAR SEMUA REKAN DIVISI --}}
                             @if(isset($daftarRekan) && count($daftarRekan) > 0)
                             <div class="bg-white p-6 rounded-xl shadow-sm">
                                 <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
-                                    Absensi Tim Divisi {{ Auth::user()->divisi }}
+                                    Absensi Tim 
                                 </h2>
                                 <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
                                     @foreach($daftarRekan as $rekan)
@@ -346,7 +270,179 @@
                             @endif
                         </div>
                     </div>
-                </form>
+
+                    {{-- Tambahkan MODAL baru untuk Absen Keluar Hari Sebelumnya --}}
+                    <div id="modal-absen-keluar-unfinished" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+                        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
+                            <form action="{{ route('absen.keluar', $unfinishedAbsensi->id) }}" method="POST" enctype="multipart/form-data" id="form-absen-keluar-unfinished">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="latitude_keluar" id="latitude-keluar-unfinished">
+                                <input type="hidden" name="longitude_keluar" id="longitude-keluar-unfinished">
+                                
+                                <div class="p-6">
+                                    <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
+                                    <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar hari sebelumnya.</p>
+                                    
+                                    <div class="mt-6">
+                                        <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
+                                        <div id="camera-container-keluar-unfinished" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
+                                            <video id="video-keluar-unfinished" class="w-full h-full object-cover" autoplay></video>
+                                            <canvas id="canvas-keluar-unfinished" class="hidden"></canvas>
+                                            <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                                <button type="button" id="snap-keluar-unfinished" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                                    <i class="fas fa-camera"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <label for="lampiran-keluar-unfinished" id="upload-label-keluar-unfinished" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                                            <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar-unfinished">
+                                                <i id="upload-icon-keluar-unfinished" class="fas fa-camera text-3xl text-gray-400"></i>
+                                                <p id="upload-text-keluar-unfinished" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                                            </div>
+                                            <input name="lampiran_keluar" id="lampiran-keluar-unfinished" type="file" class="hidden" accept="image/*" />
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
+                                    <button type="button" id="btn-tutup-modal-keluar-unfinished" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                                    <button type="submit" id="submit-button-keluar-unfinished" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                @else
+                    {{-- TAMPILAN JIKA BELUM ABSEN --}}
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        {{-- KOLOM KIRI: FORMULIR ABSEN --}}
+                        <form action="{{ route('absen.store') }}" method="POST" enctype="multipart/form-data" id="form-absen" class="w-full lg:w-2/3">
+                            @csrf
+                            <input type="hidden" name="latitude" id="latitude">
+                            <input type="hidden" name="longitude" id="longitude">
+                            <div class="bg-white p-6 rounded-xl shadow-sm space-y-6 min-h-[500px] flex flex-col justify-between">
+                                <div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="bg-gray-100 p-4 rounded-lg">
+                                            <label class="text-sm text-gray-500">Hari & Tanggal</label>
+                                            <p class="font-bold text-lg text-gray-800">{{ \Carbon\Carbon::now()->translatedFormat('l, j F Y') }}</p>
+                                        </div>
+                                        <div class="bg-gray-100 p-4 rounded-lg">
+                                            <label class="text-sm text-gray-500">Jam Saat Ini</label>
+                                            <p class="font-bold text-lg text-gray-800" id="jam-realtime"></p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6"> 
+                                        <label class="block text-md font-medium text-gray-700 mb-3">Pilih Status Kehadiran</label>
+                                        <input type="hidden" name="status" id="status" value="hadir">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mt-2" id="status-buttons">
+                                            <button type="button" data-status="hadir" class="status-btn border font-semibold py-3 rounded-lg transition-all duration-200">Hadir</button>
+                                            <button type="button" data-status="izin" class="status-btn border font-semibold py-3 rounded-lg transition-all duration-200">Izin</button>
+                                            <button type="button" data-status="sakit" class="status-btn border font-semibold py-3 rounded-lg transition-all duration-200">Sakit</button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6">
+                                        <label for="keterangan" class="block text-md font-medium text-gray-700 mb-3">
+                                            Keterangan & Lampiran <span id="keterangan-wajib" class="text-red-500 font-normal hidden">*</span>
+                                        </label>
+                                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                            <div class="md:col-span-3">
+                                                <textarea name="keterangan" id="keterangan" rows="5" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Ada keperluan keluarga.">{{ old('keterangan') }}</textarea>
+                                            </div>
+                                            <div class="md:col-span-2">
+                                                <div id="camera-container" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
+                                                    <video id="video" class="w-full h-full object-cover" autoplay></video>
+                                                    <canvas id="canvas" class="hidden"></canvas>
+                                                    <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                                        <button type="button" id="snap" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                                            <i class="fas fa-camera"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                                                    <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui">
+                                                        <i id="upload-icon" class="fas fa-camera text-3xl text-gray-400"></i>
+                                                        <p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                                                    </div>
+                                                    <input name="lampiran" id="lampiran" type="file" class="hidden" accept="image/*,application/pdf" />
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pt-2">
+                                    <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                        Kirim Absensi
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        {{-- KOLOM KANAN: REKAP BULANAN --}}
+                        <div class="w-full lg:w-1/3 space-y-8">
+                            <div class="flex justify-end mb-4">
+                                <a href="{{ route('dashboard') }}" class="text-blue-600 hover:underline font-semibold hidden lg:block">Kembali ke Dashboard</a>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Rekap Bulan Ini</h2>
+                                <p class="text-center text-gray-500 text-sm mb-6">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div class="bg-green-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-green-700">Hadir</p>
+                                        <div class="text-base font-bold text-green-700">{{ $rekapAbsen['hadir'] }}</div>
+                                    </div>
+                                    <div class="bg-red-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-red-700">Sakit</p>
+                                        <div class="text-base font-bold text-red-700">{{ $rekapAbsen['sakit'] }}</div>
+                                    </div>
+                                    <div class="bg-yellow-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-yellow-700">Izin</p>
+                                        <div class="text-base font-bold text-yellow-700">{{ $rekapAbsen['izin'] }}</div>
+                                    </div>
+                                    <div class="bg-blue-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-blue-700">Cuti</p>
+                                        <div class="text-base font-bold text-blue-700">{{ $rekapAbsen['cuti'] }}</div>
+                                    </div>
+                                    <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-sm text-gray-700">Tidak Hadir</p>
+                                        <div class="text-base font-bold text-gray-700">{{ $rekapAbsen['tidak hadir'] }}</div>
+                                    </div>
+                                    <div class="bg-orange-100 p-4 rounded-lg text-center">
+                                        <p class="font-semibold text-xs text-orange-700">Terlambat Hadir</p>
+                                        <div class="text-base font-bold text-orange-700 mt-1">{{ $rekapAbsen['terlambat'] }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- DAFTAR SEMUA REKAN DIVISI --}}
+                            @if(isset($daftarRekan) && count($daftarRekan) > 0)
+                                <div class="bg-white p-6 rounded-xl shadow-sm">
+                                    <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
+                                        Absensi Tim 
+                                    </h2>
+                                    <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                                        @foreach($daftarRekan as $rekan)
+                                        <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                            <div class="flex items-center">
+                                                <img src="{{ $rekan->user->profile_picture ? asset('storage/' . $rekan->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($rekan->user->name ?? 'U').'&background=random&color=fff&size=32' }}" alt="{{ $rekan->user->name ?? '' }}" class="w-8 h-8 rounded-full object-cover mr-3">
+                                                <p class="font-semibold text-gray-700 text-sm">{{ $rekan->user->name }}</p>
+                                            </div>
+                                            <span class="px-2 py-0.5 text-xs font-semibold leading-tight rounded-full capitalize
+                                                @switch($rekan->status)
+                                                    @case('hadir') bg-green-100 text-green-800 @break
+                                                    @case('sakit') bg-red-100 text-red-800 @break
+                                                    @case('izin') bg-yellow-100 text-yellow-800 @break
+                                                    @default bg-gray-100 text-gray-800
+                                                @endswitch">
+                                                {{ str_replace('_', ' ', $rekan->status) }}
+                                            </span>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
             @endif
         </div>
     </div>
@@ -356,43 +452,47 @@
     <div id="absensi-data" data-id="{{ $absensiHariIni->id }}"></div>
     <div id="modal-absen-keluar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
-            <input type="hidden" name="latitude_keluar" id="latitude-keluar">
-            <input type="hidden" name="longitude_keluar" id="longitude-keluar">
-            
-            <div class="p-6">
-                <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
-                <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar.</p>
+            <form action="{{ route('absen.keluar', $absensiHariIni->id) }}" method="POST" enctype="multipart/form-data" id="form-absen-keluar">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="latitude_keluar" id="latitude-keluar">
+                <input type="hidden" name="longitude_keluar" id="longitude-keluar">
                 
-                <div class="mt-6">
-                    <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
-                    <div id="camera-container-keluar" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                        <video id="video-keluar" class="w-full h-full object-cover" autoplay></video>
-                        <canvas id="canvas-keluar" class="hidden"></canvas>
-                        <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                            <button type="button" id="snap-keluar" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                <i class="fas fa-camera"></i>
-                            </button>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
+                    <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar.</p>
+                    
+                    <div class="mt-6">
+                        <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
+                        <div id="camera-container-keluar" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
+                            <video id="video-keluar" class="w-full h-full object-cover" autoplay></video>
+                            <canvas id="canvas-keluar" class="hidden"></canvas>
+                            <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                <button type="button" id="snap-keluar" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                            </div>
                         </div>
+                        <label for="lampiran-keluar" id="upload-label-keluar" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                            <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar">
+                                <i id="upload-icon-keluar" class="fas fa-camera text-3xl text-gray-400"></i>
+                                <p id="upload-text-keluar" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                            </div>
+                            <input name="lampiran_keluar" id="lampiran-keluar" type="file" class="hidden" accept="image/*" />
+                        </label>
                     </div>
-                    <label for="lampiran-keluar" id="upload-label-keluar" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
-                        <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar">
-                            <i id="upload-icon-keluar" class="fas fa-camera text-3xl text-gray-400"></i>
-                            <p id="upload-text-keluar" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
-                        </div>
-                        <input name="lampiran_keluar" id="lampiran-keluar" type="file" class="hidden" accept="image/*" />
-                    </label>
                 </div>
-            </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-                <button type="button" id="btn-tutup-modal-keluar" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                <button type="button" id="submit-button-keluar" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
-            </div>
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
+                    <button type="button" id="btn-tutup-modal-keluar" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                    <button type="submit" id="submit-button-keluar" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
+                </div>
+            </form>
         </div>
     </div>
     @endif
     
     {{-- MODAL UNTUK ABSEN LEMBUR --}}
-    @if ($absensiHariIni && $absensiHariIni->jam_keluar && is_null($lemburHariIni))
+    @if ($absensiHariIni && is_null($absensiHariIni->jam_keluar) && $absensiHariIni->status == 'hadir')
     <div id="modal-absen-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
             <input type="hidden" name="latitude_lembur" id="latitude-lembur">
@@ -505,7 +605,28 @@
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
             const snapButton = document.getElementById('snap');
+            const submitButton = document.getElementById('submit-button');
+            const latitudeInput = document.getElementById('latitude');
+            const longitudeInput = document.getElementById('longitude');
+
             let stream;
+            let isLocationReady = false;
+            let isPhotoReady = false;
+
+            function checkFormReadiness() {
+                if (hiddenStatusInput.value === 'hadir') {
+                    if (isLocationReady && isPhotoReady) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Kirim Absensi';
+                    } else {
+                        submitButton.disabled = true;
+                        submitButton.textContent = 'Mohon Ambil Foto & Lokasi';
+                    }
+                } else {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Kirim Absensi';
+                }
+            }
 
             function setSuccessUI(fileName) {
                 uploadUI.innerHTML = `
@@ -543,21 +664,20 @@
             }
 
             function getLocation() {
-                const submitButton = document.getElementById('submit-button');
-                submitButton.disabled = true;
-                submitButton.textContent = 'Mencari Lokasi...';
+                isLocationReady = false;
+                checkFormReadiness();
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
-                            document.getElementById('latitude').value = position.coords.latitude;
-                            document.getElementById('longitude').value = position.coords.longitude;
-                            submitButton.disabled = false;
-                            submitButton.textContent = 'Kirim Absensi';
+                            latitudeInput.value = position.coords.latitude;
+                            longitudeInput.value = position.coords.longitude;
+                            isLocationReady = true;
+                            checkFormReadiness();
                         },
                         () => {
                             alert('Tidak bisa mendapatkan lokasi. Pastikan GPS Anda aktif dan berikan izin pada browser.');
-                            submitButton.disabled = false;
-                            submitButton.textContent = 'Kirim Absensi';
+                            isLocationReady = false;
+                            checkFormReadiness();
                         },
                         {
                             enableHighAccuracy: true,
@@ -567,8 +687,8 @@
                     );
                 } else {
                     alert('Browser Anda tidak mendukung Geolocation.');
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Kirim Absensi';
+                    isLocationReady = false;
+                    checkFormReadiness();
                 }
             }
 
@@ -584,16 +704,18 @@
                 
                 resetUploadUI();
                 stopCamera();
-                
+                isPhotoReady = false;
+                isLocationReady = false;
+
                 if (status === 'hadir') {
                     keteranganWajibSpan.classList.add('hidden');
-                    keteranganTextarea.disabled = true;
-                    keteranganTextarea.value = '';
-                    keteranganTextarea.placeholder = 'Keterangan tidak diperlukan untuk status Hadir.';
+                    keteranganTextarea.disabled = false;
+                    keteranganTextarea.placeholder = 'Contoh: Kunjungan ke Rumah Sakit';
                     keteranganTextarea.classList.add('bg-gray-100');
                     cameraContainer.classList.remove('hidden');
                     uploadLabel.classList.add('hidden');
                     startCamera();
+                    getLocation();
                 } else {
                     keteranganWajibSpan.classList.remove('hidden');
                     keteranganTextarea.disabled = false;
@@ -601,8 +723,10 @@
                     keteranganTextarea.classList.remove('bg-gray-100');
                     cameraContainer.classList.add('hidden');
                     uploadLabel.classList.remove('hidden');
+                    latitudeInput.value = '';
+                    longitudeInput.value = '';
                 }
-                getLocation();
+                checkFormReadiness();
             }
 
             function setActiveButton(status) {
@@ -640,17 +764,28 @@
                     cameraContainer.classList.add('hidden');
                     uploadLabel.classList.remove('hidden');
                     setSuccessUI(file.name);
+                    
+                    isPhotoReady = true;
+                    checkFormReadiness();
                 }, 'image/png');
             });
 
             fileInput.addEventListener('change', function() {
-                if (this.files && this.files.length > 0) setSuccessUI(this.files[0].name);
+                if (this.files && this.files.length > 0) {
+                    setSuccessUI(this.files[0].name);
+                    isPhotoReady = true;
+                } else {
+                    isPhotoReady = false;
+                }
+                checkFormReadiness();
             });
             
             uploadLabel.addEventListener('click', function(e) {
                 if (e.target.id === 'change-photo-btn') {
                     e.preventDefault();
                     e.stopPropagation();
+                    isPhotoReady = false;
+                    checkFormReadiness();
                     cameraContainer.classList.remove('hidden');
                     uploadLabel.classList.add('hidden');
                     startCamera();
@@ -665,6 +800,13 @@
                 }
             });
 
+            formAbsen.addEventListener('submit', function(e) {
+                if (hiddenStatusInput.value === 'hadir' && (!isLocationReady || !isPhotoReady)) {
+                    e.preventDefault();
+                    alert('Mohon ambil foto selfie dan izinkan akses lokasi terlebih dahulu.');
+                }
+            });
+
             setActiveButton(hiddenStatusInput.value);
             toggleUiForStatus(hiddenStatusInput.value);
         }
@@ -675,9 +817,8 @@
         if (btnAbsenKeluar && modal) {
             const formKeluar = document.getElementById('form-absen-keluar');
             const modalContent = modal.querySelector('.transform');
-            const btnTutupModal = document.getElementById('btn-tutup-modal');
+            const btnTutupModal = document.getElementById('btn-tutup-modal-keluar');
 
-            // Logika kamera dan GPS untuk absen keluar
             const latitudeKeluarInput = document.getElementById('latitude-keluar');
             const longitudeKeluarInput = document.getElementById('longitude-keluar');
             const cameraContainerKeluar = document.getElementById('camera-container-keluar');
@@ -828,6 +969,166 @@
 
             if (btnAbsenKeluar) btnAbsenKeluar.addEventListener('click', openModal);
             if (btnTutupModal) btnTutupModal.addEventListener('click', closeModal);
+        }
+        
+        // Logika untuk Absen Keluar HARI SEBELUMNYA
+        const btnAbsenKeluarUnfinished = document.getElementById('btn-absen-keluar-unfinished');
+        const modalUnfinished = document.getElementById('modal-absen-keluar-unfinished');
+        if (btnAbsenKeluarUnfinished && modalUnfinished) {
+            const formKeluarUnfinished = document.getElementById('form-absen-keluar-unfinished');
+            const modalContentUnfinished = modalUnfinished.querySelector('.transform');
+            const btnTutupModalUnfinished = document.getElementById('btn-tutup-modal-keluar-unfinished');
+
+            const latitudeKeluarUnfinishedInput = document.getElementById('latitude-keluar-unfinished');
+            const longitudeKeluarUnfinishedInput = document.getElementById('longitude-keluar-unfinished');
+            const cameraContainerKeluarUnfinished = document.getElementById('camera-container-keluar-unfinished');
+            const uploadLabelKeluarUnfinished = document.getElementById('upload-label-keluar-unfinished');
+            const fileInputKeluarUnfinished = document.getElementById('lampiran-keluar-unfinished');
+            const videoKeluarUnfinished = document.getElementById('video-keluar-unfinished');
+            const canvasKeluarUnfinished = document.getElementById('canvas-keluar-unfinished');
+            const snapButtonKeluarUnfinished = document.getElementById('snap-keluar-unfinished');
+            const uploadUiKeluarUnfinished = document.getElementById('upload-ui-keluar-unfinished');
+            const submitKeluarUnfinishedBtn = document.getElementById('submit-button-keluar-unfinished');
+
+            let streamKeluarUnfinished;
+            let isLocationReadyKeluarUnfinished = false;
+            let isPhotoReadyKeluarUnfinished = false;
+
+            function setSuccessUIKeluarUnfinished(fileName) {
+                uploadUiKeluarUnfinished.innerHTML = `
+                    <div class="flex flex-col items-center justify-center text-center p-2 w-full">
+                        <i class="fas fa-check-circle text-3xl text-green-500"></i>
+                        <p class="mt-2 text-sm text-gray-700 font-semibold w-full truncate px-2" title="${fileName}">${fileName}</p>
+                        <button type="button" id="change-photo-keluar-unfinished-btn" class="mt-2 text-xs text-blue-600 hover:underline font-medium">Ganti</button>
+                    </div>`;
+                uploadLabelKeluarUnfinished.classList.replace('border-dashed', 'border-solid');
+                uploadLabelKeluarUnfinished.classList.add('border-green-500', 'bg-green-50');
+            }
+
+            function resetUploadUIKeluarUnfinished() {
+                fileInputKeluarUnfinished.value = '';
+                uploadUiKeluarUnfinished.innerHTML = `<i id="upload-icon-keluar-unfinished" class="fas fa-camera text-3xl text-gray-400"></i><p id="upload-text-keluar-unfinished" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>`;
+                uploadLabelKeluarUnfinished.classList.remove('border-solid', 'border-green-500', 'bg-green-50', 'hidden');
+                uploadLabelKeluarUnfinished.classList.add('border-dashed', 'border-gray-300');
+            }
+
+            function checkFormReadinessKeluarUnfinished() {
+                if (isLocationReadyKeluarUnfinished && isPhotoReadyKeluarUnfinished) {
+                    submitKeluarUnfinishedBtn.disabled = false;
+                    submitKeluarUnfinishedBtn.textContent = 'Kirim Absen Keluar';
+                } else {
+                    submitKeluarUnfinishedBtn.disabled = true;
+                    submitKeluarUnfinishedBtn.textContent = 'Mohon Ambil Foto & Lokasi';
+                }
+            }
+            
+            async function startCameraKeluarUnfinished() {
+                try {
+                    streamKeluarUnfinished = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    videoKeluarUnfinished.srcObject = streamKeluarUnfinished;
+                    videoKeluarUnfinished.onloadedmetadata = () => { 
+                        snapButtonKeluarUnfinished.disabled = false; 
+                    };
+                    cameraContainerKeluarUnfinished.classList.remove('hidden');
+                    uploadLabelKeluarUnfinished.classList.add('hidden');
+                } catch (err) {
+                    alert('Tidak bisa mengakses kamera untuk absen keluar. Pastikan izin telah diberikan.');
+                    resetUploadUIKeluarUnfinished();
+                }
+            }
+
+            function stopCameraKeluarUnfinished() {
+                if (streamKeluarUnfinished) { streamKeluarUnfinished.getTracks().forEach(track => track.stop()); }
+                snapButtonKeluarUnfinished.disabled = true;
+            }
+
+            function getLocationKeluarUnfinished() {
+                submitKeluarUnfinishedBtn.textContent = 'Mencari Lokasi...';
+                isLocationReadyKeluarUnfinished = false;
+                checkFormReadinessKeluarUnfinished();
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            latitudeKeluarUnfinishedInput.value = position.coords.latitude;
+                            longitudeKeluarUnfinishedInput.value = position.coords.longitude;
+                            isLocationReadyKeluarUnfinished = true;
+                            checkFormReadinessKeluarUnfinished();
+                        },
+                        () => {
+                            alert('Gagal mendapatkan lokasi untuk absen keluar.');
+                            isLocationReadyKeluarUnfinished = false;
+                            checkFormReadinessKeluarUnfinished();
+                        }, 
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                    );
+                }
+            }
+            
+            snapButtonKeluarUnfinished.addEventListener("click", function() {
+                canvasKeluarUnfinished.width = videoKeluarUnfinished.videoWidth;
+                canvasKeluarUnfinished.height = videoKeluarUnfinished.videoHeight;
+                canvasKeluarUnfinished.getContext('2d').drawImage(videoKeluarUnfinished, 0, 0, canvasKeluarUnfinished.width, canvasKeluarUnfinished.height);
+                canvasKeluarUnfinished.toBlob(function(blob) {
+                    const file = new File([blob], "selfie_keluar_unfinished_" + Date.now() + ".png", { type: "image/png" });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInputKeluarUnfinished.files = dataTransfer.files;
+                    
+                    stopCameraKeluarUnfinished();
+                    cameraContainerKeluarUnfinished.classList.add('hidden');
+                    uploadLabelKeluarUnfinished.classList.remove('hidden');
+                    setSuccessUIKeluarUnfinished(file.name);
+
+                    isPhotoReadyKeluarUnfinished = true;
+                    checkFormReadinessKeluarUnfinished();
+
+                }, 'image/png');
+            });
+
+            uploadLabelKeluarUnfinished.addEventListener('click', function(e) {
+                if (e.target.id === 'change-photo-keluar-unfinished-btn') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    isPhotoReadyKeluarUnfinished = false;
+                    checkFormReadinessKeluarUnfinished();
+
+                    cameraContainerKeluarUnfinished.classList.remove('hidden');
+                    uploadLabelKeluarUnfinished.classList.add('hidden');
+                    startCameraKeluarUnfinished();
+                } else if (fileInputKeluarUnfinished.files.length === 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    cameraContainerKeluarUnfinished.classList.remove('hidden');
+                    uploadLabelKeluarUnfinished.classList.add('hidden');
+                    startCameraKeluarUnfinished();
+                }
+            });
+
+            function openModalUnfinished() {
+                modalUnfinished.classList.remove('hidden');
+                modalUnfinished.classList.add('flex');
+                setTimeout(() => modalContentUnfinished.classList.remove('scale-95', 'opacity-0'), 10);
+                startCameraKeluarUnfinished();
+                getLocationKeluarUnfinished();
+            }
+
+            function closeModalUnfinished() {
+                modalContentUnfinished.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modalUnfinished.classList.add('hidden');
+                    modalUnfinished.classList.remove('flex');
+                    stopCameraKeluarUnfinished();
+                    resetUploadUIKeluarUnfinished();
+                    isLocationReadyKeluarUnfinished = false;
+                    isPhotoReadyKeluarUnfinished = false;
+                    checkFormReadinessKeluarUnfinished();
+                }, 200);
+            }
+
+            if (btnAbsenKeluarUnfinished) btnAbsenKeluarUnfinished.addEventListener('click', openModalUnfinished);
+            if (btnTutupModalUnfinished) btnTutupModalUnfinished.addEventListener('click', closeModalUnfinished);
         }
 
         // --- LOGIKA BARU UNTUK ABSENSI LEMBUR (AJAX) ---
@@ -1037,7 +1338,6 @@
         const btnKeluarLembur = document.getElementById('btn-absen-keluar-lembur');
         const modalKeluarLembur = document.getElementById('modal-keluar-lembur');
         if(modalKeluarLembur) {
-            // TIDAK PERLU AMBIL ID DARI DATASET KARENA SUDAH ADA DI ACTION FORM
             const modalContentKeluarLembur = modalKeluarLembur.querySelector('.transform');
             const btnTutupModalKeluarLembur = document.getElementById('btn-tutup-modal-keluar-lembur');
             const submitKeluarLemburBtn = document.getElementById('submit-button-keluar-lembur');
@@ -1157,8 +1457,6 @@
                     startCameraKeluarLembur();
                 }
             });
-
-            // LOGIKA PENGIRIMAN DATA DENGAN FETCH TELAH DIHAPUS
 
             btnTutupModalKeluarLembur.addEventListener('click', function() {
                 isLocationReadyKeluarLembur = false;

@@ -73,8 +73,9 @@ class UserController extends Controller
     /**
      * update user.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request)
     {
+        $user = User::findOrFail($request->user_id);
         $validated = $request->validate([
             'name'              => ['required', 'string', 'max:255'],
             'email'             => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
@@ -86,6 +87,8 @@ class UserController extends Controller
             'divisi'            => 'nullable|string|max:255',
         ]);
 
+        // dd($validated);
+        
         DB::transaction(function () use ($request, $validated, $user) {
             if ($request->filled('password')) {
                 $validated['password'] = Hash::make($validated['password']);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Cuti;
 use App\Models\Absensi;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\CarbonPeriod;
@@ -15,12 +16,38 @@ class CutiController extends Controller
     /**
      * Menampilkan daftar semua pengajuan cuti.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $cutiRequests = Cuti::with('user')->latest()->paginate(10);
+        $query = Cuti::with('user');
+        $users = User::where('role', 'user')->orderBy('name')->get();
+
+        // Logika filter
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('jenis_cuti')) {
+            $query->where('jenis_cuti', $request->jenis_cuti);
+        }
+        
+        if ($request->filled('tanggal_mulai')) {
+            $query->whereDate('tanggal_mulai', '>=', $request->tanggal_mulai);
+        }
+
+        if ($request->filled('tanggal_selesai')) {
+            $query->whereDate('tanggal_selesai', '<=', $request->tanggal_selesai);
+        }
+
+        $cutiRequests = $query->latest()->paginate(10);
+        
         return view('admin.cuti.index', [
             'title' => 'Manajemen Pengajuan Cuti',
             'cutiRequests' => $cutiRequests,
+            'users' => $users,
         ]);
     }
     
@@ -40,32 +67,34 @@ class CutiController extends Controller
     public function updateStatus(Request $request, Cuti $cuti)
     {
         $request->validate([
-            'status' => 'required|in:ditolak', // Admin hanya boleh menolak
-            'catatan_penolakan' => 'required|string',
+            'status' => 'required|in:disetujui,ditolak',
+            'catatan_approval' => 'nullable|string',
         ]);
 
         $user = Auth::user();
 
-        // Hanya role tertentu (misal: HRD atau Manajer) yang boleh membatalkan
-        if (!in_array($user->jabatan, ['HRD', 'Manajer'])) {
-             return redirect()->route('admin.cuti.show', $cuti)->with('error', 'Anda tidak punya hak akses untuk aksi ini.');
+        // Hanya role tertentu yang boleh melakukan aksi ini
+        if (!in_array($user->jabatan, ['HRD', 'Manajer', 'Direktur'])) {
+            return redirect()->route('admin.cuti.show', $cuti)->with('error', 'Anda tidak punya hak akses untuk aksi ini.');
         }
 
-        // Simpan status penolakan
-        $cuti->update([
-            'status' => 'ditolak',
-            'catatan_approval' => $request->catatan_penolakan,
-        ]);
-
-        // Hapus data absensi 'cuti' jika ada
-        $period = CarbonPeriod::create($cuti->tanggal_mulai, $cuti->tanggal_selesai);
-        foreach ($period as $date) {
-            Absensi::where('user_id', $cuti->user_id)
-                   ->where('tanggal', $date->format('Y-m-d'))
-                   ->where('status', 'cuti')
-                   ->delete();
+        // Jika status disetujui, buat record absensi 'cuti'
+        if ($request->status === 'disetujui') {
+            $period = CarbonPeriod::create($cuti->tanggal_mulai, $cuti->tanggal_selesai);
+            foreach ($period as $date) {
+                Absensi::updateOrCreate(
+                    ['user_id' => $cuti->user_id, 'tanggal' => $date->format('Y-m-d')],
+                    ['status' => 'cuti', 'keterangan' => 'Cuti ' . $cuti->jenis_cuti, 'jam_masuk' => '00:00:00']
+                );
+            }
         }
         
-        return redirect()->route('admin.cuti.show', $cuti)->with('success', 'Pengajuan cuti telah berhasil dibatalkan/ditolak.');
+        // Simpan status dan catatan
+        $cuti->update([
+            'status' => $request->status === 'disetujui' ? 'diterima' : 'ditolak', // Gunakan 'diterima' agar sesuai dengan tampilan
+            'catatan_approval' => $request->catatan_approval,
+        ]);
+        
+        return redirect()->route('admin.cuti.show', $cuti)->with('success', 'Status pengajuan cuti berhasil diperbarui.');
     }
 }

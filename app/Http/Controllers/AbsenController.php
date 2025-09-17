@@ -22,51 +22,102 @@ class AbsenController extends Controller
         $title = 'Form Absensi';
         $user = Auth::user();
         $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
 
-        // 1. Cek absensi user hari ini
-        $absensiHariIni = Absensi::where('user_id', $user->id)
-            ->where('tanggal', $today->toDateString())
+        $isWeekend = $today->isWeekend();
+        $isHoliday = false; // kalo mau buat list hari liburnya (tabel "holidays")
+
+        // Cek apakah ada absensi yang belum selesai dari hari sebelumnya (tanpa jam keluar)
+        $unfinishedAbsensi = Absensi::where('user_id', $user->id)
+            ->where('tanggal', $yesterday->toDateString())
+            ->whereNotNull('jam_masuk')
+            ->whereNull('jam_keluar')
             ->first();
 
-        // 2. Cek absensi lembur hari ini
-        $lemburHariIni = Lembur::where('user_id', $user->id)
-            ->where('tanggal', $today->toDateString())
+        // Siapkan variabel default
+        $absensiHariIni = null;
+        $lemburHariIni = null;
+
+        // Jika hari ini adalah hari kerja dan tidak ada absensi yang belum selesai
+        if (!$isWeekend && !$isHoliday && !$unfinishedAbsensi) {
+            $absensiHariIni = Absensi::where('user_id', $user->id)
+                ->where('tanggal', $today->toDateString())
+                ->first();
+
+            $lemburHariIni = Lembur::where('user_id', $user->id)
+                ->where('tanggal', $today->toDateString())
+                ->first();
+        }
+
+        // Rekap absensi dan daftar rekan dipindahkan ke helper function
+        $rekapAbsen = $this->rekapAbsensiBulanan($user, $today);
+        $daftarRekan = $this->getDaftarRekan($user, $today);
+        
+        $absensiKemarin = Absensi::where('user_id', $user->id)
+            ->where('tanggal', $today->subDay()->toDateString())
+            ->where('status', 'hadir')
             ->first();
 
-        // 3. Rekap absensi bulanan
+        return view('users.absen', compact('title', 'absensiHariIni', 'lemburHariIni', 'rekapAbsen', 'daftarRekan', 'absensiKemarin', 'unfinishedAbsensi', 'isHoliday'));
+    }
+    
+    /**
+     * Metode helper untuk menghitung rekap absensi bulanan.
+     */
+    protected function rekapAbsensiBulanan(User $user, Carbon $date): array
+    {
         $absensiBulanIni = Absensi::where('user_id', $user->id)
-            ->whereYear('tanggal', $today->year)
-            ->whereMonth('tanggal', $today->month)
+            ->whereYear('tanggal', $date->year)
+            ->whereMonth('tanggal', $date->month)
             ->get();
-
-        $rekapAbsen = [
-            'hadir' => $absensiBulanIni->where('status', 'hadir')->count(),
-            'sakit' => $absensiBulanIni->where('status', 'sakit')->count(),
-            'izin'  => $absensiBulanIni->where('status', 'izin')->count(),
+    
+        $rekap = [
+            'hadir' => 0,
+            'sakit' => 0,
+            'izin'  => 0,
+            'cuti'  => 0,
+            'tidak hadir'  => 0,
+            'terlambat' => 0,
         ];
-
-        // Hitung total keterlambatan
-        $totalLateMinutes = 0;
-        $standardWorkHourCarbon = Carbon::parse('08:00:00');
-
+    
+        $standardWorkHourCarbon = Carbon::parse('08:00:00', 'Asia/Jakarta');
+        $notPresentThresholdCarbon = Carbon::parse('23:59:00', 'Asia/Jakarta');
+    
         foreach ($absensiBulanIni as $record) {
-            if ($record->status == 'hadir' && $record->jam_masuk) {
-                $jamMasuk = Carbon::parse($record->jam_masuk);
-                if ($jamMasuk->gt($standardWorkHourCarbon)) {
-                    $totalLateMinutes += $jamMasuk->diffInMinutes($standardWorkHourCarbon);
+            if ($record->status === 'hadir') {
+                $jamMasuk = Carbon::parse($record->jam_masuk, 'Asia/Jakarta');
+                
+                if ($jamMasuk->gt($standardWorkHourCarbon) && $jamMasuk->lte($notPresentThresholdCarbon)) {
+                    $rekap['terlambat'] += abs($jamMasuk->diffInMinutes($standardWorkHourCarbon));
+                } else if ($jamMasuk->gt($notPresentThresholdCarbon)) {
+                    $rekap['tidak hadir']++;
+                } else {
+                    $rekap['hadir']++;
                 }
+            } else {
+                $rekap[$record->status]++;
             }
         }
-        $rekapAbsen['terlambat'] = \Carbon\CarbonInterval::minutes($totalLateMinutes)->cascade()->forHumans(['short' => true]);
-
-        // Hitung total cuti
+        
         $totalCutiTerpakai = Cuti::where('user_id', $user->id)
             ->where('status', 'disetujui')
-            ->whereYear('tanggal_mulai', $today->year)
+            ->whereYear('tanggal_mulai', $date->year)
             ->sum(DB::raw('DATEDIFF(tanggal_selesai, tanggal_mulai) + 1'));
-        $rekapAbsen['cuti'] = $totalCutiTerpakai;
+        $rekap['cuti'] = $totalCutiTerpakai;
+    
+        $totalMenitTerlambat = $rekap['terlambat'];
+        $jamTerlambat = floor($totalMenitTerlambat / 60);
+        $menitTerlambat = $totalMenitTerlambat % 60;
+        $rekap['terlambat'] = $jamTerlambat . ' Jam ' . $menitTerlambat . ' Menit';
+    
+        return $rekap;
+    }
 
-        // 4. Daftar rekan satu divisi & status absensinya hari ini
+    /**
+     * Metode helper untuk mendapatkan daftar rekan satu divisi dan status absensi mereka.
+     */
+    protected function getDaftarRekan(User $user, Carbon $date): array
+    {
         $daftarRekan = [];
         $jabatanUser = $user->jabatan;
 
@@ -82,7 +133,7 @@ class AbsenController extends Controller
 
         if ($rekanDilihat->isNotEmpty()) {
             $absensiRekanHariIni = Absensi::whereIn('user_id', $rekanDilihat->pluck('id'))
-                ->where('tanggal', $today->toDateString())
+                ->where('tanggal', $date->toDateString())
                 ->get()
                 ->keyBy('user_id');
 
@@ -94,8 +145,7 @@ class AbsenController extends Controller
                 ];
             }
         }
-
-        return view('users.absen', compact('title', 'absensiHariIni', 'lemburHariIni', 'rekapAbsen', 'daftarRekan'));
+        return $daftarRekan;
     }
 
     /**
@@ -115,6 +165,17 @@ class AbsenController extends Controller
             return redirect()->route('absen')->with('error', 'Anda sudah melakukan absensi hari ini.');
         }
 
+        // Logika baru: Cek absensi hari sebelumnya
+        $absensiKemarin = Absensi::where('user_id', Auth::id())
+            ->where('tanggal', today()->subDay()->toDateString())
+            ->where('status', 'hadir')
+            ->first();
+
+        if ($absensiKemarin && is_null($absensiKemarin->jam_keluar)) {
+            return redirect()->route('absen')->with('error', 'Anda belum melakukan absen keluar pada hari kerja sebelumnya.');
+        }
+
+        // Cek validasi untuk sakit/izin dan hadir 
         if (in_array($request->status, ['sakit', 'izin'])) {
             if (!$request->filled('keterangan') && !$request->hasFile('lampiran')) {
                 return redirect()->back()->withInput()
@@ -122,7 +183,7 @@ class AbsenController extends Controller
             }
         }
         
-        if ($request->status === 'hadir' && (!$request->latitude || !$request->longitude)) {
+        if ($request->status === 'hadir' && (!$request->latitude || (!$request->longitude))) {
             return redirect()->back()->with('error', 'Lokasi GPS wajib diaktifkan untuk absen hadir.');
         }
 
@@ -131,16 +192,44 @@ class AbsenController extends Controller
             $pathLampiran = $request->file('lampiran')->store('lampiran_absensi', 'public');
         }
 
+        $inputStatus = $request->status;
+        $jamMasuk = now();
+        $notPresentThreshold = Carbon::parse('23:59:00', 'Asia/Jakarta');
+        $standardWorkHour = Carbon::parse('08:00:00', 'Asia/Jakarta');
+        $keterangan = $request->keterangan;
+
+        // Logika untuk menentukan status akhir
+        $isLate = false;
+        if ($inputStatus === 'hadir' && $jamMasuk->gt($standardWorkHour)) {
+            $isLate = true;
+        }
+
+        // Jika absen masuk setelah jam 11:00, ubah status menjadi 'tidak_hadir'
+        if ($inputStatus === 'hadir' && $jamMasuk->gt($notPresentThreshold)) {
+            $inputStatus = 'tidak hadir';
+            $keterangan = null; // Hapus keterangan jika statusnya 'tidak_hadir'
+        }
+        // Jika terlambat (tapi tidak lebih dari jam 11:00) dan statusnya 'hadir'
+        else if ($isLate) {
+            $diffInMinutes = round(abs($jamMasuk->diffInMinutes($standardWorkHour)));
+            $keterangan = 'Terlambat ' . $diffInMinutes . ' menit. ' . ($keterangan ? 'Keterangan: ' . $keterangan : '');
+        }
+
         Absensi::create([
             'user_id'   => Auth::id(),
             'tanggal'   => today()->toDateString(),
-            'jam_masuk' => now()->toTimeString(),
-            'status'    => $request->status,
-            'keterangan'=> $request->keterangan,
+            'jam_masuk' => $jamMasuk->toTimeString(),
+            'status'    => $inputStatus, // Gunakan status yang sudah diperbarui
+            'keterangan'=> $keterangan,
             'lampiran'  => $pathLampiran,
             'latitude'  => $request->latitude,
             'longitude' => $request->longitude,
         ]);
+
+        // Tambahkan pesan yang lebih spesifik jika statusnya diubah
+        if ($inputStatus === 'tidak hadir') {
+            return redirect()->route('absen')->with('error', 'Absensi masuk Anda melewati batas waktu (11:00). Status Anda otomatis menjadi Tidak Hadir.');
+        }
 
         return redirect()->route('absen')->with('success', 'Absensi berhasil direkam!');
     }
@@ -154,7 +243,6 @@ class AbsenController extends Controller
             'lampiran_keluar'    => 'required|file|mimes:jpg,jpeg,png|max:2048',
             'latitude_keluar'    => 'required|string',
             'longitude_keluar'   => 'required|string',
-            'keterangan_keluar'  => 'nullable|string|max:1000',
         ]);
 
         if ($absensi->user_id !== Auth::id()) {
@@ -169,7 +257,6 @@ class AbsenController extends Controller
 
         $absensi->update([
             'jam_keluar'        => now()->toTimeString(),
-            'keterangan_keluar' => $request->keterangan_keluar,
             'lampiran_keluar'   => $pathLampiranKeluar,
             'latitude_keluar'   => $request->latitude_keluar,
             'longitude_keluar'  => $request->longitude_keluar,
@@ -184,7 +271,7 @@ class AbsenController extends Controller
     public function storeLembur(Request $request)
     {
         $request->validate([
-            'keterangan' => 'nullable|string|max:1000',
+            'keterangan' => 'required|string|max:1000',
             'lampiran_masuk'    => 'required|file|mimes:jpg,jpeg,png|max:2048',
             'latitude_masuk'    => 'required|string|max:255',
             'longitude_masuk'   => 'required|string|max:255',
@@ -197,11 +284,11 @@ class AbsenController extends Controller
                                          ->first();
 
         if (!$absensiHariIni || !$absensiHariIni->jam_keluar) {
-            return response()->json(['error' => 'Anda harus absen pulang terlebih dahulu untuk memulai lembur.'], 403);
+            return redirect()->route('absen')->with('error', 'Anda harus absen pulang terlebih dahulu untuk memulai lembur.');
         }
 
         if (Lembur::where('user_id', $user->id)->where('tanggal', $today)->exists()) {
-            return response()->json(['error' => 'Anda sudah melakukan absensi lembur masuk hari ini.'], 403);
+           return redirect()->route('absen')->with('error', 'Anda sudah melakukan absensi lembur masuk hari ini.');
         }
 
         $pathLampiranMasuk = null;
@@ -219,7 +306,7 @@ class AbsenController extends Controller
             'longitude_masuk'  => $request->longitude_masuk,
         ]);
 
-        return response()->json(['success' => 'Absensi lembur masuk berhasil direkam!']);
+        return redirect()->route('absen')->with('success', 'Absensi lembur masuk berhasil direkam!');
     }
 
     /**
@@ -229,8 +316,6 @@ class AbsenController extends Controller
     {
         // Validasi data yang diterima dari form
         $request->validate([
-            // Tidak ada keterangan keluar di form absen keluar lembur, jadi hapus validasi ini jika tidak digunakan
-            // 'keterangan_keluar' => 'nullable|string|max:1000',
             'lampiran_keluar'    => 'required|file|mimes:jpg,jpeg,png|max:2048',
             'latitude_keluar'    => 'required|string',
             'longitude_keluar'   => 'required|string',

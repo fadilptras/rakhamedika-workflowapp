@@ -108,8 +108,8 @@
         <div class="bg-zinc-800 rounded-lg w-full max-w-lg p-6 shadow-lg border border-zinc-700">
             <h2 class="text-xl font-bold mb-6 text-white">Edit Data Admin</h2>
             <form id="edit-form" method="POST" enctype="multipart/form-data">
-                @csrf 
-                @method('PUT')
+                @csrf
+                <input type="hidden" name="user_id" id="edit-user-id">
                 <input type="hidden" name="role" value="admin">
 
                 <div class="space-y-4">
@@ -155,8 +155,11 @@
                     
                     if (editModal) {
                         const form = editModal.querySelector('#edit-form');
-                        form.action = `/admin/admins/${user.id}`;
-                        form.querySelector('#edit-name').value = user.name;
+                        // Ubah baris ini untuk rute baru
+                        form.action = `{{ route('admin.admins.update') }}`;
+
+                        // Tambahkan baris ini untuk mengisi ID pengguna
+                        form.querySelector('#edit-user-id').value = user.id;
                         form.querySelector('#edit-email').value = user.email;
                         form.querySelector('#edit-password').value = '';
                         form.querySelector('#edit-profile_picture').value = '';
