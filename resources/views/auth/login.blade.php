@@ -31,8 +31,8 @@
             alt="Ilustrasi login" 
             class="w-full max-w-xs mx-auto animated-image"
           />
-          <h2 class="text-2xl font-bold text-white mt-12">Selamat Datang Kembali</h2>
-          <p class="text-blue-100 mt-2">Masuk untuk mengakses sistem workflow Anda.</p>
+          <h2 class="text-2xl font-bold text-left text-white mt-4">Selamat Datang Kembali</h2>
+          <p class="text-blue-100 mt-0 text-left">Masuk untuk mengakses Sistem Workflow Rakha.</p>
         </div>
       </div>
 

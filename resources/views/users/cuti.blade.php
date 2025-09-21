@@ -1,175 +1,160 @@
 <x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
-    
+
     {{-- Ikon (Font Awesome) --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <div class="bg-gray-50 p-4 md:p-8 min-h-screen">
-        <div class="max-w-7xl mx-auto space-y-8">
+    <div class="bg-gray-100 p-0 md:p-0 min-h-screen">
+        <div class="max-w-7xl mx-auto space-y-6">
 
-            {{-- ======================= PERUBAHAN DI SINI ======================= --}}
-            {{-- HEADER HALAMAN DAN TOMBOL-TOMBOL --}}
-            <div class="flex flex-col items-end space-y-2">
-                {{-- Tombol Kembali ke Dashboard --}}
-                <a href="{{ route('dashboard') }}" class="text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
-                
-                {{-- Tombol Pengajuan Baru --}}
-                <a href="#form-pengajuan" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200">
-                    <i class="fas fa-plus"></i>
-                    Ajukan Cuti Baru
+            <div class="flex items-right">
+                <a href="{{ route('dashboard') }}" class="text-sm font-semibold text-blue-600 hover:underline">
+                    <i class="fas fa-arrow-left mr-2"></i>Kembali ke Dashboard
                 </a>
             </div>
-            {{-- ===================== AKHIR PERUBAHAN ===================== --}}
 
+            {{-- Mengubah container utama menjadi grid untuk semua elemen --}}
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-            {{-- RIWAYAT PENGAJUAN CUTI --}}
-            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">Riwayat Pengajuan Cuti</h2>
-                
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Pengajuan</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durasi Cuti</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse ($cutiRequests as $cuti)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ \Carbon\Carbon::parse($cuti->created_at)->format('d M Y') }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d M Y') }} - {{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d M Y') }}
-                                    <span class="text-gray-500">({{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($cuti->tanggal_selesai)) + 1 }} hari)</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        @if($cuti->status == 'disetujui') bg-green-100 text-green-800
-                                        @elseif($cuti->status == 'ditolak') bg-red-100 text-red-800
-                                        @else bg-yellow-100 text-yellow-800 @endif">
-                                        {{ ucfirst($cuti->status) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <a href="{{ route('cuti.show', $cuti) }}" class="text-blue-600 hover:underline">Lihat Detail</a>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">Belum ada riwayat pengajuan cuti.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                {{-- 1. Kartu Sisa Cuti (Urutan 1 di Mobile, Urutan 2 di Desktop) --}}
+                <div class="order-1 lg:order-2 lg:col-span-2 bg-gradient-to-r from-blue-700 to-blue-600 text-white p-6 rounded-2xl shadow-xl">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-indigo-200">Sisa Cuti Tahunan</p>
+                            <p class="text-4xl font-extrabold tracking-tight">
+                                {{ $sisaCuti['tahunan'] ?? 0 }} <span class="text-2xl font-semibold text-indigo-300">/ {{ $totalCuti['tahunan'] ?? 12 }} Hari</span>
+                            </p>
+                        </div>
+                        <div class="bg-white/20 p-3 rounded-xl">
+                            <i class="fas fa-chart-pie text-2xl"></i>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            {{-- FORMULIR PENGAJUAN CUTI --}}
-            <div id="form-pengajuan" class="flex flex-col lg:flex-row gap-8">
-                <form action="{{ route('cuti.store') }}" method="POST" enctype="multipart/form-data" class="w-full lg:w-2/3">
-                    @csrf
-                    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm space-y-7">
-                        <h2 class="text-2xl font-bold text-gray-900">Formulir Pengajuan Cuti Tahunan</h2>
+                {{-- 2. Form Pengajuan Cuti (Urutan 2 di Mobile, Urutan 1 di Desktop) --}}
+                <div class="order-2 lg:order-1 lg:col-span-3 lg:row-span-2 bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200 flex flex-col">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Ajukan Cuti Baru</h3>
+                    <form action="{{ route('cuti.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col flex-grow space-y-6">
+                        @csrf
+                        <input type="hidden" name="jenis_cuti" value="tahunan">
 
-                        {{-- Menampilkan pesan error validasi global --}}
+                        <div class="flex-grow space-y-6">
+                            {{-- Input Tanggal --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="tanggal_mulai" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Mulai</label>
+                                    <input type="date" id="tanggal_mulai" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('tanggal_mulai') border-red-500 @enderror">
+                                </div>
+                                <div>
+                                    <label for="tanggal_selesai" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Selesai</label>
+                                    <input type="date" id="tanggal_selesai" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('tanggal_selesai') border-red-500 @enderror">
+                                </div>
+                            </div>
+                            
+                            {{-- Input Alasan --}}
+                            <div>
+                                <label for="alasan" class="block text-sm font-medium text-gray-600 mb-1">Alasan</label>
+                                <textarea id="alasan" name="alasan" rows="4" class="w-full p-3 bg-gray-100 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('alasan') border-red-500 @enderror" placeholder="Jelaskan alasan Anda mengajukan cuti...">{{ old('alasan') }}</textarea>
+                            </div>
+                        </div>
+
+                        {{-- Tombol Kirim --}}
+                        <div class="pt-2">
+                            <button type="submit" class="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-1">
+                                <i class="fas fa-paper-plane"></i>
+                                Kirim Pengajuan
+                            </button>
+                        </div>
+
                         @if ($errors->any())
-                            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
+                            <div class="!mt-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md text-sm" role="alert">
                                 <p class="font-bold">Terjadi Kesalahan</p>
-                                <ul>
+                                <ul class="list-disc list-inside ml-4">
                                     @foreach ($errors->all() as $error)
-                                        <li>- {{ $error }}</li>
+                                        <li>{{ $error }}</li>
                                     @endforeach
                                 </ul>
                             </div>
                         @endif
-                        
-                        {{-- Input Jenis Cuti (tersembunyi karena hanya ada satu) --}}
-                        <input type="hidden" name="jenis_cuti" value="tahunan">
+                    </form>
+                </div>
 
-                        <div>
-                            <label class="block text-md font-semibold text-gray-800 mb-3">Pilih Tanggal</label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="tanggal_mulai" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Mulai</label>
-                                    <input type="date" id="tanggal_mulai" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('tanggal_mulai') border-red-500 @enderror">
-                                </div>
-                                <div>
-                                    <label for="tanggal_selesai" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Selesai</label>
-                                    <input type="date" id="tanggal_selesai" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('tanggal_selesai') border-red-500 @enderror">
-                                </div>
+                {{-- 3. Kartu Ringkasan (Urutan 3 di Mobile, Urutan 3 di Desktop) --}}
+                <div class="order-3 lg:order-3 lg:col-span-2 bg-white p-6 rounded-2xl shadow-xl border border-gray-200 flex flex-col">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Ringkasan</h3>
+                    <div class="space-y-4 flex-grow flex flex-col justify-center">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-day fa-lg text-gray-400"></i>
+                                <p class="ml-3 text-sm font-medium text-gray-600">Mulai Cuti</p>
                             </div>
+                            <p id="ringkasan-mulai" class="font-bold text-sm text-gray-800">-</p>
                         </div>
-
-                        <div>
-                             <label for="alasan" class="block text-md font-semibold text-gray-800 mb-3">Alasan Cuti</label>
-                             <textarea id="alasan" name="alasan" rows="4" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('alasan') border-red-500 @enderror" placeholder="Jelaskan alasan Anda mengajukan cuti...">{{ old('alasan') }}</textarea>
-                        </div>
-
-                        <div>
-                            <label class="block text-md font-semibold text-gray-800 mb-3">Lampiran <span class="text-sm text-gray-500 font-normal">(jika ada)</span></label>
-                            <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition @error('lampiran') border-red-500 @enderror">
-                                <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center" id="upload-default-view">
-                                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
-                                    <p class="mt-2 text-sm text-gray-500"><span class="font-semibold">Klik atau seret file</span></p>
-                                    <p class="text-xs text-gray-500">Contoh: Surat dokter (PDF, JPG)</p>
-                                </div>
-                                <div class="hidden flex-col items-center justify-center text-center" id="upload-success-view">
-                                     <i class="fas fa-check-circle text-3xl text-green-500"></i>
-                                     <p class="mt-2 text-sm text-gray-700 font-semibold" id="filename"></p>
-                                </div>
-                                <input id="lampiran" name="lampiran" type="file" class="hidden" />
-                            </label>
-                        </div>
-
-                        <div class="pt-4">
-                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
-                                <i class="fas fa-paper-plane"></i>
-                                Ajukan Cuti Sekarang
-                            </button>
-                        </div>
-                    </div>
-                </form>
-                
-                {{-- SIDEBAR KANAN --}}
-                <div class="w-full lg:w-1/3 space-y-6">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">Sisa Cuti Anda</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <div class="flex justify-between text-sm font-medium mb-1">
-                                    <span class="text-gray-700">Tahunan</span>
-                                    <span class="text-gray-500">{{ $sisaCuti['tahunan'] ?? 0 }} / {{ $totalCuti['tahunan'] ?? 12 }} hari</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                    @php
-                                        $persenTahunan = (($totalCuti['tahunan'] ?? 12) > 0) ? (($sisaCuti['tahunan'] ?? 0) / ($totalCuti['tahunan'] ?? 12)) * 100 : 0;
-                                    @endphp
-                                    <div class="bg-sky-500 h-2.5 rounded-full" style="width: {{ $persenTahunan }}%"></div>
-                                </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-check fa-lg text-gray-400"></i>
+                                <p class="ml-3 text-sm font-medium text-gray-600">Selesai Cuti</p>
                             </div>
+                            <p id="ringkasan-selesai" class="font-bold text-sm text-gray-800">-</p>
                         </div>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-2xl shadow-sm">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">Ringkasan Pengajuan</h3>
-                        <div class="border border-dashed border-gray-300 rounded-lg p-4 space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-500">Total Hari</span>
-                                <span id="total-hari" class="font-bold text-lg text-gray-800">- Hari</span>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-hourglass-half fa-lg text-gray-400"></i>
+                                <p class="ml-3 text-sm font-medium text-gray-600">Total Durasi</p>
                             </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-500">Dari</span>
-                                <span id="ringkasan-mulai" class="font-semibold text-gray-700">-</span>
-                            </div>
-                             <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-500">Sampai</span>
-                                <span id="ringkasan-selesai" class="font-semibold text-gray-700">-</span>
-                            </div>
+                            <p id="total-hari" class="font-bold text-sm text-gray-800">- Hari</p>
                         </div>
                     </div>
                 </div>
+
+                {{-- 4. Riwayat Pengajuan Cuti (Urutan 4 di Mobile & Desktop) --}}
+                <div class="order-4 lg:col-span-5 bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Riwayat Pengajuan</h2>
+                    <div class="space-y-4">
+                        @forelse ($cutiRequests as $cuti)
+                        <a href="{{ route('cuti.show', $cuti) }}" class="block p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-300">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full
+                                        @if($cuti->status == 'disetujui') bg-green-100 text-green-600
+                                        @elseif($cuti->status == 'ditolak') bg-red-100 text-red-600
+                                        @elseif($cuti->status == 'dibatalkan') bg-gray-100 text-gray-500
+                                        @else bg-yellow-100 text-yellow-600 @endif">
+                                        <i class="fas 
+                                            @if($cuti->status == 'disetujui') fa-check
+                                            @elseif($cuti->status == 'ditolak') fa-times
+                                            @elseif($cuti->status == 'dibatalkan') fa-ban
+                                            @else fa-clock @endif"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="font-semibold text-gray-800">
+                                            {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d M Y') }} - {{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d M Y') }}
+                                        </p>
+                                        <p class="text-sm text-gray-500">
+                                            Durasi: {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($cuti->tanggal_selesai)) + 1 }} hari • Diajukan: {{ \Carbon\Carbon::parse($cuti->created_at)->format('d M Y') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-3 sm:mt-0">
+                                    <span class="px-3 py-1 text-xs font-bold rounded-full 
+                                        @if($cuti->status == 'disetujui') bg-green-100 text-green-800
+                                        @elseif($cuti->status == 'ditolak') bg-red-100 text-red-800
+                                        @elseif($cuti->status == 'dibatalkan') bg-gray-100 text-gray-800
+                                        @else bg-yellow-100 text-yellow-800 @endif">
+                                        {{ ucfirst($cuti->status) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        @empty
+                        <div class="text-center py-10 border-2 border-dashed rounded-xl">
+                            <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
+                            <p class="text-gray-500 font-medium">Belum ada riwayat pengajuan cuti.</p>
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -182,15 +167,11 @@
         const totalHariElem = document.getElementById('total-hari');
         const ringkasanMulaiElem = document.getElementById('ringkasan-mulai');
         const ringkasanSelesaiElem = document.getElementById('ringkasan-selesai');
-        const lampiranInput = document.getElementById('lampiran');
-        const uploadLabel = document.getElementById('upload-label');
-        const uploadDefaultView = document.getElementById('upload-default-view');
-        const uploadSuccessView = document.getElementById('upload-success-view');
-        const filenameElem = document.getElementById('filename');
 
         function formatTanggal(tanggalStr) {
             if (!tanggalStr) return '-';
             const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            // Menambahkan 'T00:00:00' untuk menghindari masalah timezone
             const date = new Date(tanggalStr + 'T00:00:00');
             return date.toLocaleDateString('id-ID', options);
         }
@@ -213,8 +194,9 @@
                 }
 
                 totalHariElem.classList.remove('text-red-500');
-                const diffTime = Math.abs(end - start);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                // Perhitungan hari yang inklusif
+                const diffTime = end.getTime() - start.getTime();
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
                 totalHariElem.textContent = `${diffDays} Hari`;
             } else {
@@ -222,22 +204,10 @@
             }
         }
 
-        function handleFileUpload() {
-            if (lampiranInput.files && lampiranInput.files.length > 0) {
-                const file = lampiranInput.files[0];
-                filenameElem.textContent = file.name;
-                uploadDefaultView.classList.add('hidden');
-                uploadSuccessView.classList.remove('hidden');
-                uploadLabel.classList.remove('border-dashed', 'border-gray-300');
-                uploadLabel.classList.add('border-solid', 'border-green-500', 'bg-green-50');
-            }
-        }
-
         tglMulai.addEventListener('change', hitungDurasi);
         tglSelesai.addEventListener('change', hitungDurasi);
-        lampiranInput.addEventListener('change', handleFileUpload);
 
-        // Panggil fungsi sekali saat load untuk mengisi ringkasan jika ada old-value
+        // Panggil fungsi saat halaman dimuat untuk menampilkan nilai awal jika ada
         hitungDurasi();
     });
     </script>

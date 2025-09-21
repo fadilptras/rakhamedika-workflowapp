@@ -12,8 +12,7 @@ use App\Http\Controllers\Admin\AbsensiController;
 use App\Http\Controllers\Admin\CutiController as AdminCutiController;
 use App\Http\Controllers\RekapAbsenController;
 use App\Http\Controllers\Admin\AdminPengajuanDanaController;
-use App\Http\Controllers\Admin\LokasiAbsenController;
-use App\Http\Controllers\Admin\AdminLemburController; // <-- Tambahkan ini
+use App\Http\Controllers\Admin\AdminLemburController;
 use App\Http\Controllers\ProfileController;
 
 // Route utama, langsung arahkan ke halaman login
@@ -80,10 +79,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     Route::get('/', fn() => redirect()->route('admin.employees.index'));
     
-     // Rute untuk Rekap Absensi
-    Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
-    Route::get('/absensi/pdf', [AbsensiController::class, 'downloadPDF'])->name('absensi.pdf');
-
     // Rute untuk mengelola KARYAWAN (role='user')
     Route::prefix('employees')->name('employees.')->group(function () {
         Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'user')->name('index');
@@ -99,6 +94,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/update', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
     });
+    
+    // Rute untuk menu Kelola Absen
+    Route::prefix('absensi')->name('absensi.')->group(function () {
+        // Rute untuk Aktivitas Harian & download PDF
+        Route::get('/', [AbsensiController::class, 'index'])->name('index');
+        Route::get('/pdf/harian', [AbsensiController::class, 'downloadPdfHarian'])->name('downloadPdfHarian');
+        
+        // Rute untuk Rekap Absensi Bulanan & download PDF
+        Route::get('/rekap', [AbsensiController::class, 'rekap'])->name('rekap');
+        Route::get('/rekap/pdf', [AbsensiController::class, 'downloadPdf'])->name('rekap.downloadPdf');
+    });
+
+    // Rute untuk Rekap Lembur (terpisah)
+    Route::prefix('lembur')->name('lembur.')->group(function () {
+        Route::get('/', [AdminLemburController::class, 'index'])->name('index');
+        Route::get('/pdf', [AdminLemburController::class, 'downloadPdf'])->name('downloadPdf');
+    });
 
     // Manajemen Cuti
     Route::get('/cuti', [AdminCutiController::class, 'index'])->name('cuti.index');
@@ -112,6 +124,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{pengajuanDana}/approve', [AdminPengajuanDanaController::class, 'approve'])->name('approve');
         Route::post('/{pengajuanDana}/reject', [AdminPengajuanDanaController::class, 'reject'])->name('reject');
     });
-    
-    Route::get('/lembur', [AdminLemburController::class, 'index'])->name('lembur.index');
 });

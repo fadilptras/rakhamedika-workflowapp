@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Carbon\CarbonPeriod;
 
 class AbsenController extends Controller
 {
@@ -25,7 +26,6 @@ class AbsenController extends Controller
         $yesterday = Carbon::yesterday();
 
         $isWeekend = $today->isWeekend();
-        $isHoliday = false; // kalo mau buat list hari liburnya (tabel "holidays")
 
         // Cek apakah ada absensi yang belum selesai dari hari sebelumnya (tanpa jam keluar)
         $unfinishedAbsensi = Absensi::where('user_id', $user->id)
@@ -38,80 +38,117 @@ class AbsenController extends Controller
         $absensiHariIni = null;
         $lemburHariIni = null;
 
-        // Jika hari ini adalah hari kerja dan tidak ada absensi yang belum selesai
-        if (!$isWeekend && !$isHoliday && !$unfinishedAbsensi) {
-            $absensiHariIni = Absensi::where('user_id', $user->id)
-                ->where('tanggal', $today->toDateString())
-                ->first();
+        // Ambil data absensi hari ini, terlepas dari apakah itu akhir pekan atau tidak.
+        // Dengan ini, pengguna tetap bisa absen di hari libur.
+        $absensiHariIni = Absensi::where('user_id', $user->id)
+            ->where('tanggal', $today->toDateString())
+            ->first();
 
-            $lemburHariIni = Lembur::where('user_id', $user->id)
-                ->where('tanggal', $today->toDateString())
-                ->first();
-        }
+        $lemburHariIni = Lembur::where('user_id', $user->id)
+            ->where('tanggal', $today->toDateString())
+            ->first();
 
-        // Rekap absensi dan daftar rekan dipindahkan ke helper function
         $rekapAbsen = $this->rekapAbsensiBulanan($user, $today);
         $daftarRekan = $this->getDaftarRekan($user, $today);
-        
+
+        // Karena kita tidak memblokir absen, logika ini perlu diubah untuk mengakomodasi absen di hari libur.
         $absensiKemarin = Absensi::where('user_id', $user->id)
             ->where('tanggal', $today->subDay()->toDateString())
             ->where('status', 'hadir')
             ->first();
+        
+        // Perbaikan: Hapus pengecekan absensiKemarin jika ingin absen di hari libur tetap bisa dilakukan.
+        // Cukup cek unfinishedAbsensi saja.
+        $unfinishedAbsensi = Absensi::where('user_id', $user->id)
+            ->where('tanggal', $yesterday->toDateString())
+            ->whereNotNull('jam_masuk')
+            ->whereNull('jam_keluar')
+            ->first();
 
-        return view('users.absen', compact('title', 'absensiHariIni', 'lemburHariIni', 'rekapAbsen', 'daftarRekan', 'absensiKemarin', 'unfinishedAbsensi', 'isHoliday'));
+        return view('users.absen', compact('title', 'absensiHariIni', 'lemburHariIni', 'rekapAbsen', 'daftarRekan', 'unfinishedAbsensi', 'isWeekend'));
     }
-    
+
     /**
      * Metode helper untuk menghitung rekap absensi bulanan.
      */
     protected function rekapAbsensiBulanan(User $user, Carbon $date): array
     {
-        $absensiBulanIni = Absensi::where('user_id', $user->id)
-            ->whereYear('tanggal', $date->year)
-            ->whereMonth('tanggal', $date->month)
+        $startDate = $date->copy()->startOfMonth();
+        $endDate = $date->copy()->endOfMonth();
+
+        // 1. Ambil semua data relevan sekaligus
+        $absensiDalamPeriode = Absensi::where('user_id', $user->id)
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->get()
+            ->keyBy(fn($item) => Carbon::parse($item->tanggal)->toDateString());
+
+        $cutiDalamPeriode = Cuti::where('user_id', $user->id)
+            ->where('status', 'disetujui')
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->where('tanggal_mulai', '<=', $endDate)
+                      ->where('tanggal_selesai', '>=', $startDate);
+            })
             ->get();
-    
+
+        // 2. Inisialisasi rekap
         $rekap = [
             'hadir' => 0,
             'sakit' => 0,
             'izin'  => 0,
             'cuti'  => 0,
-            'tidak hadir'  => 0,
-            'terlambat' => 0,
+            'tidak hadir' => 0, // Ini akan menjadi 'alpa'
+            'terlambat' => 0 // Dalam menit
         ];
-    
-        $standardWorkHourCarbon = Carbon::parse('08:00:00', 'Asia/Jakarta');
-        $notPresentThresholdCarbon = Carbon::parse('23:59:00', 'Asia/Jakarta');
-    
-        foreach ($absensiBulanIni as $record) {
-            if ($record->status === 'hadir') {
-                $jamMasuk = Carbon::parse($record->jam_masuk, 'Asia/Jakarta');
+        $standardWorkHour = Carbon::createFromTime(8, 0, 0, 'Asia/Jakarta');
+        
+        // 3. Iterasi setiap hari dalam sebulan
+        $period = CarbonPeriod::create($startDate, $endDate);
+
+        foreach ($period as $day) {
+            if ($day->isWeekend()) {
+                continue; // Lewati akhir pekan
+            }
+
+            $tanggalFormatted = $day->toDateString();
+            $recordAbsensi = $absensiDalamPeriode->get($tanggalFormatted);
+
+            $isOnLeave = $cutiDalamPeriode->first(function ($cuti) use ($day) {
+                return $day->between(Carbon::parse($cuti->tanggal_mulai), Carbon::parse($cuti->tanggal_selesai));
+            });
+
+            if ($isOnLeave) {
+                $rekap['cuti']++;
+            } elseif ($recordAbsensi) {
+                $status = strtolower($recordAbsensi->status);
+                if (array_key_exists($status, $rekap)) {
+                    $rekap[$status]++;
+                }
                 
-                if ($jamMasuk->gt($standardWorkHourCarbon) && $jamMasuk->lte($notPresentThresholdCarbon)) {
-                    $rekap['terlambat'] += abs($jamMasuk->diffInMinutes($standardWorkHourCarbon));
-                } else if ($jamMasuk->gt($notPresentThresholdCarbon)) {
-                    $rekap['tidak hadir']++;
-                } else {
-                    $rekap['hadir']++;
+                if ($status === 'hadir' && $recordAbsensi->jam_masuk) {
+                    $jamMasuk = Carbon::parse($recordAbsensi->jam_masuk, 'Asia/Jakarta');
+                    if ($jamMasuk->gt($standardWorkHour)) {
+                        $diffInMinutes = abs($jamMasuk->diffInMinutes($standardWorkHour));
+                        $rekap['terlambat'] += $diffInMinutes;
+                    }
                 }
             } else {
-                $rekap[$record->status]++;
+                // Karyawan tidak cuti dan tidak ada catatan absensi
+                // Jika tanggal sudah lewat, hitung sebagai 'tidak hadir' (alpa)
+                if ($day->isPast() && !$day->isToday()) {
+                    $rekap['tidak hadir']++;
+                }
             }
         }
         
-        $totalCutiTerpakai = Cuti::where('user_id', $user->id)
-            ->where('status', 'disetujui')
-            ->whereYear('tanggal_mulai', $date->year)
-            ->sum(DB::raw('DATEDIFF(tanggal_selesai, tanggal_mulai) + 1'));
-        $rekap['cuti'] = $totalCutiTerpakai;
-    
+        // 4. Format waktu terlambat
         $totalMenitTerlambat = $rekap['terlambat'];
         $jamTerlambat = floor($totalMenitTerlambat / 60);
         $menitTerlambat = $totalMenitTerlambat % 60;
         $rekap['terlambat'] = $jamTerlambat . ' Jam ' . $menitTerlambat . ' Menit';
-    
+
         return $rekap;
     }
+
 
     /**
      * Metode helper untuk mendapatkan daftar rekan satu divisi dan status absensi mereka.
@@ -199,20 +236,20 @@ class AbsenController extends Controller
         $keterangan = $request->keterangan;
 
         // Logika untuk menentukan status akhir
-        $isLate = false;
-        if ($inputStatus === 'hadir' && $jamMasuk->gt($standardWorkHour)) {
-            $isLate = true;
-        }
-
-        // Jika absen masuk setelah jam 11:00, ubah status menjadi 'tidak_hadir'
-        if ($inputStatus === 'hadir' && $jamMasuk->gt($notPresentThreshold)) {
-            $inputStatus = 'tidak hadir';
-            $keterangan = null; // Hapus keterangan jika statusnya 'tidak_hadir'
-        }
-        // Jika terlambat (tapi tidak lebih dari jam 11:00) dan statusnya 'hadir'
-        else if ($isLate) {
-            $diffInMinutes = round(abs($jamMasuk->diffInMinutes($standardWorkHour)));
-            $keterangan = 'Terlambat ' . $diffInMinutes . ' menit. ' . ($keterangan ? 'Keterangan: ' . $keterangan : '');
+        if ($inputStatus === 'hadir') {
+            
+            if ($jamMasuk->gt($notPresentThreshold)) {
+                $inputStatus = 'tidak hadir';
+                $keterangan = null; // Hapus keterangan jika statusnya 'tidak_hadir'
+            }
+            
+            else if ($jamMasuk->gt($standardWorkHour)) {
+                $diffInMinutes = abs($jamMasuk->diffInMinutes($standardWorkHour));
+                $jamTerlambat = floor($diffInMinutes / 60);
+                $menitTerlambat = $diffInMinutes % 60;
+                $keteranganTerlambat = "Terlambat {$jamTerlambat} Jam {$menitTerlambat} Menit.";
+                $keterangan = trim($keteranganTerlambat . ' ' . ($keterangan ? 'Keterangan: ' . $keterangan : ''));
+            }
         }
 
         Absensi::create([

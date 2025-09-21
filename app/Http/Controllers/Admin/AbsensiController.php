@@ -3,278 +3,306 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Absensi;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Absensi;
+use App\Models\Lembur;
+use App\Models\User;
 use Carbon\Carbon;
-use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Pagination\LengthAwarePaginator;
-use DateInterval;
-use DatePeriod;
+use Carbon\CarbonPeriod;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AbsensiController extends Controller
 {
     /**
-     * halaman rekap absensi seluruh karyawan
+     * Menampilkan data absensi untuk admin dengan filter dan pagination.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
-        $title = 'Rekap Absensi Karyawan';
-        $standardWorkHour = '08:00:00';
-        $notPresentThresholdMinutes = 180; // Batas jam 11:00 WIB (3 jam dari jam 8:00)
+        // Mendapatkan bulan dan tahun dari request, jika tidak ada, gunakan bulan dan tahun saat ini
+        $month = intval($request->input('month', now()->month));
+        $year = intval($request->input('year', now()->year));
+        $day = intval($request->input('day', now()->day));
+        $divisi = $request->input('divisi');
+        $status = $request->input('status');
 
-        // Tentukan rentang tanggal berdasarkan filter.
-        // Jika tidak ada filter yang spesifik, gunakan bulan ini sebagai default.
-        if ($request->filled('tanggal')) {
-            $startDate = Carbon::parse($request->tanggal)->startOfDay();
-            $endDate = Carbon::parse($request->tanggal)->endOfDay();
-        } elseif ($request->filled('filter_rentang') && $request->filter_rentang !== 'semua') {
-            switch ($request->filter_rentang) {
-                case 'minggu_ini':
-                    $startDate = now()->startOfWeek();
-                    $endDate = now()->endOfWeek();
-                    break;
-                case 'bulan_ini':
-                    $startDate = now()->startOfMonth();
-                    $endDate = now()->endOfMonth();
-                    break;
-            }
-        } elseif ($request->filled('bulan') && $request->filled('tahun')) {
-            $startDate = Carbon::createFromDate($request->tahun, $request->bulan, 1)->startOfMonth();
-            $endDate = Carbon::createFromDate($request->tahun, $request->bulan, 1)->endOfMonth();
-        } else {
-            // Default: Gunakan bulan ini jika tidak ada filter waktu
-            $startDate = now()->startOfMonth();
-            $endDate = now()->endOfMonth();
-        }
-        
-
-        // Ambil semua karyawan yang relevan
-        $userQuery = User::where('role', 'user');
-        if ($request->filled('divisi')) {
-            $userQuery->where('divisi', $request->divisi);
-        }
-        if ($request->filled('user_id')) {
-            $userQuery->where('id', $request->user_id);
-        }
-        $users = $userQuery->orderBy('name')->get();
-
-        // Ambil semua data absensi dalam rentang waktu yang ditentukan
-        $absensiQuery = Absensi::with('user');
-        if ($startDate && $endDate) {
-            $absensiQuery->whereBetween('tanggal', [$startDate, $endDate]);
-        }
-        $absensiRecords = $absensiQuery->get()->keyBy(function ($item) {
-            return $item->user_id . '-' . $item->tanggal;
-        });
-
-        $finalRecords = collect();
-        $totalLateMinutes = 0;
-        $notPresentAfter = Carbon::parse($standardWorkHour)->addMinutes($notPresentThresholdMinutes);
-
-        // Iterasi setiap hari dalam rentang dan setiap user
-        if ($startDate && $endDate) {
-            $period = new DatePeriod($startDate, new DateInterval('P1D'), $endDate->copy()->addDay());
-            foreach ($period as $date) {
-                // Perbaikan: Ubah objek DateTime menjadi Carbon sebelum memanggil isFuture()
-                $carbonDate = Carbon::instance($date);
-                if ($carbonDate->isFuture()) {
-                    continue;
-                }
-
-                foreach ($users as $user) {
-                    $key = $user->id . '-' . $carbonDate->toDateString();
-                    $record = $absensiRecords->get($key);
-
-                    // LOGIKA BARU: Kategorikan sebagai "Tidak Hadir" jika tidak ada record
-                    if (!$record) {
-                        // Hanya tambahkan jika hari ini sudah lewat jam 11:00 atau jika harinya sudah lewat
-                        if ($carbonDate->isPast() || (today()->isSameDay($carbonDate) && now()->greaterThan($notPresentAfter))) {
-                            $record = (object)[
-                                'user_id' => $user->id,
-                                'user' => $user,
-                                'tanggal' => $carbonDate->toDateString(),
-                                'jam_masuk' => null,
-                                'jam_keluar' => null,
-                                'status' => 'tidak_hadir',
-                                'keterangan' => 'Tidak hadir dan tidak ada absensi tercatat.',
-                                'lampiran' => null,
-                                'lampiran_keluar' => null,
-                                'latitude' => null,
-                                'longitude' => null,
-                                'latitude_keluar' => null,
-                                'longitude_keluar' => null,
-                            ];
-                            $finalRecords->push($record);
-                        }
-                    } else {
-                        // LOGIKA BARU: Jika terlambat lebih dari 3 jam, ubah status menjadi tidak hadir
-                        if ($record->status == 'hadir' && Carbon::parse($record->jam_masuk)->greaterThan($notPresentAfter)) {
-                            $record->status = 'tidak_hadir';
-                            $record->keterangan = 'Terlambat lebih dari 3 jam dari jam masuk standar.';
-                        }
-
-                        // Hitung keterlambatan untuk yang tidak terlalu telat
-                        if ($record->status == 'hadir' && Carbon::parse($record->jam_masuk)->greaterThan(Carbon::parse($standardWorkHour)) && Carbon::parse($record->jam_masuk)->lessThanOrEqualTo($notPresentAfter)) {
-                            $jamMasuk = Carbon::parse($record->jam_masuk);
-                            $jamMulaiKerja = Carbon::parse($record->tanggal . ' ' . $standardWorkHour);
-                            $minutesLate = $jamMasuk->diffInMinutes($jamMulaiKerja);
-                            $totalLateMinutes += $minutesLate;
-                            $record->isLate = true;
-                        } else {
-                            $record->isLate = false;
-                        }
-                        $finalRecords->push($record);
-                    }
-                }
-            }
-        }
-        
-        // Filter berdasarkan status
-        if ($request->filled('status') && in_array($request->status, ['hadir', 'sakit', 'izin', 'cuti'])) {
-            $finalRecords = $finalRecords->where('status', $request->status);
-        } elseif ($request->status == 'terlambat') {
-            $finalRecords = $finalRecords->filter(fn ($record) => property_exists($record, 'isLate') && $record->isLate);
-        } elseif ($request->status == 'tidak_hadir') {
-            $finalRecords = $finalRecords->where('status', 'tidak_hadir');
-        }
-
-        // Terapkan paginasi pada koleksi hasil akhir
-        $perPage = 15;
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $pagedData = $finalRecords->slice(($currentPage - 1) * $perPage, $perPage)->all();
-        $absensiRecords = new LengthAwarePaginator($pagedData, count($finalRecords), $perPage, $currentPage, ['path' => $request->url(), 'query' => $request->query()]);
-
-        $totalLate = CarbonInterval::minutes($totalLateMinutes)->cascade()->forHumans();
-
-        $months = array_map(fn ($m) => Carbon::create()->month($m)->translatedFormat('F'), range(1, 12));
-        $years = range(now()->year, now()->year - 5);
+        // Mengambil semua divisi unik dari tabel users
         $divisions = User::select('divisi')->whereNotNull('divisi')->distinct()->pluck('divisi');
-        $allUsers = User::where('role', 'user')->orderBy('name')->get();
 
-        return view('admin.absensi.index', compact('title', 'absensiRecords', 'months', 'years', 'divisions', 'allUsers', 'totalLate', 'standardWorkHour'));
+        // Buat tanggal awal dan akhir berdasarkan bulan dan tahun
+        $start_date_month = now()->year($year)->month($month)->startOfMonth()->format('Y-m-d');
+        $end_date_month = now()->year($year)->month($month)->endOfMonth()->format('Y-m-d');
+        
+        // Buat objek tanggal untuk hari yang dipilih
+        $date_for_page = now()->year($year)->month($month)->day($day);
+        
+        // Perubahan: Tambahkan pengecekan apakah hari yang dipilih adalah akhir pekan
+        $isWeekend = $date_for_page->isWeekend();
+
+        // Query dasar untuk mengambil data dari model Absensi
+        $query = Absensi::with('user')
+                         ->whereBetween('tanggal', [$start_date_month, $end_date_month]);
+
+        // Menambahkan filter opsional jika ada
+        if ($divisi) {
+            $query->whereHas('user', function ($q) use ($divisi) {
+                $q->where('divisi', $divisi);
+            });
+        }
+        
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        // Ambil data untuk hari tertentu (sesuai pagination)
+        $absensi_harian = $query->whereDate('tanggal', $date_for_page->format('Y-m-d'))->get();
+
+        // Data untuk dropdown filter bulan dan tahun
+        $months = collect(range(1, 12))->mapWithKeys(function ($bulan) {
+            return [$bulan => Carbon::create()->month($bulan)->translatedFormat('F')];
+        });
+        $years = range(now()->year, now()->year - 5);
+        $daysInMonth = $date_for_page->daysInMonth;
+
+        return view('admin.absensi.index', compact('absensi_harian', 'month', 'year', 'day', 'divisi', 'status', 'divisions', 'months', 'years', 'daysInMonth', 'isWeekend'));
     }
 
     /**
-     * Method untuk download PDF.
+     * Menampilkan halaman rekap absensi bulanan.
      */
-    public function downloadPDF(Request $request)
+    public function rekap(Request $request)
     {
-        $standardWorkHour = '08:00:00';
-        $notPresentThresholdMinutes = 180;
-        $periode = "Semua Waktu";
-
-        // Tentukan rentang tanggal berdasarkan filter.
-        // Jika tidak ada filter yang spesifik, gunakan bulan ini sebagai default.
-        if ($request->filled('tanggal')) {
-            $startDate = Carbon::parse($request->tanggal)->startOfDay();
-            $endDate = Carbon::parse($request->tanggal)->endOfDay();
-            $periode = Carbon::parse($request->tanggal)->isoFormat('D MMMM YYYY');
-        } elseif ($request->filled('filter_rentang') && $request->filter_rentang !== 'semua') {
-            $rentang = $request->filter_rentang;
-            if ($rentang == 'minggu_ini') {
-                $startDate = now()->startOfWeek();
-                $endDate = now()->endOfWeek();
-                $periode = "Minggu Ini";
-            } elseif ($rentang == 'bulan_ini') {
-                $startDate = now()->startOfMonth();
-                $endDate = now()->endOfMonth();
-                $periode = "Bulan " . Carbon::now()->isoFormat('MMMM YYYY');
-            }
-        } elseif ($request->filled('bulan') && $request->filled('tahun')) {
-            $startDate = Carbon::createFromDate($request->tahun, $request->bulan, 1)->startOfMonth();
-            $endDate = Carbon::createFromDate($request->tahun, $request->bulan, 1)->endOfMonth();
-            $periode = "Bulan " . Carbon::create()->month($request->bulan)->isoFormat('MMMM') . " " . $request->tahun;
-        } else {
-             // Default: Gunakan bulan ini jika tidak ada filter waktu
-            $startDate = now()->startOfMonth();
-            $endDate = now()->endOfMonth();
-            $periode = "Bulan " . Carbon::now()->isoFormat('MMMM YYYY');
+        $title = 'Rekap Absensi Bulanan';
+        
+        // Mengambil filter dari request, atau menggunakan nilai default
+        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
+        $divisi = $request->input('divisi');
+        
+        // Ambil daftar semua user yang absensi dalam periode ini, atau semua user jika tidak ada filter divisi
+        $queryUsers = User::query();
+        if ($divisi) {
+            $queryUsers->where('divisi', $divisi);
         }
+        $users = $queryUsers->where('role', 'user')->get();
 
-        // Ambil semua karyawan yang relevan
-        $userQuery = User::where('role', 'user');
-        if ($request->filled('divisi')) {
-            $userQuery->where('divisi', $request->divisi);
-        }
-        if ($request->filled('user_id')) {
-            $userQuery->where('id', $request->user_id);
-        }
-        $users = $userQuery->orderBy('name')->get();
-
-        // Ambil semua data absensi dalam rentang waktu yang ditentukan
-        $absensiQuery = Absensi::with('user');
+        $divisions = User::select('divisi')->whereNotNull('divisi')->distinct()->pluck('divisi');
+        $allDates = collect();
         if ($startDate && $endDate) {
-            $absensiQuery->whereBetween('tanggal', [$startDate, $endDate]);
+            $allDates = collect(CarbonPeriod::create($startDate, $endDate));
         }
-        $absensiRecords = $absensiQuery->get()->keyBy(function ($item) {
-            return $item->user_id . '-' . $item->tanggal;
-        });
 
-        $finalRecords = collect();
-        $notPresentAfter = Carbon::parse($standardWorkHour)->addMinutes($notPresentThresholdMinutes);
+        $rekapData = [];
+        $standardWorkHour = Carbon::createFromTime(8, 0, 0, 'Asia/Jakarta');
 
-        // Iterasi setiap hari dalam rentang dan setiap user
-        if ($startDate && $endDate) {
-            $period = new DatePeriod($startDate, new DateInterval('P1D'), $endDate->copy()->addDay());
-            foreach ($period as $date) {
-                // Perbaikan: Ubah objek DateTime menjadi Carbon sebelum memanggil isFuture()
-                $carbonDate = Carbon::instance($date);
-                if ($carbonDate->isFuture()) {
-                    continue;
-                }
+        foreach ($users as $user) {
+            $absensiRecords = Absensi::where('user_id', $user->id)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->get()
+                ->keyBy('tanggal');
 
-                foreach ($users as $user) {
-                    $key = $user->id . '-' . $carbonDate->toDateString();
-                    $record = $absensiRecords->get($key);
+            // Ambil juga data lembur dalam satu query
+            $lemburRecords = Lembur::where('user_id', $user->id)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->whereNotNull('jam_keluar_lembur')
+                ->get()
+                ->keyBy('tanggal');
+            
+            $summary = [
+                'H' => 0, 'S' => 0, 'I' => 0, 'C' => 0, 'A' => 0, 'L' => 0, 'terlambat' => 0
+            ];
+            
+            $dailyRecords = [];
 
-                    if (!$record) {
-                        if ($carbonDate->isPast() || (today()->isSameDay($carbonDate) && now()->greaterThan($notPresentAfter))) {
-                            $record = (object)[
-                                'user_id' => $user->id,
-                                'user' => $user,
-                                'tanggal' => $carbonDate->toDateString(),
-                                'jam_masuk' => null,
-                                'status' => 'tidak_hadir',
-                                'keterangan' => 'Tidak hadir dan tidak ada absensi tercatat.',
-                            ];
-                            $finalRecords->push($record);
+            foreach ($allDates as $date) {
+                $record = $absensiRecords->get($date->toDateString());
+                $lembur = $lemburRecords->get($date->toDateString());
+
+                $status = '-'; // Default: tanda hubung untuk tanggal yang belum ada absensi
+                
+                // Perubahan utama ada di sini: cek jika hari libur atau akhir pekan
+                if ($date->isWeekend()) {
+                    $status = '-';
+                    // Kita tidak menambah summary untuk hari libur, karena bukan hari kerja
+                } elseif ($record) {
+                    $status = strtoupper(substr($record->status, 0, 1));
+                    if ($record->status === 'hadir') {
+                        $jamMasuk = Carbon::parse($record->jam_masuk, 'Asia/Jakarta');
+                        if ($jamMasuk->gt($standardWorkHour)) {
+                            $diffInMinutes = abs($jamMasuk->diffInMinutes($standardWorkHour));
+                            $summary['terlambat'] += $diffInMinutes;
                         }
-                    } else {
-                        if ($record->status == 'hadir' && Carbon::parse($record->jam_masuk)->greaterThan($notPresentAfter)) {
-                            $record->status = 'tidak_hadir';
-                            $record->keterangan = 'Terlambat lebih dari 3 jam dari jam masuk standar.';
-                        }
-
-                        if ($record->status == 'hadir' && Carbon::parse($record->jam_masuk)->greaterThan(Carbon::parse($standardWorkHour)) && Carbon::parse($record->jam_masuk)->lessThanOrEqualTo($notPresentAfter)) {
-                            $record->isLate = true;
-                        } else {
-                            $record->isLate = false;
-                        }
-                        $finalRecords->push($record);
+                    }
+                    if($record->status == 'cuti') {
+                       $status = 'C';
+                    }
+                    $summary[$status]++;
+                } else {
+                    // Jika tidak ada record dan tanggal sudah terlewat, hitung sebagai tidak hadir
+                    if ($date->lt(now()->startOfDay())) {
+                        $status = 'A';
+                        $summary['A']++;
                     }
                 }
+
+                // Tambahkan 'L' jika ada lembur
+                if ($lembur) {
+                    $status .= ' L';
+                }
+
+                $dailyRecords[$date->toDateString()] = $status;
             }
+            
+            // Hitung jumlah lembur untuk user dan periode ini
+            $jumlahLembur = Lembur::where('user_id', $user->id)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->whereNotNull('jam_keluar_lembur')
+                ->count();
+            $summary['L'] = $jumlahLembur;
+
+            // Konversi total menit terlambat ke format Jam Menit
+            $totalMinutes = $summary['terlambat'];
+            $hours = floor($totalMinutes / 60);
+            $minutes = $totalMinutes % 60;
+            $summary['terlambat_formatted'] = $hours . ' Jam ' . $minutes . ' Menit';
+            
+            $rekapData[] = [
+                'user' => $user,
+                'daily' => $dailyRecords,
+                'summary' => $summary,
+            ];
         }
+
+        return view('admin.absensi.rekap', compact('title', 'rekapData', 'allDates', 'divisions', 'divisi', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Download rekap absensi bulanan sebagai PDF.
+     */
+    public function downloadPdf(Request $request)
+    {
+        // Re-use logic dari method rekap
+        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
+        $divisi = $request->input('divisi');
+
+        $queryUsers = User::query();
+        if ($divisi) {
+            $queryUsers->where('divisi', $divisi);
+        }
+        $users = $queryUsers->where('role', 'user')->get();
+        $allDates = collect();
+        if ($startDate && $endDate) {
+            $allDates = collect(CarbonPeriod::create($startDate, $endDate));
+        }
+
+        $rekapData = [];
+        $standardWorkHour = Carbon::createFromTime(8, 0, 0, 'Asia/Jakarta');
+
+        foreach ($users as $user) {
+            $absensiRecords = Absensi::where('user_id', $user->id)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->get()
+                ->keyBy('tanggal');
+            
+            $lemburRecords = Lembur::where('user_id', $user->id)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->whereNotNull('jam_keluar_lembur')
+                ->get()
+                ->keyBy('tanggal');
+
+            $summary = [
+                'H' => 0, 'S' => 0, 'I' => 0, 'C' => 0, 'A' => 0, 'L' => 0, 'terlambat' => 0
+            ];
+            
+            $dailyRecords = [];
+            foreach ($allDates as $date) {
+                $record = $absensiRecords->get($date->toDateString());
+                $lembur = $lemburRecords->get($date->toDateString());
+                $status = '-'; 
+                if ($record) {
+                    $status = strtoupper(substr($record->status, 0, 1));
+                    if ($record->status === 'hadir') {
+                        $jamMasuk = Carbon::parse($record->jam_masuk, 'Asia/Jakarta');
+                        if ($jamMasuk->gt($standardWorkHour)) {
+                            $diffInMinutes = abs($jamMasuk->diffInMinutes($standardWorkHour));
+                            $summary['terlambat'] += $diffInMinutes;
+                        }
+                    }
+                    if($record->status == 'cuti') {
+                        $status = 'C';
+                    }
+                    $summary[$status]++;
+                } else {
+                    if ($date->lt(now()->startOfDay())) {
+                        $status = 'A';
+                        $summary['A']++;
+                    }
+                }
+                
+                // Tambahkan 'L' jika ada lembur
+                if ($lembur) {
+                    $status .= ' L';
+                }
+                
+                $dailyRecords[$date->toDateString()] = $status;
+            }
+            
+            // Hitung jumlah lembur untuk user dan periode ini
+            $jumlahLembur = Lembur::where('user_id', $user->id)
+                ->whereBetween('tanggal', [$startDate, $endDate])
+                ->whereNotNull('jam_keluar_lembur')
+                ->count();
+            $summary['L'] = $jumlahLembur;
+            
+            $totalMinutes = $summary['terlambat'];
+            $hours = floor($totalMinutes / 60);
+            $minutes = $totalMinutes % 60;
+            $summary['terlambat_formatted'] = $hours . ' Jam ' . $minutes . ' Menit';
+            
+            $rekapData[] = [
+                'user' => $user,
+                'daily' => $dailyRecords,
+                'summary' => $summary,
+            ];
+        }
+
+        // Perbaikan: Mengubah nama view yang dipanggil
+        $pdf = PDF::loadView('admin.absensi.pdf_rekap_bulanan', compact('rekapData', 'allDates', 'startDate', 'endDate', 'divisi'));
         
-        // Filter PDF berdasarkan status
-        if ($request->filled('status') && in_array($request->status, ['hadir', 'sakit', 'izin', 'cuti'])) {
-            $finalRecords = $finalRecords->where('status', $request->status);
-        } elseif ($request->status == 'terlambat') {
-            $finalRecords = $finalRecords->filter(fn($record) => property_exists($record, 'isLate') && $record->isLate);
-        } elseif ($request->status == 'tidak_hadir') {
-            $finalRecords = $finalRecords->where('status', 'tidak_hadir');
+        $filename = 'rekap_absensi_'.Carbon::parse($startDate)->isoFormat('MMMM_YYYY').'.pdf';
+        return $pdf->download($filename);
+    }
+    
+    /**
+     * Download absensi harian sebagai PDF.
+     */
+    public function downloadPdfHarian(Request $request)
+    {
+        // Re-use logic dari method index
+        $month = intval($request->input('month', now()->month));
+        $year = intval($request->input('year', now()->year));
+        $day = intval($request->input('day', now()->day));
+        $divisi = $request->input('divisi');
+
+        $date_for_page = now()->year($year)->month($month)->day($day);
+
+        $query = Absensi::with('user')
+                         ->whereDate('tanggal', $date_for_page->format('Y-m-d'));
+
+        if ($divisi) {
+            $query->whereHas('user', function ($q) use ($divisi) {
+                $q->where('divisi', $divisi);
+            });
         }
-
-        $pdf = Pdf::loadView('admin.absensi.pdf', [
-            'absensiRecords' => $finalRecords,
-            'periode' => $periode,
-            'standardWorkHour' => $standardWorkHour,
-            'lateThresholdMinutes' => $notPresentThresholdMinutes,
-        ]);
-
-        return $pdf->download('rekap-absensi-' . now()->format('Y-m-d') . '.pdf');
+        $absensi_harian = $query->get();
+        
+        $pdf = PDF::loadView('admin.absensi.pdf_harian', compact('absensi_harian', 'date_for_page'));
+        
+        $filename = 'absensi_harian_' . $date_for_page->format('Y-m-d') . '.pdf';
+        return $pdf->download($filename);
     }
 }

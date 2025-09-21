@@ -22,7 +22,7 @@
 <body class="bg-zinc-900 text-zinc-300 font-sans h-screen flex">
 
     {{-- Sidebar --}}
-    <aside id="sidebar" class="bg-zinc-800 h-full flex flex-col w-64 flex-shrink-0">
+    <aside id="sidebar" class="bg-zinc-800 h-full flex flex-col w-64 flex-shrink-0 fixed top-0 left-0 z-50">
         <div class="p-4 border-b border-zinc-700/50 flex items-center justify-center h-[68px]">
             <i class="fas fa-user-shield text-3xl mr-3 text-amber-400"></i>
             <span class="font-bold text-xl text-white">Admin Rakha</span>
@@ -45,10 +45,10 @@
                             <span class="ml-3 font-semibold">Kelola Admin</span>
                         </a>
                     </li>
-                    <li x-data="{ open: {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lokasi.*') ? 'true' : 'false' }} }">
+                    <li x-data="{ open: {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lembur.*') ? 'true' : 'false' }} }">
                         <a @click.prevent="open = !open" href="#" 
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
-                            {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lokasi.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lembur.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
                             
                             <i class="fas fa-calendar-check text-xl w-8 text-center"></i> 
                             
@@ -61,15 +61,15 @@
                                 <li>
                                     <a href="{{ route('admin.absensi.index') }}" 
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
-                                        {{ request()->routeIs('admin.absensi.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
-                                        Rekap Absen
+                                        {{ request()->routeIs('admin.absensi.index', 'admin.lembur.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Aktivitas
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ route('admin.lembur.index') }}" 
+                                    <a href="{{ route('admin.absensi.rekap') }}" 
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
-                                        {{ request()->routeIs('admin.lembur.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
-                                        Rekap Lembur
+                                        {{ request()->routeIs('admin.absensi.rekap') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Rekap Absensi
                                     </a>
                                 </li>
                             </ul>
@@ -105,7 +105,7 @@
     </aside>
 
     {{-- Konten Utama --}}
-    <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col ml-64">
         <header class="bg-zinc-800 shadow-md p-2 flex justify-between items-center px-4 sm:px-6 lg:px-8 h-[68px] flex-shrink-0">
             <h1 class="text-white text-lg font-bold">{{ $title ?? 'Dashboard' }}</h1>
         </header>

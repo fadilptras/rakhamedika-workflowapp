@@ -1,7 +1,7 @@
 <x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
 
-    <div class="bg-gray-50 p-4 md:p-8 min-h-screen">
+    <div class="bg-gray-50 p-0 md:p-8 min-h-screen">
         <div class="max-w-6xl mx-auto">
             @if(session('success'))
                 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md mb-4" role="alert">
@@ -21,6 +21,14 @@
                         <li>- {{ $error }}</li>
                     @endforeach
                     </ul>
+                </div>
+            @endif
+            
+            {{-- Tambahan notifikasi untuk akhir pekan --}}
+            @if ($isWeekend)
+                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md mb-4" role="alert">
+                    <p class="font-bold">Akhir Pekan</p>
+                    <p>Hari ini adalah hari libur</p>
                 </div>
             @endif
 
@@ -134,7 +142,7 @@
                                 </div>
                                 <div class="bg-orange-100 p-4 rounded-lg text-center">
                                     <p class="font-semibold text-xs text-orange-700">Terlambat Hadir</p>
-                                    <div class="text-base font-bold text-orange-700 mt-1">{{ $rekap['terlambat'] }}</div>
+                                    <div class="text-base font-bold text-orange-700 mt-1">{{ $rekapAbsen['terlambat'] }}</div>
                                 </div>
                             </div>
                         </div>

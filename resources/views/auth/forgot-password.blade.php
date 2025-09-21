@@ -8,23 +8,35 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Poppins', sans-serif; }
+    .animated-image {
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
   </style>
 </head>
-<body class="bg-gray-200 min-h-screen flex items-center justify-center">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
- <div class="flex w-full max-w-3xl rounded-lg shadow-lg bg-white overflow-hidden">
-    <div class="hidden lg:flex w-2/5 bg-gradient-to-br from-blue-500 to-blue-600 items-center justify-center p-4">
-        <div class="text-center max-w-sm">
-          <img src="{{ asset('asset/images/ilustrasi1.png') }}" alt="Illustration"/>
-          <h2 class="text-left text-2xl font-bold text-white mt-20 mx-2">Kami Siap Membantu Anda</h2>
+ <div class="flex w-full max-w-4xl rounded-lg shadow-lg bg-white overflow-hidden">
+    <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-500 to-blue-600 items-center justify-center p-8">
+        <div class="text-center">
+            <img 
+            src="{{ asset('asset/images/ilustrasi1.png') }}" 
+            alt="Ilustrasi login"
+            class="w-full max-w-xs mx-auto animated-image"
+          />
+          <h2 class="text-2xl font-bold text-white mt-12">Kami Siap Membantu Anda</h2>
+          <p class="text-blue-100 mt-2">Untuk melakukan reset password, silakan hubungi Administrator</p>
         </div>
     </div>
 
-    <div class="w-full lg:w-3/5 flex items-center justify-center p-4 sm:p-8">
-      <div class="w-full max-w-sm space-y-6 text-center">
-        <div>
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 md:p-12">
+      <div class="w-full max-w-md">
+        <div class="text-center lg:text-left mb-8">
           <h1 class="text-3xl font-extrabold text-gray-900">Lupa Password?</h1>
-          <p class="mt-4 text-gray-600">Untuk melakukan reset password, silakan hubungi Administrator melalui salah satu kontak di bawah ini:</p>
+          <p class="mt-2 text-gray-600">Hubungi Administrator untuk mereset password Anda.</p>
         </div>
 
         <div class="text-left bg-gray-50 p-4 rounded-lg border">
@@ -42,7 +54,7 @@
         </div>
 
         <div class="pt-4">
-            <a href="{{ route('login') }}" class="w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm font-medium text-white bg-gray-600 hover:bg-gray-700">
+            <a href="{{ route('login') }}" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 transition">
                 Kembali ke Halaman Login
             </a>
         </div>

@@ -28,16 +28,16 @@ class ProfileController extends Controller
     public function update(Request $request)
     {
         $user = Auth::user();
-
-        // Validasi data berdasarkan aturan di Admin\UserController.php
+    
+        // Validasi data profil, termasuk password yang opsional
         $validated = $request->validate([
             'name'              => ['required', 'string', 'max:255'],
             'email'             => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'jabatan'           => 'nullable|string|max:255',
             'tanggal_bergabung' => 'nullable|date',
             'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'password'          => ['nullable', 'string', 'min:8'],
         ]);
-
+    
         DB::transaction(function () use ($request, $validated, $user) {
             // Logika update foto profil
             if ($request->hasFile('profile_picture')) {
@@ -47,27 +47,31 @@ class ProfileController extends Controller
                 $validated['profile_picture'] = $request->file('profile_picture')
                     ->store('profile-pictures', 'public');
             }
-
-            // Logika untuk tanggal bergabung
-            // Jika tanggal bergabung tidak diisi, hapus dari array agar tidak diupdate
+    
+            // Jika password diisi, enkripsi dan update
+            if ($request->filled('password')) {
+                $validated['password'] = Hash::make($request->password);
+            } else {
+                // Jika password kosong, hapus dari array agar tidak diupdate
+                unset($validated['password']);
+            }
+    
+            // Jika tanggal bergabung kosong, hapus dari array agar tidak di-update
             if (empty($validated['tanggal_bergabung'])) {
                 unset($validated['tanggal_bergabung']);
             }
             
-            // Kolom 'divisi' tidak diupdate oleh user
-            // Hapus dari array yang akan diupdate
+            // Kolom jabatan dan divisi tidak boleh diubah oleh user, hapus jika ada di request
+            if (isset($validated['jabatan'])) {
+                unset($validated['jabatan']);
+            }
             if (isset($validated['divisi'])) {
                 unset($validated['divisi']);
             }
-            
-            // Hapus password dari data yang diupdate, karena user tidak mengedit password di sini.
-            if (isset($validated['password'])) {
-                unset($validated['password']);
-            }
-
+    
             $user->update($validated);
         });
-
-        return redirect()->route('editProfile')->with('success', 'Profil berhasil diupdate.');
+    
+        return redirect()->route('profil.index')->with('success', 'Profil berhasil diupdate.');
     }
 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Dashboard' }}</title>
-    <link rel="icon" href="{{ asset('asset/images/logorakha.png') }}" type="image/png">
+    <link rel="icon" href="{{ asset('asset/images/rakhalogo.png') }}" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -72,31 +72,38 @@
 
     <div class="flex-1 flex flex-col">
         
-        {{-- Navbar --}}
-        <nav class="w-full bg-[#1153b4] shadow-md sticky top-0 z-10">
+{{-- Navbar & Header --}}
+        <header class="bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg sticky top-0 z-10 text-white">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="py-4 flex items-center">
-                    {{-- Tombol untuk membuka sidebar --}}
-                    <button id="sidebar-toggle" class="text-white mr-4 p-2 rounded-md hover:bg-blue-700 focus:outline-none">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
+                <div class="py-4 flex items-center justify-between">
                     
-                    <div class="flex items-center justify-center flex-1 lg:justify-start">
-                        <img src="{{ asset('asset/images/logorakha.png') }}" alt="Logo" class="h-8 w-8 mr-2">
-                        <span class="text-white text-lg font-bold">
-                            PT RAKHA NUSANTARA MEDIKA
-                        </span>
+                    {{-- Sisi Kiri: Tombol Sidebar dan Judul --}}
+                    <div class="flex items-center">
+                        {{-- Tombol untuk membuka sidebar --}}
+                        <button id="sidebar-toggle" class="mr-4 p-2 rounded-md hover:bg-blue-800/50 focus:outline-none transition-colors duration-200">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        
+                        {{-- Logo dan Judul --}}
+                        <div class="flex items-center">
+                            <img src="{{ asset('asset/images/logorakha.png') }}" alt="Logo" class="h-10 w-10 mr-3">
+                            <div>
+                                <h1 class="text-lg font-bold leading-tight">
+                                    PT RAKHA NUSANTARA MEDIKA
+                                </h1>
+                                <p class="text-sm text-blue-200 font-semibold leading-tight">
+                                    {{ $title }}
+                                </p>
+                            </div>
+                        </div>
                     </div>
+
+                    {{-- Sisi Kanan (Bisa ditambahkan item lain jika perlu) --}}
+                    <div class="flex items-center">
+                        {{-- Contoh: Tombol Notifikasi atau Profil bisa ditambahkan di sini --}}
+                    </div>
+
                 </div>
-            </div>
-        </nav>
-        
-        {{-- Header --}}
-        <header class="bg-blue-100 shadow-sm p-2 flex justify-between items-center px-4 sm:px-6 lg:px-8">
-            <div class="py-2">
-                <a href="/" class="text-black text-lg font-bold">
-                        {{ $title }}
-                </a>
             </div>
         </header>
 
