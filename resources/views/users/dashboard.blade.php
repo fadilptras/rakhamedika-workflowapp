@@ -42,6 +42,8 @@
                             <div>
                                 <label class="text-xs text-gray-600 font-semibold">Tanggal Bergabung</label>
                                 <p class="font-bold text-base text-gray-800">{{ Auth::user()->tanggal_bergabung ? Auth::user()->tanggal_bergabung->format('d F Y') : '-' }}</p>
+                                {{-- {{ Auth::user()->tanggal_bergabung ? \Carbon\Carbon::parse(Auth::user()->tanggal_bergabung)->format('d F Y') : '-' }}
+</p --}}
                             </div>
                         </div>
                     </div>
