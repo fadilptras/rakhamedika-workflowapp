@@ -9,7 +9,7 @@
                 <div class="space-y-8">
                     
                     {{-- KARTU 1: DETAIL PENGAJUAN --}}
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
                         <div class="p-6 md:p-8 bg-[#333446] text-white">
                             <div class="flex items-center gap-4">
                                 <i class="fas fa-file-alt text-3xl opacity-80"></i>
@@ -53,7 +53,7 @@
                     </div>
 
                     {{-- KARTU 2: INFORMASI REKENING --}}
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
                         <div class="p-6 md:p-8 bg-[#333446] text-white">
                             <div class="flex items-center gap-4">
                                 <i class="fas fa-university text-3xl opacity-80"></i>
@@ -87,7 +87,7 @@
                     </div>
 
                     {{-- KARTU 3: RINCIAN DANA --}}
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
                          <div class="p-6 md:p-8 bg-[#333446] text-white">
                             <div class="flex items-center gap-4">
                                 <i class="fas fa-list-ul text-3xl opacity-80"></i>
@@ -112,7 +112,7 @@
                     </div>
 
                     {{-- KARTU 4: FILE PENDUKUNG --}}
-                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
                         <div class="p-6 md:p-8 bg-[#333446] text-white">
                             <div class="flex items-center gap-4">
                                 <i class="fas fa-paperclip text-3xl opacity-80"></i>
@@ -162,7 +162,7 @@
                     </table>
                     <div class="block md:hidden p-4 space-y-4 border-t border-slate-200">
                         @forelse ($pengajuanDanas as $request)
-                        <div class="bg-slate-50 rounded-lg p-4 border border-slate-200"><div class="flex justify-between items-start mb-2"><div class="font-bold text-slate-800 text-base pr-4">{{ $request->judul_pengajuan }}</div>@if ($request->status == 'diajukan')<span class="flex-shrink-0 font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>@elseif ($request->status == 'disetujui')<span class="flex-shrink-0 font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>@elseif ($request->status == 'ditolak')<span class="flex-shrink-0 font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>@endif</div><div class="text-sm text-slate-500 mb-3">{{ $request->created_at->format('d M Y') }}</div><div class="flex justify-between items-center"><div class="text-slate-600">Total: <span class="font-bold text-slate-800">Rp {{ number_format($request->total_dana, 0, ',', '.') }}</span></div><a href="{{ route('pengajuan_dana.show', $request->id) }}" class="text-indigo-600 hover:underline text-sm font-semibold">Lihat Detail</a></div></div>
+                        <div class="bg-slate-50 rounded-lg p-4 border border-slate-200"><div class="flex justify-between items-start mb-2"><div class="font-bold text-slate-800 text-base pr-4">{{ $request->judul_pengajuan }}</div>@if ($request->status == 'diajukan')<span class="flex-shrink-0 font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>@elseif ($request->status == 'disetujui')<span class="flex-shrink-0 font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>@elseif ($request->status == 'ditolak')<span class="flex-shrink-0 font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>@endif</div><div class="text-sm text-slate-500 mb-3">{{ $request->created_at->format('d M Y') }}</div><div class="flex justify-between items-center"><div class="text-slate-600">Total: <span class="font-bold text-slate-800">Rp {{ number_format($request->total_dana, 0, ',', '.') }}</span></div><a href="{{ route('pengajuan_dana.show', $request->id) }}" class="text-blue-600 hover:underline text-sm font-semibold">Lihat Detail</a></div></div>
                         @empty
                         <div class="text-center text-slate-500 py-8">Belum ada pengajuan dana yang dibuat.</div>@endforelse
                     </div>
