@@ -23,16 +23,27 @@ class UserController extends Controller
             abort(404);
         }
 
-        $users = User::where('role', $role)->latest()->paginate(10);
+        // --- PERUBAHAN DIMULAI DI SINI ---
+        // 1. Ambil semua user tanpa paginasi, urutkan berdasarkan divisi lalu nama.
+        $users = User::where('role', $role)->orderBy('divisi')->orderBy('name')->get();
+
+        // 2. Kelompokkan user berdasarkan 'divisi'.
+        //    Gunakan fungsi callback untuk menangani divisi yang kosong/null.
+        $usersByDivision = $users->groupBy(function ($user) {
+            return $user->divisi ?: 'Tanpa Divisi'; // Jika divisi null atau kosong, kelompokkan ke 'Tanpa Divisi'
+        });
+
         $viewName = $role === 'admin' ? 'admin.admin' : 'admin.karyawan';
         $title = $role === 'admin' ? 'Kelola Admin' : 'Kelola Karyawan';
 
         return view($viewName, [
-            'users' => $users,
+            'usersByDivision' => $usersByDivision, // 3. Kirim data yang sudah dikelompokkan ke view
             'title' => $title,
             'defaultRole' => $role
         ]);
+        // --- AKHIR PERUBAHAN ---
     }
+
 
     /**
      * save user baru
@@ -87,8 +98,6 @@ class UserController extends Controller
             'divisi'            => 'nullable|string|max:255',
         ]);
 
-        // dd($validated);
-        
         DB::transaction(function () use ($request, $validated, $user) {
             if ($request->filled('password')) {
                 $validated['password'] = Hash::make($validated['password']);
@@ -103,14 +112,10 @@ class UserController extends Controller
                 $validated['profile_picture'] = $request->file('profile_picture')
                     ->store('profile-pictures', 'public');
             }
-
-            // --- PERUBAHAN UTAMA ADA DI SINI ---
-            // Cek jika tanggal bergabung dikirim dalam keadaan kosong (null).
-            // Jika ya, hapus dari array agar tidak diupdate.
+            
             if (empty($validated['tanggal_bergabung'])) {
                 unset($validated['tanggal_bergabung']);
             }
-            // --- AKHIR PERUBAHAN ---
 
             $user->update($validated);
         });
@@ -124,7 +129,6 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        // Mencegah hapus admin utama (tidak ada perubahan di method ini)
         if ($user->email === 'admin@rakha.com') {
             return redirect()->back()->with('error', 'Aksi Ditolak! Akun admin utama tidak dapat dihapus.');
         }
@@ -141,5 +145,28 @@ class UserController extends Controller
         $redirectRoute = $role === 'admin' ? 'admin.admins.index' : 'admin.employees.index';
         return redirect()->route($redirectRoute)->with('success', 'Akun berhasil dihapus.');
     }
-}
 
+        /**
+     * Mengatur seorang user sebagai Kepala Divisi.
+     * Ini akan secara otomatis menghapus status kepala divisi dari user lain di divisi yang sama.
+     */
+    public function setAsDivisionHead(User $user)
+    {
+        // Pastikan user punya divisi
+        if (empty($user->divisi)) {
+            return redirect()->back()->with('error', 'Tidak bisa mengatur kepala divisi untuk karyawan tanpa divisi.');
+        }
+
+        DB::transaction(function () use ($user) {
+            // 1. Reset semua kepala divisi di divisi yang sama
+            User::where('divisi', $user->divisi)
+                ->where('id', '!=', $user->id)
+                ->update(['is_kepala_divisi' => false]);
+
+            // 2. Atur user yang dipilih sebagai kepala divisi
+            $user->update(['is_kepala_divisi' => true]);
+        });
+
+        return redirect()->route('admin.employees.index')->with('success', "{$user->name} telah diatur sebagai Kepala Divisi {$user->divisi}.");
+    }
+}

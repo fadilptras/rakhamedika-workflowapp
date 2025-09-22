@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use App\Models\Cuti;
 
-class CutiNotification extends Notification implements ShouldQueue
+class CutiNotification extends Notification
 {
     use Queueable;
 

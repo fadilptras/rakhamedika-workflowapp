@@ -85,6 +85,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/', [UserController::class, 'store'])->name('store');
         Route::post('/update', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+
+        // --- RUTE BARU UNTUK SET KEPALA DIVISI ---
+        Route::post('/{user}/set-as-head', [UserController::class, 'setAsDivisionHead'])->name('setAsHead');
     });
 
     // Rute untuk mengelola ADMIN (role='admin')
@@ -112,16 +115,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/pdf', [AdminLemburController::class, 'downloadPdf'])->name('downloadPdf');
     });
 
-    // Manajemen Cuti
+    // Manajemen Cuti (HANYA UNTUK MELIHAT)
     Route::get('/cuti', [AdminCutiController::class, 'index'])->name('cuti.index');
     Route::get('/cuti/{cuti}', [AdminCutiController::class, 'show'])->name('cuti.show');
-    Route::patch('/cuti/{cuti}', [AdminCutiController::class, 'updateStatus'])->name('cuti.update');
 
-    // Rekap Pengajuan Dana
+    // Rekap Pengajuan Dana (HANYA UNTUK MELIHAT)
     Route::prefix('pengajuan-dana')->name('pengajuan_dana.')->group(function () {
         Route::get('/', [AdminPengajuanDanaController::class, 'index'])->name('index');
         Route::get('/{pengajuanDana}', [AdminPengajuanDanaController::class, 'show'])->name('show');
-        Route::post('/{pengajuanDana}/approve', [AdminPengajuanDanaController::class, 'approve'])->name('approve');
-        Route::post('/{pengajuanDana}/reject', [AdminPengajuanDanaController::class, 'reject'])->name('reject');
     });
 });

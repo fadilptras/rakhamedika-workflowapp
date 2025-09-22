@@ -154,17 +154,51 @@
                     {{-- Konten tabel dan kartu status --}}
                     <table class="hidden md:table min-w-full border-t border-slate-200 text-sm"><thead class="bg-slate-50 text-slate-600"><tr><th class="px-6 py-3 text-left font-semibold">Tanggal</th><th class="px-6 py-3 text-left font-semibold">Judul Pengajuan</th><th class="px-6 py-3 text-left font-semibold">Total Dana</th><th class="px-6 py-3 text-left font-semibold">Status</th><th class="px-6 py-3 text-center font-semibold">Aksi</th></tr></thead>
                         <tbody class="divide-y divide-slate-200">
-                            @forelse ($pengajuanDanas as $request)
-                            <tr class="hover:bg-slate-50 transition"><td class="px-6 py-4 text-slate-600">{{ $request->created_at->format('d M Y') }}</td><td class="px-6 py-4 font-semibold text-slate-800">{{ $request->judul_pengajuan }}</td><td class="px-6 py-4 font-medium">Rp {{ number_format($request->total_dana, 0, ',', '.') }}</td><td class="px-6 py-4">@if ($request->status == 'diajukan')<span class="font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>@elseif ($request->status == 'disetujui')<span class="font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>@elseif ($request->status == 'ditolak')<span class="font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>@endif</td><td class="px-6 py-4 text-center"><a href="{{ route('pengajuan_dana.show', $request->id) }}" class="text-indigo-600 hover:underline font-semibold">Lihat Detail</a></td></tr>
+                            {{-- PERBAIKAN DI SINI --}}
+                            @forelse ($pengajuanDanas as $pengajuan)
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="px-6 py-4 text-slate-600">{{ $pengajuan->created_at->format('d M Y') }}</td>
+                                <td class="px-6 py-4 font-semibold text-slate-800">{{ $pengajuan->judul_pengajuan }}</td>
+                                <td class="px-6 py-4 font-medium">Rp {{ number_format($pengajuan->total_dana, 0, ',', '.') }}</td>
+                                <td class="px-6 py-4">
+                                    @if ($pengajuan->status == 'diajukan')
+                                        <span class="font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
+                                    @elseif ($pengajuan->status == 'disetujui')
+                                        <span class="font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>
+                                    @elseif ($pengajuan->status == 'ditolak')
+                                        <span class="font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-center"><a href="{{ route('pengajuan_dana.show', $pengajuan->id) }}" class="text-indigo-600 hover:underline font-semibold">Lihat Detail</a></td>
+                            </tr>
                             @empty
-                            <tr><td class="px-6 py-10 text-center text-slate-500" colspan="5">Belum ada pengajuan dana yang dibuat.</td></tr>@endforelse
+                            <tr><td class="px-6 py-10 text-center text-slate-500" colspan="5">Belum ada pengajuan dana yang dibuat.</td></tr>
+                            @endforelse
                         </tbody>
                     </table>
                     <div class="block md:hidden p-4 space-y-4 border-t border-slate-200">
-                        @forelse ($pengajuanDanas as $request)
-                        <div class="bg-slate-50 rounded-lg p-4 border border-slate-200"><div class="flex justify-between items-start mb-2"><div class="font-bold text-slate-800 text-base pr-4">{{ $request->judul_pengajuan }}</div>@if ($request->status == 'diajukan')<span class="flex-shrink-0 font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>@elseif ($request->status == 'disetujui')<span class="flex-shrink-0 font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>@elseif ($request->status == 'ditolak')<span class="flex-shrink-0 font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>@endif</div><div class="text-sm text-slate-500 mb-3">{{ $request->created_at->format('d M Y') }}</div><div class="flex justify-between items-center"><div class="text-slate-600">Total: <span class="font-bold text-slate-800">Rp {{ number_format($request->total_dana, 0, ',', '.') }}</span></div><a href="{{ route('pengajuan_dana.show', $request->id) }}" class="text-blue-600 hover:underline text-sm font-semibold">Lihat Detail</a></div></div>
+                        {{-- DAN PERBAIKAN DI SINI --}}
+                        @forelse ($pengajuanDanas as $pengajuan)
+                        <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="font-bold text-slate-800 text-base pr-4">{{ $pengajuan->judul_pengajuan }}</div>
+                                @if ($pengajuan->status == 'diajukan')
+                                    <span class="flex-shrink-0 font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
+                                @elseif ($pengajuan->status == 'disetujui')
+                                    <span class="flex-shrink-0 font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>
+                                @elseif ($pengajuan->status == 'ditolak')
+                                    <span class="flex-shrink-0 font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>
+                                @endif
+                            </div>
+                            <div class="text-sm text-slate-500 mb-3">{{ $pengajuan->created_at->format('d M Y') }}</div>
+                            <div class="flex justify-between items-center">
+                                <div class="text-slate-600">Total: <span class="font-bold text-slate-800">Rp {{ number_format($pengajuan->total_dana, 0, ',', '.') }}</span></div>
+                                <a href="{{ route('pengajuan_dana.show', $pengajuan->id) }}" class="text-blue-600 hover:underline text-sm font-semibold">Lihat Detail</a>
+                            </div>
+                        </div>
                         @empty
-                        <div class="text-center text-slate-500 py-8">Belum ada pengajuan dana yang dibuat.</div>@endforelse
+                        <div class="text-center text-slate-500 py-8">Belum ada pengajuan dana yang dibuat.</div>
+                        @endforelse
                     </div>
                 </div>
             </div>

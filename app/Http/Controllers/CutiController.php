@@ -183,7 +183,7 @@ class CutiController extends Controller
         
         if ($user->divisi) {
             $approver = User::where('divisi', $user->divisi)
-                            ->where('jabatan', 'like', 'Kepala%')
+                            ->where('is_kepala_divisi', true)
                             ->where('id', '!=', $user->id)
                             ->first();
             if ($approver) {

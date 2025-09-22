@@ -42,8 +42,6 @@
                             <div>
                                 <label class="text-xs text-gray-600 font-semibold">Tanggal Bergabung</label>
                                 <p class="font-bold text-base text-gray-800">{{ Auth::user()->tanggal_bergabung ? Auth::user()->tanggal_bergabung->format('d F Y') : '-' }}</p>
-                                {{-- {{ Auth::user()->tanggal_bergabung ? \Carbon\Carbon::parse(Auth::user()->tanggal_bergabung)->format('d F Y') : '-' }}
-</p --}}
                             </div>
                         </div>
                     </div>
@@ -51,12 +49,14 @@
 
                 {{-- Kolom Tengah & Kanan - Konten Utama --}}
                 <div class="lg:col-span-2 xl:col-span-3 space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
-                        {{-- grid grid-cols-1 sm:grid-cols-3 gap-4 justify-items-center items-center --}}
-
+                    {{-- =============================================== --}}
+                    {{-- PERUBAHAN UTAMA ADA DI SINI --}}
+                    {{-- =============================================== --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
                         {{-- Kartu Absensi --}}
-                        <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                        <h3 class="font-bold text-gray-900 mb-8 text-xl">Absensi</h3>
+                        <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200 flex flex-col">
+                            <h3 class="font-bold text-gray-900 mb-8 text-xl">Absensi</h3>
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 <a href="{{ route('absen') }}" class="bg-blue-50 hover:bg-blue-100 p-4 rounded-xl text-center flex flex-col items-center justify-center aspect-square transition border border-blue-200">
                                     <i class="fas fa-fingerprint text-2xl text-blue-600 mb-2"></i>
@@ -73,11 +73,11 @@
                             </div>
                         </div>
 
-                        {{-- Kartu Notifikasi - Sekarang dengan background gelap --}}
-                        <div class="bg-gray-900 text-white p-6 rounded-2xl shadow-md border border-gray-700">
-                            <div class="flex justify-between items-center mb-4">
+                        {{-- Kartu Notifikasi --}}
+                        <div class="bg-gray-900 text-white p-6 rounded-2xl shadow-md border border-gray-700 flex flex-col">
+                            <div class="flex justify-between items-center mb-4 flex-shrink-0">
                                 <h3 class="font-bold text-white text-xl">Notifikasi</h3>
-                                <a href="{{ route('notifikasi.index') }}" class="flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors duration-200">
+                                <a href="{{ route('notifikasi.index') }}" class="relative flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors duration-200">
                                     <span class="text-sm font-semibold">Lihat Semua</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -92,19 +92,21 @@
                                     @endif
                                 </a>
                             </div>
-                            <div class="space-y-3">
+                            <div class="space-y-3 flex-grow flex flex-col justify-center">
                                 @forelse(Auth::user()->notifications->take(2) as $notification)
                                 <a href="{{ $notification->data['url'] ?? '#' }}" class="block p-3 rounded-lg {{ $notification->read_at ? 'bg-gray-800' : 'bg-blue-800' }} hover:bg-gray-700 transition-colors duration-150">
                                     <div class="flex items-start">
                                         <i class="fas {{ $notification->data['icon'] ?? 'fa-info-circle' }} text-xl text-white mt-1 mr-3"></i>
                                         <div>
                                             <p class="font-semibold text-sm text-gray-100">{{ $notification->data['title'] ?? 'Notifikasi Baru' }}</p>
-                                            <p class="text-xs text-gray-300">{{ $notification->data['message'] ?? 'Tidak ada detail' }}</p>
+                                            <p class="text-xs text-gray-300 line-clamp-1">{{ $notification->data['message'] ?? 'Tidak ada detail' }}</p>
                                         </div>
                                     </div>
                                 </a>
                                 @empty
-                                <p class="text-center text-gray-400 py-4 text-sm">Tidak ada notifikasi baru.</p>
+                                <div class="flex-grow flex items-center justify-center">
+                                    <p class="text-center text-gray-400 py-4 text-sm">Tidak ada notifikasi baru.</p>
+                                </div>
                                 @endforelse
                             </div>
                         </div>

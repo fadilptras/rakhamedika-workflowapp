@@ -21,6 +21,7 @@ class User extends Authenticatable
         'jabatan',
         'tanggal_bergabung',
         'divisi',
+        'is_kepala_divisi',
     ];
 
     protected $hidden = [
