@@ -22,7 +22,8 @@
                         <div>
                             <p class="text-sm font-medium text-indigo-200">Sisa Cuti Tahunan</p>
                             <p class="text-4xl font-extrabold tracking-tight">
-                                {{ $sisaCuti['tahunan'] ?? 0 }} <span class="text-2xl font-semibold text-indigo-300">/ {{ $totalCuti['tahunan'] ?? 12 }} Hari</span>
+                                {{-- Hapus ['tahunan'] dan fallback-nya bisa disederhanakan --}}
+                                {{ $sisaCuti ?? 0 }} <span class="text-2xl font-semibold text-indigo-300">/ {{ $totalCuti ?? 0 }} Hari</span>
                             </p>
                         </div>
                         <div class="bg-white/20 p-3 rounded-xl">

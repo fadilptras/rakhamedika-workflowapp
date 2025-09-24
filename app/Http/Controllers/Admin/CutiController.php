@@ -101,4 +101,37 @@ class CutiController extends Controller
 
         return redirect()->route('admin.cuti.show', $cuti)->with('error', 'Aksi tidak diizinkan atau pengajuan cuti belum pada tahap ini.');
     }
+
+    /**
+     * Menampilkan halaman pengaturan jatah cuti untuk admin.
+     */
+    public function pengaturanCuti()
+    {
+        $users = User::where('role', 'user')->get(); // Ambil karyawan saja
+        return view('admin.cuti.pengaturan', [
+            'title' => 'Pengaturan Jatah Cuti',
+            'users' => $users
+        ]);
+    }
+
+    /**
+     * Menyimpan perubahan jatah cuti.
+     */
+    public function updatePengaturanCuti(Request $request)
+    {
+        $request->validate([
+            'jatah_cuti' => 'required|array',
+            'jatah_cuti.*' => 'required|integer|min:0',
+        ]);
+
+        foreach ($request->jatah_cuti as $userId => $jatahCuti) {
+            $user = User::find($userId);
+            if ($user) {
+                $user->jatah_cuti = $jatahCuti;
+                $user->save();
+            }
+        }
+
+        return redirect()->route('admin.cuti.pengaturan')->with('success', 'Jatah cuti berhasil diperbarui.');
+    }
 }

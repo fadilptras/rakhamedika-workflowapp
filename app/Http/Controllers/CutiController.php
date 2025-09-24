@@ -11,7 +11,7 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\CutiNotification;
-use App\Policies\CutiPolicy; // Pastikan ini di-import jika belum
+use App\Policies\CutiPolicy;
 
 class CutiController extends Controller
 {
@@ -21,21 +21,26 @@ class CutiController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $totalCuti = ['tahunan' => 12];
-        $tahunIni = Carbon::now()->year;
+        $totalCuti = $user->jatah_cuti;
+        $tahunIni = Carbon::now()->year; // Variabel ini sudah ada
 
-        // Mendefinisikan variabel $title
         $title = 'Pengajuan Cuti';
 
         $cutiDisetujui = Cuti::where('user_id', $user->id)
-                             ->where('status', 'disetujui')
-                             ->whereYear('tanggal_mulai', $tahunIni)
-                             ->get();
+            ->where('status', 'disetujui')
+            ->whereYear('tanggal_mulai', $tahunIni)
+            ->get();
 
         $cutiTerpakai = $this->hitungCutiTerpakai($cutiDisetujui);
+        $sisaCuti = $totalCuti - $cutiTerpakai['tahunan']; 
 
-        $sisaCuti = ['tahunan' => $totalCuti['tahunan'] - $cutiTerpakai['tahunan']];
-        $cutiRequests = Cuti::where('user_id', $user->id)->latest()->get();
+        // --- BARIS YANG DIUBAH ---
+        // Tambahkan filter whereYear() untuk hanya menampilkan riwayat tahun ini
+        $cutiRequests = Cuti::where('user_id', $user->id)
+            ->whereYear('created_at', $tahunIni) // Filter berdasarkan tahun pengajuan
+            ->latest()
+            ->get();
+        // --- AKHIR PERUBAHAN ---
 
         return view('users.cuti', compact('sisaCuti', 'totalCuti', 'cutiRequests', 'title'));
     }
@@ -70,7 +75,8 @@ class CutiController extends Controller
 
         $user = Auth::user();
         
-        $sisaCuti = 12 - $this->hitungCutiTerpakai(
+        // Menggunakan jatah_cuti dari user
+        $sisaCuti = $user->jatah_cuti - $this->hitungCutiTerpakai(
             Cuti::where('user_id', $user->id)->where('status', 'disetujui')->whereYear('tanggal_mulai', now()->year)->get()
         )['tahunan'];
         
@@ -84,11 +90,11 @@ class CutiController extends Controller
             ->whereIn('status', ['diajukan', 'disetujui'])
             ->where(function ($query) use ($validatedData) {
                 $query->whereBetween('tanggal_mulai', [$validatedData['tanggal_mulai'], $validatedData['tanggal_selesai']])
-                      ->orWhereBetween('tanggal_selesai', [$validatedData['tanggal_mulai'], $validatedData['tanggal_selesai']])
-                      ->orWhere(function ($q) use ($validatedData) {
-                          $q->where('tanggal_mulai', '<=', $validatedData['tanggal_mulai'])
+                    ->orWhereBetween('tanggal_selesai', [$validatedData['tanggal_mulai'], $validatedData['tanggal_selesai']])
+                    ->orWhere(function ($q) use ($validatedData) {
+                        $q->where('tanggal_mulai', '<=', $validatedData['tanggal_mulai'])
                             ->where('tanggal_selesai', '>=', $validatedData['tanggal_selesai']);
-                      });
+                    });
             })->exists();
 
         if ($isOverlapping) {
@@ -118,7 +124,7 @@ class CutiController extends Controller
             $hrd->notify(new CutiNotification($cuti));
         }
 
-        return redirect()->route('cuti')->with('success', 'Pengajuan cuti Anda telah berhasil dikirim.');
+        return redirect()->route('cuti.create')->with('success', 'Pengajuan cuti Anda telah berhasil dikirim.');
     }
 
     /**
@@ -159,13 +165,13 @@ class CutiController extends Controller
         $this->authorize('cancel', $cuti);
 
         Absensi::where('user_id', $cuti->user_id)
-               ->where('status', 'cuti')
-               ->whereBetween('tanggal', [$cuti->tanggal_mulai, $cuti->tanggal_selesai])
-               ->delete();
+            ->where('status', 'cuti')
+            ->whereBetween('tanggal', [$cuti->tanggal_mulai, $cuti->tanggal_selesai])
+            ->delete();
 
         $cuti->update(['status' => 'dibatalkan']);
 
-        return redirect()->route('cuti')->with('success', 'Pengajuan cuti telah berhasil dibatalkan.');
+        return redirect()->route('cuti.create')->with('success', 'Pengajuan cuti telah berhasil dibatalkan.');
     }
 
     /**
@@ -183,9 +189,9 @@ class CutiController extends Controller
         
         if ($user->divisi) {
             $approver = User::where('divisi', $user->divisi)
-                            ->where('is_kepala_divisi', true)
-                            ->where('id', '!=', $user->id)
-                            ->first();
+                ->where('is_kepala_divisi', true)
+                ->where('id', '!=', $user->id)
+                ->first();
             if ($approver) {
                 return $approver;
             }

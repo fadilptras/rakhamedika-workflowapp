@@ -118,6 +118,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Manajemen Cuti (HANYA UNTUK MELIHAT)
     Route::get('/cuti', [AdminCutiController::class, 'index'])->name('cuti.index');
+    
+    // PINDAHKAN RUTE PENGATURAN KE ATAS RUTE SHOW
+    Route::get('/cuti/pengaturan', [AdminCutiController::class, 'pengaturanCuti'])->name('cuti.pengaturan');
+    Route::post('/cuti/pengaturan', [AdminCutiController::class, 'updatePengaturanCuti'])->name('cuti.updatePengaturan');
+    
+    // RUTE DINAMIS DENGAN PARAMETER HARUS DI BAWAH
     Route::get('/cuti/{cuti}', [AdminCutiController::class, 'show'])->name('cuti.show');
 
     // Rekap Pengajuan Dana (HANYA UNTUK MELIHAT)

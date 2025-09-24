@@ -75,12 +75,34 @@
                             </ul>
                         </div>
                     </li>
-                    <li>
-                        <a href="{{ route('admin.cuti.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
+                    <li x-data="{ open: {{ request()->routeIs('admin.cuti.*') ? 'true' : 'false' }} }">
+                        <a @click.prevent="open = !open" href="#"
+                            class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer
                             {{ request()->routeIs('admin.cuti.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-                            <i class="fas fa-calendar-alt text-xl w-8 text-center"></i> 
-                            <span class="ml-3 font-semibold">Pengajuan Cuti</span>
+
+                            <i class="fas fa-calendar-alt text-xl w-8 text-center"></i>
+
+                            <span class="ml-3 font-semibold flex-1">Kelola Cuti</span>
+                            <i class="fas fa-chevron-down text-sm transition-transform" :class="open ? 'rotate-180' : ''"></i>
                         </a>
+                        <div x-show="open" x-collapse>
+                            <ul class="ml-12 mt-2 space-y-1">
+                                <li>
+                                    <a href="{{ route('admin.cuti.pengaturan') }}"
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
+                                        {{ request()->routeIs('admin.cuti.pengaturan') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Pengaturan Jatah Cuti
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.cuti.index') }}"
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
+                                        {{ request()->routeIs('admin.cuti.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Manajemen Pengajuan
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
                     <li>
                         <a href="{{ route('admin.pengajuan_dana.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
