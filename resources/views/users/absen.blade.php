@@ -61,7 +61,7 @@
                                     </div>
                                     <p class="text-3xl font-bold text-gray-800">{{ \Carbon\Carbon::parse($absensiHariIni->jam_masuk)->format('H:i') }} <span class="text-lg font-medium">WIB</span></p>
                                     @if($absensiHariIni->latitude && $absensiHariIni->longitude)
-                                        <a href="http://maps.google.com/maps?q={{ $absensiHariIni->latitude }},{{ $absensiHariIni->longitude }}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                                        <a href="https://www.google.com/maps/search/?api=1&query={{ $absensiHariIni->latitude }},{{ $absensiHariIni->longitude }}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
                                             <i class="fas fa-map-marker-alt mr-1"></i>Lihat Lokasi
                                         </a>
                                     @endif
@@ -77,7 +77,7 @@
                                         @if ($absensiHariIni->jam_keluar)
                                             <p class="text-3xl font-bold text-gray-800">{{ \Carbon\Carbon::parse($absensiHariIni->jam_keluar)->format('H:i') }} <span class="text-lg font-medium">WIB</span></p>
                                             @if($absensiHariIni->latitude_keluar && $absensiHariIni->longitude_keluar)
-                                                <a href="http://maps.google.com/maps?q={{ $absensiHariIni->latitude_keluar }},{{ $absensiHariIni->longitude_keluar }}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                                                <a href="https://www.google.com/maps/search/?api=1&query={{ $absensiHariIni->latitude_keluar }},{{ $absensiHariIni->longitude_keluar }}" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
                                                     <i class="fas fa-map-marker-alt mr-1"></i>Lihat Lokasi
                                                 </a>
                                             @endif
@@ -500,48 +500,59 @@
     @endif
     
     {{-- MODAL UNTUK ABSEN LEMBUR --}}
-    @if ($absensiHariIni && is_null($absensiHariIni->jam_keluar) && $absensiHariIni->status == 'hadir')
+    @if ($absensiHariIni && $absensiHariIni->jam_keluar && $absensiHariIni->status == 'hadir')
     <div id="modal-absen-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
-            <input type="hidden" name="latitude_lembur" id="latitude-lembur">
-            <input type="hidden" name="longitude_lembur" id="longitude-lembur">
-            
-            <div class="p-6">
-                <h3 class="text-xl font-bold text-gray-800">Form Absen Lembur</h3>
-                <p class="text-gray-500 mt-1">Ambil foto selfie dan isi keterangan untuk memulai lembur.</p>
+            {{-- ======================================================= --}}
+            {{-- PERUBAHAN DIMULAI DI SINI: Mengubah ke Form Biasa --}}
+            {{-- ======================================================= --}}
+            <form action="{{ route('absen.lembur.store') }}" method="POST" enctype="multipart/form-data" id="form-absen-lembur">
+                @csrf
+                <input type="hidden" name="latitude_masuk" id="latitude-lembur">
+                <input type="hidden" name="longitude_masuk" id="longitude-lembur">
                 
-                <div class="mt-6">
-                    <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Lembur <span class="text-red-500">*</span></label>
-                    <div id="camera-container-lembur" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                        <video id="video-lembur" class="w-full h-full object-cover" autoplay></video>
-                        <canvas id="canvas-lembur" class="hidden"></canvas>
-                        <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                            <button type="button" id="snap-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                <i class="fas fa-camera"></i>
-                            </button>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800">Form Absen Lembur</h3>
+                    <p class="text-gray-500 mt-1">Ambil foto selfie dan isi keterangan untuk memulai lembur.</p>
+                    
+                    <div class="mt-6">
+                        <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Lembur <span class="text-red-500">*</span></label>
+                        <div id="camera-container-lembur" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
+                            <video id="video-lembur" class="w-full h-full object-cover" autoplay></video>
+                            <canvas id="canvas-lembur" class="hidden"></canvas>
+                            <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                <button type="button" id="snap-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                            </div>
                         </div>
+                        <label for="lampiran-lembur" id="upload-label-lembur" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                            <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-lembur">
+                                <i id="upload-icon-lembur" class="fas fa-camera text-3xl text-gray-400"></i>
+                                <p id="upload-text-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                            </div>
+                            <input name="lampiran_masuk" id="lampiran-lembur" type="file" class="hidden" accept="image/*" />
+                        </label>
                     </div>
-                    <label for="lampiran-lembur" id="upload-label-lembur" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
-                        <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-lembur">
-                            <i id="upload-icon-lembur" class="fas fa-camera text-3xl text-gray-400"></i>
-                            <p id="upload-text-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
-                        </div>
-                        <input name="lampiran_masuk" id="lampiran-lembur" type="file" class="hidden" accept="image/*" />
-                    </label>
-                </div>
 
-                <div class="mt-4">
-                    <label for="keterangan-lembur" class="block text-md font-medium text-gray-700 mb-2">Keterangan Lembur <span class="text-red-500">*</span></label>
-                    <textarea id="keterangan-lembur" name="keterangan" rows="3" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Menyelesaikan laporan bulanan." required></textarea>
+                    <div class="mt-4">
+                        <label for="keterangan-lembur" class="block text-md font-medium text-gray-700 mb-2">Keterangan Lembur <span class="text-red-500">*</span></label>
+                        <textarea id="keterangan-lembur" name="keterangan" rows="3" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Menyelesaikan laporan bulanan." required></textarea>
+                    </div>
                 </div>
-            </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-                <button type="button" id="btn-tutup-modal-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                <button type="button" id="submit-button-lembur" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400">Kirim Absen Lembur</button>
-            </div>
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
+                    <button type="button" id="btn-tutup-modal-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                    {{-- Mengubah type menjadi 'submit' --}}
+                    <button type="submit" id="submit-button-lembur" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400">Kirim Absen Lembur</button>
+                </div>
+            </form>
+            {{-- ======================================================= --}}
+            {{-- PERUBAHAN SELESAI DI SINI --}}
+            {{-- ======================================================= --}}
         </div>
     </div>
     @endif
+
 
     {{-- MODAL UNTUK ABSEN KELUAR LEMBUR --}}
     @if ($lemburHariIni && is_null($lemburHariIni->jam_keluar_lembur))
@@ -1139,7 +1150,7 @@
             if (btnTutupModalUnfinished) btnTutupModalUnfinished.addEventListener('click', closeModalUnfinished);
         }
 
-        // --- LOGIKA BARU UNTUK ABSENSI LEMBUR (AJAX) ---
+        // --- LOGIKA BARU UNTUK ABSENSI LEMBUR (NON-AJAX) ---
 
         // Masuk Lembur
         const btnAbsenLembur = document.getElementById('btn-absen-lembur');
@@ -1177,6 +1188,7 @@
             }
             
             function checkFormReadinessLembur() {
+                // Hanya periksa foto dan lokasi, karena keterangan sudah 'required' di HTML
                 if (isLocationReadyLembur && isPhotoReadyLembur && keteranganLemburInput.value.trim() !== '') {
                     submitLemburBtn.disabled = false;
                     submitLemburBtn.textContent = 'Kirim Absen Lembur';
@@ -1267,51 +1279,10 @@
                 }
             });
 
-            submitLemburBtn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const formData = new FormData();
-                formData.append('_token', '{{ csrf_token() }}');
-                formData.append('latitude_masuk', latitudeLemburInput.value);
-                formData.append('longitude_masuk', longitudeLemburInput.value);
-                formData.append('keterangan', keteranganLemburInput.value);
-                if (fileInputLembur.files.length > 0) {
-                    formData.append('lampiran_masuk', fileInputLembur.files[0]);
-                }
-                
-                submitLemburBtn.disabled = true;
-                submitLemburBtn.textContent = 'Memproses...';
-
-                try {
-                    const response = await fetch("{{ route('absen.lembur.store') }}", {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json',
-                        }
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        alert(result.success);
-                        closeModalLembur();
-                        window.location.reload();
-                    } else {
-                        const errorMessages = Object.values(result.errors || {error: [result.error]}).flat().join('\n');
-                        alert('Terjadi kesalahan:\n' + errorMessages);
-                        submitLemburBtn.disabled = false;
-                        submitLemburBtn.textContent = 'Kirim Absen Lembur';
-                    }
-                } catch (error) {
-                    alert('Terjadi kesalahan pada koneksi atau server.');
-                    submitLemburBtn.disabled = false;
-                    submitLemburBtn.textContent = 'Kirim Absen Lembur';
-                }
-            });
-
+            // =======================================================
+            // KODE AJAX DIHAPUS DARI SINI
+            // =======================================================
+            
             btnTutupModalLembur.addEventListener('click', function() {
                 isLocationReadyLembur = false;
                 isPhotoReadyLembur = false;

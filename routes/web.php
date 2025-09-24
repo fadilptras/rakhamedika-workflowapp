@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
     
     Route::get('/profile', [ProfileController::class, 'editProfile'])->name('profil.index');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profil.update');
+    Route::post('/profile/check-password', [ProfileController::class, 'checkCurrentPassword'])->name('profile.checkPassword');
     
     // Pengajuan Dana
     Route::get('/pengajuan-dana', [PengajuanDanaController::class, 'index'])->name('pengajuan_dana.index');

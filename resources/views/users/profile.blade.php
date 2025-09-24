@@ -67,9 +67,29 @@
                                 @enderror
                             </div>
                             
+                            {{-- ======================================================= --}}
+                            {{-- PERUBAHAN PASSWORD LAMA DENGAN SEMUA IKON --}}
+                            {{-- ======================================================= --}}
+                            <div class="relative">
+                                <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Password Lama</label>
+                                <input type="password" id="current_password" name="current_password" class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('current_password') border-red-500 @enderror" placeholder="Isi untuk ganti password">
+                                <div class="absolute inset-y-0 right-0 top-6 flex items-center pr-3">
+                                    <span id="current-password-feedback" class="mr-2">
+                                        <i id="current-password-correct" class="fas fa-check-circle text-green-500 hidden"></i>
+                                        <i id="current-password-incorrect" class="fas fa-times-circle text-red-500 hidden"></i>
+                                    </span>
+                                    <span id="toggle-current-password" class="cursor-pointer text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </span>
+                                </div>
+                                @error('current_password')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
                             <div class="relative">
                                 <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password Baru</label>
-                                <input type="password" id="password" name="password" minlength="8" class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('password') border-red-500 @enderror" placeholder="Kosongkan jika tidak ingin mengubah">
+                                <input type="password" id="password" name="password" minlength="8" class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('password') border-red-500 @enderror" placeholder="Minimal 8 karakter">
                                 <div class="absolute inset-y-0 right-0 top-6 pr-3 flex items-center cursor-pointer text-gray-400 hover:text-gray-600" id="toggle-password">
                                     <i class="fas fa-eye-slash"></i>
                                 </div>
@@ -77,6 +97,14 @@
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                                 <p id="password-error" class="hidden text-red-500 text-xs mt-1"></p>
+                            </div>
+                            
+                            <div class="relative">
+                                <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password Baru</label>
+                                <input type="password" id="password_confirmation" name="password_confirmation" class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ketik ulang password baru">
+                                <div class="absolute inset-y-0 right-0 top-6 pr-3 flex items-center cursor-pointer text-gray-400 hover:text-gray-600" id="toggle-password-confirmation">
+                                    <i class="fas fa-eye-slash"></i>
+                                </div>
                             </div>
                             
                             <div>
@@ -124,6 +152,72 @@
             const passwordError = document.getElementById('password-error');
             const form = document.getElementById('profile-form');
             
+            // =======================================================
+            // PENAMBAHAN SKRIP BARU
+            // =======================================================
+            const currentPasswordInput = document.getElementById('current_password');
+            const currentPasswordCorrectIcon = document.getElementById('current-password-correct');
+            const currentPasswordIncorrectIcon = document.getElementById('current-password-incorrect');
+            const toggleCurrentPassword = document.getElementById('toggle-current-password');
+
+            const passwordConfirmationInput = document.getElementById('password_confirmation');
+            const togglePasswordConfirmation = document.getElementById('toggle-password-confirmation');
+            let debounceTimer;
+
+            // Fungsi generik untuk toggle password
+            function setupPasswordToggle(toggleElement, inputElement) {
+                toggleElement.addEventListener('click', function() {
+                    const type = inputElement.getAttribute('type') === 'password' ? 'text' : 'password';
+                    inputElement.setAttribute('type', type);
+                    this.querySelector('i').classList.toggle('fa-eye');
+                    this.querySelector('i').classList.toggle('fa-eye-slash');
+                });
+            }
+            
+            setupPasswordToggle(togglePassword, passwordInput);
+            setupPasswordToggle(togglePasswordConfirmation, passwordConfirmationInput);
+            setupPasswordToggle(toggleCurrentPassword, currentPasswordInput); // Tambahan untuk password lama
+
+            // Fungsi untuk cek password lama secara real-time
+            currentPasswordInput.addEventListener('keyup', function() {
+                clearTimeout(debounceTimer);
+                const password = this.value;
+
+                // Sembunyikan semua ikon jika kolom kosong
+                if (password.length === 0) {
+                    currentPasswordCorrectIcon.classList.add('hidden');
+                    currentPasswordIncorrectIcon.classList.add('hidden');
+                    return;
+                }
+
+                // Gunakan debounce untuk mencegah terlalu banyak request
+                debounceTimer = setTimeout(() => {
+                    fetch('{{ route("profile.checkPassword") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ current_password: password })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.valid) {
+                            currentPasswordCorrectIcon.classList.remove('hidden');
+                            currentPasswordIncorrectIcon.classList.add('hidden');
+                        } else {
+                            currentPasswordCorrectIcon.classList.add('hidden');
+                            currentPasswordIncorrectIcon.classList.remove('hidden');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        currentPasswordCorrectIcon.classList.add('hidden');
+                        currentPasswordIncorrectIcon.classList.add('hidden');
+                    });
+                }, 500); // Jeda 500ms setelah user berhenti mengetik
+            });
+            
             // Script untuk preview foto
             profilePhotoInput.addEventListener('change', function(event) {
                 const file = event.target.files[0];
@@ -136,23 +230,12 @@
                 }
             });
 
-            // Script untuk toggle password
-            togglePassword.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                
-                // Ganti ikon mata
-                this.querySelector('i').classList.toggle('fa-eye');
-                this.querySelector('i').classList.toggle('fa-eye-slash');
-            });
-
-            // Script untuk validasi password di sisi klien
+            // Script untuk validasi panjang password baru
             form.addEventListener('submit', function(event) {
                 const passwordValue = passwordInput.value.trim();
                 
-                // Cek jika field password diisi tapi panjangnya kurang dari 8
                 if (passwordValue.length > 0 && passwordValue.length < 8) {
-                    event.preventDefault(); // Mencegah form ter-submit
+                    event.preventDefault(); 
                     passwordError.textContent = 'Password minimal harus 8 karakter.';
                     passwordError.classList.remove('hidden');
                 } else {

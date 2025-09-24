@@ -29,17 +29,26 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
     
-        // Validasi data profil, termasuk password yang opsional
-        $validated = $request->validate([
+        // Validasi utama tetap di sini
+        $request->validate([
             'name'              => ['required', 'string', 'max:255'],
             'email'             => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'tanggal_bergabung' => 'nullable|date',
             'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'password'          => ['nullable', 'string', 'min:8'],
+            'current_password'  => ['nullable', 'required_with:password', 'string'],
+            'password'          => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
     
-        DB::transaction(function () use ($request, $validated, $user) {
-            // Logika update foto profil
+        // Jika pengguna mencoba mengubah password, validasi password lama
+        if ($request->filled('password')) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                return back()->withErrors(['current_password' => 'Password lama yang Anda masukkan tidak cocok.'])->withInput();
+            }
+        }
+    
+        DB::transaction(function () use ($request, $user) {
+            $validated = $request->except('password', 'current_password', 'password_confirmation');
+
             if ($request->hasFile('profile_picture')) {
                 if ($user->profile_picture) {
                     Storage::disk('public')->delete($user->profile_picture);
@@ -48,30 +57,34 @@ class ProfileController extends Controller
                     ->store('profile-pictures', 'public');
             }
     
-            // Jika password diisi, enkripsi dan update
             if ($request->filled('password')) {
                 $validated['password'] = Hash::make($request->password);
-            } else {
-                // Jika password kosong, hapus dari array agar tidak diupdate
-                unset($validated['password']);
-            }
-    
-            // Jika tanggal bergabung kosong, hapus dari array agar tidak di-update
-            if (empty($validated['tanggal_bergabung'])) {
-                unset($validated['tanggal_bergabung']);
             }
             
-            // Kolom jabatan dan divisi tidak boleh diubah oleh user, hapus jika ada di request
-            if (isset($validated['jabatan'])) {
-                unset($validated['jabatan']);
-            }
-            if (isset($validated['divisi'])) {
-                unset($validated['divisi']);
-            }
+            unset($validated['jabatan'], $validated['divisi']);
     
             $user->update($validated);
         });
     
         return redirect()->route('profil.index')->with('success', 'Profil berhasil diupdate.');
+    }
+
+    // =======================================================
+    // TAMBAHKAN FUNGSI BARU DI SINI
+    // =======================================================
+    /**
+     * Memeriksa kecocokan password lama secara real-time (AJAX).
+     */
+    public function checkCurrentPassword(Request $request)
+    {
+        $request->validate(['current_password' => 'required|string']);
+
+        $user = Auth::user();
+
+        if (Hash::check($request->current_password, $user->password)) {
+            return response()->json(['valid' => true]);
+        }
+
+        return response()->json(['valid' => false]);
     }
 }

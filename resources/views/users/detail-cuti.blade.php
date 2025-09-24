@@ -102,12 +102,13 @@
                     
                     {{-- Catatan Approval --}}
                     @if($cuti->catatan_approval)
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-800">Catatan dari Approver</h3>
-                        <div class="mt-2 text-sm text-gray-700 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                            <p>{{ $cuti->catatan_approval }}</p>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800">Catatan dari Approver</h3>
+                            {{-- Kotak catatan yang sudah dirapikan --}}
+                            <div class="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-sm text-gray-700">
+                                <p>{{ $cuti->catatan_approval }}</p>
+                            </div>
                         </div>
-                    </div>
                     @endif
 
                     {{-- Tombol Aksi untuk Approver --}}
@@ -121,7 +122,8 @@
                                     <div class="space-y-4">
                                         <div>
                                             <label for="catatan" class="block text-sm font-medium text-gray-700 mb-1">Catatan (Opsional)</label>
-                                            <textarea name="catatan" id="catatan" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                                            {{-- INI BAGIAN YANG DIPERBAIKI --}}
+                                            <textarea name="catatan" id="catatan" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2"></textarea>
                                         </div>
                                         <div class="flex items-center gap-4">
                                             <button type="submit" name="status" value="disetujui" class="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
