@@ -45,7 +45,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-700">
-                    @foreach($employees as $user)
+                    @foreach($employees->sortByDesc('is_kepala_divisi') as $user)
                         <tr class="hover:bg-zinc-700/50">
                             <td class="px-5 py-4">
                                 <div class="flex items-center">

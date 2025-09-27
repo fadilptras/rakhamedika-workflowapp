@@ -19,7 +19,8 @@
     }
   </style>
 </head>
-<body class="bg-gray-100">
+{{-- --- PERUBAHAN DI SINI: Warna background diubah menjadi hex code #DBDBDB --- --}}
+<body class="bg-[#DBDBDB]">
 
   <div class="flex items-center justify-center min-h-screen p-4">
     <div class="flex w-full max-w-4xl rounded-lg shadow-lg bg-white overflow-hidden">
@@ -61,7 +62,7 @@
                 type="email" 
                 required 
                 placeholder="email@anda.com"
-                autocomplete="username"  {{-- DITAMBAHKAN --}}
+                autocomplete="username"
                 class="w-full px-4 py-3 border @error('email') border-red-500 @else border-gray-300 @enderror rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 value="{{ old('email') }}" />
             </div>
@@ -75,7 +76,7 @@
                   type="password" 
                   required 
                   placeholder="Masukkan password"
-                  autocomplete="current-password" {{-- DITAMBAHKAN --}}
+                  autocomplete="current-password"
                   class="w-full px-4 py-3 border @error('password') border-red-500 @else border-gray-300 @enderror rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition pr-10"
                 />
                 <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none">
@@ -102,9 +103,6 @@
             </div>
           </form>
 
-          <div class="text-center text-sm text-gray-600 mt-8">
-            <p>Belum memiliki akun? <a href="{{ route('register') }}" class="font-medium text-blue-600 hover:underline">Buat akun disini</a></p>
-          </div>
         </div>
       </div>
     </div>

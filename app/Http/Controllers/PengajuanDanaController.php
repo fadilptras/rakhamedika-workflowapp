@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\PengajuanDana;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use App\Notifications\PengajuanDanaNotification;
 use Illuminate\Support\Facades\Notification;
 
@@ -19,31 +18,19 @@ class PengajuanDanaController extends Controller
         return view('users.pengajuan-dana', compact('title', 'pengajuanDanas'));
     }
 
-    /**
-     * ===============================================
-     * PERUBAHAN UTAMA ADA DI FUNGSI INI
-     * ===============================================
-     */
     public function show(PengajuanDana $pengajuanDana)
     {
         $user = Auth::user();
-        $pemohon = $pengajuanDana->user; // Mengambil data user yang mengajukan dana
-
-        // 1. Cek apakah user yang login adalah pemilik pengajuan
+        $pemohon = $pengajuanDana->user;
         $isOwner = $user->id === $pemohon->id;
 
-        // 2. Cari siapa Kepala Divisi dari si pemohon
         $kepalaDivisi = User::where('divisi', $pemohon->divisi)
                               ->where('is_kepala_divisi', true)
                               ->first();
         
-        // 3. Cek apakah user yang login adalah Kepala Divisi yang dituju
         $isKepalaDivisi = $kepalaDivisi && $user->id === $kepalaDivisi->id;
-
-        // 4. Daftar jabatan lain yang boleh melihat (Finance, HRD, Direktur)
         $hasAllowedJabatan = in_array($user->jabatan, ['Kepala Finance dan Gudang', 'HRD', 'Direktur']);
 
-        // 5. Jika user BUKAN salah satu dari ketiga kondisi di atas, tolak akses
         if (!$isOwner && !$isKepalaDivisi && !$hasAllowedJabatan) {
             abort(403, 'ANDA TIDAK MEMILIKI AKSES UNTUK MELIHAT HALAMAN INI.');
         }
@@ -56,6 +43,17 @@ class PengajuanDanaController extends Controller
     
     public function store(Request $request)
     {
+        if ($request->has('jumlah_dana_total')) {
+            $request->merge(['jumlah_dana_total' => preg_replace('/[^0-9]/', '', $request->jumlah_dana_total)]);
+        }
+        if ($request->has('rincian_jumlah')) {
+            $cleanedRincian = [];
+            foreach ($request->rincian_jumlah as $jumlah) {
+                $cleanedRincian[] = preg_replace('/[^0-9]/', '', $jumlah);
+            }
+            $request->merge(['rincian_jumlah' => $cleanedRincian]);
+        }
+
         $validatedData = $request->validate([
             'judul_pengajuan' => 'required|string|max:255',
             'divisi' => 'required|string|max:255',
@@ -69,12 +67,9 @@ class PengajuanDanaController extends Controller
         ]);
     
         $rincian = [];
-        if ($request->has('rincian_deskripsi')) {
-            foreach ($request->input('rincian_deskripsi') as $key => $deskripsi) {
-                $rincian[] = [
-                    'deskripsi' => $deskripsi,
-                    'jumlah' => $request->input('rincian_jumlah')[$key],
-                ];
+        if (!empty($validatedData['rincian_deskripsi'])) {
+            foreach ($validatedData['rincian_deskripsi'] as $key => $deskripsi) {
+                $rincian[] = ['deskripsi' => $deskripsi, 'jumlah' => $validatedData['rincian_jumlah'][$key]];
             }
         }
     
@@ -95,13 +90,7 @@ class PengajuanDanaController extends Controller
         ]);
         
         $user = Auth::user();
-
-        // Cari Kepala Divisi pemohon
-        $kepalaDivisi = User::where('divisi', $user->divisi)
-                              ->where('is_kepala_divisi', true)
-                              ->first();
-        
-        // Cari HRD untuk ditembuskan (CC)
+        $kepalaDivisi = User::where('divisi', $user->divisi)->where('is_kepala_divisi', true)->first();
         $hrd = User::where('jabatan', 'HRD')->first();
 
         if ($kepalaDivisi) {
@@ -112,7 +101,6 @@ class PengajuanDanaController extends Controller
                 Notification::send($direktur, new PengajuanDanaNotification($pengajuanDana));
             }
         }
-
         if ($hrd) {
             Notification::send($hrd, new PengajuanDanaNotification($pengajuanDana));
         }
@@ -122,94 +110,61 @@ class PengajuanDanaController extends Controller
 
     public function approve(Request $request, PengajuanDana $pengajuanDana)
     {
+        // Otorisasi sekarang hanya satu baris, memanggil aturan di Policy
+        $this->authorize('approve', $pengajuanDana);
+        
         $user = Auth::user();
-        $userJabatan = strtolower($user->jabatan);
+        $updateData = [];
 
-        if (!$this->canApprove($user, $pengajuanDana)) {
-             abort(403, 'Anda tidak memiliki hak akses untuk menyetujui pengajuan dana.');
-        }
+        // Cek apakah user adalah Kepala Divisi dari divisi yang mengajukan
+        if ($user->is_kepala_divisi && $user->divisi === $pengajuanDana->divisi) {
+            $updateData['status_atasan'] = 'disetujui';
+            $updateData['catatan_atasan'] = $request->catatan_persetujuan ?? 'Disetujui';
 
-        $statusField = '';
-        $catatanField = '';
-
-        if ($user->is_kepala_divisi) {
-             $statusField = 'status_atasan';
-             $catatanField = 'catatan_atasan';
-        } elseif ($userJabatan == 'kepala finance dan gudang') {
-             $statusField = 'status_hrd'; // Menggunakan kolom status_hrd untuk finance
-             $catatanField = 'catatan_hrd';
-        }
-
-        if ($statusField) {
-            $pengajuanDana->update([
-                $statusField => 'disetujui',
-                $catatanField => $request->catatan_persetujuan ?? 'Disetujui',
-            ]);
-        }
-
-        // Logika Notifikasi Berjenjang
-        if ($user->is_kepala_divisi) {
-            $kepalaFinance = User::where('jabatan', 'Kepala Finance dan Gudang')->first();
+            // Cari Kepala Finance secara dinamis
+            $kepalaFinance = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
             if ($kepalaFinance) {
-                Notification::send($kepalaFinance, new PengajuanDanaNotification($pengajuanDana));
+                $tempPengajuan = $pengajuanDana->replicate()->fill($updateData);
+                Notification::send($kepalaFinance, new PengajuanDanaNotification($tempPengajuan));
             }
+
+        } else { // Jika bukan Kepala Divisi (berarti Kepala Finance)
+            $updateData['status_finance'] = 'disetujui';
+            $updateData['catatan_finance'] = $request->catatan_persetujuan ?? 'Disetujui';
         }
         
-        // Cek apakah semua pihak sudah menyetujui
-        if ($pengajuanDana->status_atasan === 'disetujui' && $pengajuanDana->status_hrd === 'disetujui') {
-            $pengajuanDana->update(['status' => 'disetujui']);
+        // Cari ID Kepala Finance secara dinamis untuk pengecekan
+        $kepalaFinanceId = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first()?->id;
+
+        // Cek jika ini adalah persetujuan final (oleh Kepala Finance)
+        if ($pengajuanDana->status_atasan === 'disetujui' && $user->id === $kepalaFinanceId) {
+            $updateData['status'] = 'disetujui';
         }
 
-        return redirect()->route('pengajuan_dana.show', $pengajuanDana->id)->with('success', 'Pengajuan dana berhasil disetujui!');
+        $pengajuanDana->update($updateData);
+
+        return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Pengajuan dana berhasil disetujui!');
     }
 
     public function reject(Request $request, PengajuanDana $pengajuanDana)
     {
+        // Otorisasi juga menggunakan Policy
+        $this->authorize('approve', $pengajuanDana);
+        
         $user = Auth::user();
-        $userJabatan = strtolower($user->jabatan);
-        
-        if (!$this->canApprove($user, $pengajuanDana)) {
-             abort(403, 'Anda tidak memiliki hak akses untuk menolak pengajuan dana.');
-        }
-        
-        $statusField = '';
-        $catatanField = '';
+        $updateData = ['status' => 'ditolak'];
 
-        if ($user->is_kepala_divisi) {
-             $statusField = 'status_atasan';
-             $catatanField = 'catatan_atasan';
-        } elseif ($userJabatan == 'kepala finance dan gudang') {
-             $statusField = 'status_hrd'; // Menggunakan kolom status_hrd untuk finance
-             $catatanField = 'catatan_hrd';
+        // Cek apakah user adalah Kepala Divisi dari divisi yang mengajukan
+        if ($user->is_kepala_divisi && $user->divisi === $pengajuanDana->divisi) {
+             $updateData['status_atasan'] = 'ditolak';
+             $updateData['catatan_atasan'] = $request->catatan_penolakan ?? 'Ditolak';
+        } else { // Jika bukan Kepala Divisi (berarti Kepala Finance)
+             $updateData['status_finance'] = 'ditolak';
+             $updateData['catatan_finance'] = $request->catatan_penolakan ?? 'Ditolak';
         }
 
-        if ($statusField) {
-            $pengajuanDana->update([
-                $statusField => 'ditolak',
-                $catatanField => $request->catatan_penolakan ?? 'Ditolak',
-                'status' => 'ditolak'
-            ]);
-        }
+        $pengajuanDana->update($updateData);
 
-        return redirect()->route('pengajuan_dana.show', $pengajuanDana->id)->with('success', 'Pengajuan dana berhasil ditolak!');
-    }
-
-    // Helper function untuk otorisasi approve/reject
-    private function canApprove(User $user, PengajuanDana $pengajuanDana): bool
-    {
-        $pemohon = $pengajuanDana->user;
-        $kepalaDivisi = User::where('divisi', $pemohon->divisi)->where('is_kepala_divisi', true)->first();
-
-        // Boleh jika user adalah Kepala Divisi yang dituju DAN statusnya masih menunggu
-        if ($kepalaDivisi && $user->id === $kepalaDivisi->id && $pengajuanDana->status_atasan === 'menunggu') {
-            return true;
-        }
-
-        // Boleh jika user adalah Kepala Finance DAN Kepala Divisi sudah approve
-        if ($user->jabatan === 'Kepala Finance dan Gudang' && $pengajuanDana->status_atasan === 'disetujui' && $pengajuanDana->status_hrd === 'menunggu') {
-            return true;
-        }
-
-        return false;
+        return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Pengajuan dana berhasil ditolak!');
     }
 }

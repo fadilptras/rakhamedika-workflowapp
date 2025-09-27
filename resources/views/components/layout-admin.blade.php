@@ -12,6 +12,8 @@
     {{-- Alpine.js untuk fitur dropdown --}}
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    @stack('styles')
+
     <style>
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #27272a; }
@@ -104,12 +106,38 @@
                             </ul>
                         </div>
                     </li>
-                    <li>
-                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
-                            {{ request()->routeIs('admin.pengajuan_dana.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-                            <i class="fas fa-coins text-xl w-8 text-center"></i> 
-                            <span class="ml-3 font-semibold">Pengajuan Dana</span>
+
+                    {{-- DROPDOWN BARU UNTUK SEMUA JENIS PENGAJUAN --}}
+                    <li x-data="{ open: {{ request()->routeIs('admin.pengajuan_dana.*') || request()->routeIs('admin.pengajuan-dokumen.*') || request()->routeIs('admin.agenda.*') ? 'true' : 'false' }} }">
+                        <a @click.prevent="open = !open" href="#" 
+                            class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
+                            {{ request()->routeIs('admin.pengajuan_dana.*') || request()->routeIs('admin.pengajuan-dokumen.*') || request()->routeIs('admin.agenda.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            <i class="fas fa-folder-open text-xl w-8 text-center"></i> 
+                            <span class="ml-3 font-semibold flex-1">Kelola Pengajuan</span>
+                            <i class="fas fa-chevron-down text-sm transition-transform" :class="open ? 'rotate-180' : ''"></i>
                         </a>
+                        <div x-show="open" x-collapse>
+                            <ul class="ml-12 mt-2 space-y-1">
+                                <li>
+                                    <a href="{{ route('admin.pengajuan_dana.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm {{ request()->routeIs('admin.pengajuan_dana.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Pengajuan Dana
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.pengajuan-dokumen.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm {{ request()->routeIs('admin.pengajuan-dokumen.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Pengajuan Dokumen
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.agenda.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm {{ request()->routeIs('admin.agenda.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Kelola Agenda
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
                 </ul>
             </nav>
@@ -138,6 +166,5 @@
     </div>
 
     @stack('scripts')
-    
 </body>
 </html>

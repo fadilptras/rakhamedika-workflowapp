@@ -2,12 +2,23 @@
     <x-slot:title>Rekap Absensi Bulanan</x-slot:title>
 
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-white">Rekap Absensi Bulanan</h1>
-        {{-- Tombol Download PDF --}}
-        <a href="{{ route('admin.absensi.rekap.downloadPdf', request()->query()) }}"
-           class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
-            <i class="fas fa-file-pdf mr-2"></i> Download PDF
-        </a>
+    <h1 class="text-2xl font-bold text-white">Rekap Absensi Bulanan</h1>
+    
+    {{-- Grup Tombol Download --}}
+        <div class="flex gap-2">
+            {{-- Tombol Download PDF --}}
+            <a href="{{ route('admin.absensi.rekap.downloadPdf', request()->query()) }}"
+            class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
+                <i class="fas fa-file-pdf mr-2"></i> PDF
+            </a>
+            
+            {{-- AWAL PERUBAHAN: Tombol Download Excel --}}
+            <a href="{{ route('admin.absensi.rekap.downloadExcel', request()->query()) }}"
+            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
+                <i class="fas fa-file-excel mr-2"></i> Excel
+            </a>
+            {{-- AKHIR PERUBAHAN --}}
+        </div>
     </div>
 
     {{-- Filter --}}

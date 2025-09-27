@@ -1,9 +1,16 @@
 <x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
 
-    <div class="bg-slate-100 min-h-screen">
-        <div class="container mx-auto p-0 md:p-0">
+    <div class="bg-slate-100 min-h-screen p-0 md:p-0">
+        <div class="container mx-auto">
             
+            @if (session('success'))
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg shadow" role="alert">
+                    <p class="font-bold">Berhasil!</p>
+                    <p>{{ session('success') }}</p>
+                </div>
+            @endif
+
             <div class="space-y-8">
                 {{-- KARTU FORM PENGAJUAN --}}
                 <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
@@ -17,8 +24,7 @@
                         </div>
                     </div>
                     
-                    {{-- Ganti action ke route yang sesuai jika ada --}}
-                    <form action="#" method="POST" enctype="multipart/form-data" class="p-6 md:p-8">
+                    <form action="{{ route('pengajuan_dokumen.store') }}" method="POST" enctype="multipart/form-data" class="p-6 md:p-8">
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                             {{-- Nama Pemohon (Otomatis) --}}
@@ -40,9 +46,9 @@
                                 </label>
                                 <select id="jenis-dokumen" name="jenis_dokumen" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:shadow-inner" required>
                                     <option value="">Pilih Dokumen</option>
-                                    <option value="slip-gaji">Slip Gaji</option>
-                                    <option value="surat-kerja">Surat Keterangan Kerja</option>
-                                    <option value="lainnya">Lainnya</option>
+                                    <option value="Slip Gaji">Slip Gaji</option>
+                                    <option value="Surat Keterangan Kerja">Surat Keterangan Kerja</option>
+                                    <option value="Lainnya">Lainnya</option>
                                 </select>
                             </div>
 
@@ -78,39 +84,56 @@
                     </form>
                 </div>
 
-                {{-- KARTU HASIL DOKUMEN (setelah disetujui) --}}
-                @php
-                    // Logika ini harus disesuaikan dengan data status pengajuan yang sebenarnya
-                    // Anggap saja $statusSelesai bernilai true jika semua tahapan sudah di-ACC
-                    $statusSelesai = true; 
-                @endphp
-                @if($statusSelesai)
-                <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                {{-- KARTU RIWAYAT PENGAJUAN --}}
+                <div class="mt-12 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
                     <div class="p-6 md:p-8">
-                        <div class="flex items-center gap-4">
-                            <i class="fas fa-check-circle text-3xl text-green-500"></i>
-                            <div>
-                                <h2 class="text-xl font-bold text-slate-800">Dokumen Telah Terbit</h2>
-                                <p class="text-sm text-slate-500">Dokumen yang Anda ajukan telah disetujui dan siap diunduh.</p>
-                            </div>
-                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800">Riwayat Pengajuan Dokumen Anda</h2>
+                        <p class="text-sm text-slate-500 mt-1">Daftar semua pengajuan dokumen yang telah Anda buat.</p>
                     </div>
-                    <div class="p-6 md:p-8 border-t border-slate-200 bg-slate-50">
-                        <div class="flex flex-col sm:flex-row items-center justify-between">
-                            <div class="mb-4 sm:mb-0">
-                                <p class="font-bold text-slate-700">Surat Keterangan Kerja</p>
-                                <p class="text-sm text-slate-500">Disetujui pada: 21 September 2025</p>
-                            </div>
-                            <a href="#" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 flex items-center gap-2">
-                                <i class="fas fa-download"></i>
-                                Unduh Dokumen
-                            </a>
-                        </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full border-t border-slate-200 text-sm">
+                            <thead class="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th class="px-6 py-3 text-left font-semibold">Tanggal</th>
+                                    <th class="px-6 py-3 text-left font-semibold">Jenis Dokumen</th>
+                                    <th class="px-6 py-3 text-left font-semibold">Status</th>
+                                    <th class="px-6 py-3 text-center font-semibold">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                @forelse ($riwayatDokumen as $dokumen)
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="px-6 py-4 text-slate-600">{{ $dokumen->created_at->format('d M Y') }}</td>
+                                    <td class="px-6 py-4 font-semibold text-slate-800">{{ $dokumen->jenis_dokumen }}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="font-bold px-2 py-1 rounded-full text-xs capitalize
+                                            @if($dokumen->status == 'diajukan') bg-yellow-100 text-yellow-800
+                                            @elseif($dokumen->status == 'diproses') bg-blue-100 text-blue-800
+                                            @elseif($dokumen->status == 'selesai') bg-green-100 text-green-800
+                                            @elseif($dokumen->status == 'ditolak') bg-red-100 text-red-800
+                                            @endif">
+                                            {{ $dokumen->status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        @if ($dokumen->status === 'selesai' && $dokumen->file_hasil)
+                                            <a href="{{ route('pengajuan_dokumen.download', $dokumen) }}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md text-xs flex-shrink-0 inline-flex items-center gap-2">
+                                                <i class="fas fa-download"></i> Unduh
+                                            </a>
+                                        @else
+                                            <span class="text-slate-400">-</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr><td class="px-6 py-10 text-center text-slate-500" colspan="4">Belum ada pengajuan dokumen yang dibuat.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                @endif
             </div>
-
         </div>
     </div>
     

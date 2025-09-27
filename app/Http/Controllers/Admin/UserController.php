@@ -23,24 +23,33 @@ class UserController extends Controller
             abort(404);
         }
 
-        // --- PERUBAHAN DIMULAI DI SINI ---
-        // 1. Ambil semua user tanpa paginasi, urutkan berdasarkan divisi lalu nama.
-        $users = User::where('role', $role)->orderBy('divisi')->orderBy('name')->get();
+        // --- AWAL PERUBAHAN ---
 
-        // 2. Kelompokkan user berdasarkan 'divisi'.
-        //    Gunakan fungsi callback untuk menangani divisi yang kosong/null.
-        $usersByDivision = $users->groupBy(function ($user) {
-            return $user->divisi ?: 'Tanpa Divisi'; // Jika divisi null atau kosong, kelompokkan ke 'Tanpa Divisi'
-        });
+        // Jika role adalah 'admin', kirim data sederhana tanpa pengelompokan
+        if ($role === 'admin') {
+            $users = User::where('role', 'admin')->orderBy('name')->get();
+            return view('admin.admin', [
+                'users' => $users, // Kirim variabel bernama '$users' yang diharapkan oleh view
+                'title' => 'Kelola Admin',
+                'defaultRole' => 'admin'
+            ]);
+        }
 
-        $viewName = $role === 'admin' ? 'admin.admin' : 'admin.karyawan';
-        $title = $role === 'admin' ? 'Kelola Admin' : 'Kelola Karyawan';
+        // Jika role adalah 'user', gunakan logika pengelompokan berdasarkan divisi
+        if ($role === 'user') {
+            $users = User::where('role', 'user')->orderBy('divisi')->orderBy('name')->get();
 
-        return view($viewName, [
-            'usersByDivision' => $usersByDivision, // 3. Kirim data yang sudah dikelompokkan ke view
-            'title' => $title,
-            'defaultRole' => $role
-        ]);
+            $usersByDivision = $users->groupBy(function ($user) {
+                return $user->divisi ?: 'Tanpa Divisi';
+            });
+
+            return view('admin.karyawan', [
+                'usersByDivision' => $usersByDivision, // Kirim variabel yang dikelompokkan
+                'title' => 'Kelola Karyawan',
+                'defaultRole' => 'user'
+            ]);
+        }
+        
         // --- AKHIR PERUBAHAN ---
     }
 

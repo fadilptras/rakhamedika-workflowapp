@@ -7,6 +7,10 @@
     <link rel="icon" href="{{ asset('asset/images/rakhalogo.png') }}" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    {{-- TAMBAHKAN BARIS INI --}}
+    @stack('styles')
+
     <style>
         /* Menambahkan transisi yang lebih halus untuk transform */
         #sidebar {
@@ -15,13 +19,12 @@
     </style>
 </head>
 
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans bg-gradient-to-br from-sky-50 to-blue-100">
 
     {{-- Overlay untuk latar belakang saat sidebar terbuka --}}
     <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden"></div>
 
     {{-- Sidebar --}}
-    {{-- Diubah: Lebar kembali ke w-20, teks dihapus, item kembali ke tengah --}}
     <div id="sidebar" class="bg-blue-600 text-white h-full flex flex-col w-20 fixed top-0 left-0 z-30 transform -translate-x-full">
         
         <div class="p-4 border-b border-blue-500 flex items-center justify-center h-[68px]">
@@ -31,7 +34,6 @@
         <div class="flex-grow overflow-y-auto">
             <nav class="p-4 pt-6">
                 <ul class="space-y-4">
-                    {{-- Diubah: Kembali hanya ikon di tengah --}}
                     <li>
                         <a href="{{ route('dashboard') }}" class="flex items-center justify-center p-3 rounded-lg transition-colors duration-200 
                             {{ request()->routeIs('dashboard') ? 'bg-blue-800 shadow-lg' : 'hover:bg-blue-700/50' }}">
@@ -44,7 +46,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('pengajuan_dokumen') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
+                        <a href="{{ route('pengajuan_dokumen.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
                             <i class="fas fa-folder text-xl"></i>
                         </a>
                     </li>
@@ -72,23 +74,18 @@
 
     <div class="flex-1 flex flex-col">
         
-{{-- Navbar & Header --}}
+        {{-- Navbar & Header --}}
         <header class="bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg sticky top-0 z-10 text-white">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="py-4 flex items-center justify-between">
-                    
-                    {{-- Sisi Kiri: Tombol Sidebar dan Judul --}}
                     <div class="flex items-center">
-                        {{-- Tombol untuk membuka sidebar --}}
                         <button id="sidebar-toggle" class="mr-4 p-2 rounded-md hover:bg-blue-800/50 focus:outline-none transition-colors duration-200">
                             <i class="fas fa-bars text-xl"></i>
                         </button>
-                        
-                        {{-- Logo dan Judul --}}
                         <div class="flex items-center">
                             <img src="{{ asset('asset/images/logorakha.png') }}" alt="Logo" class="h-10 w-10 mr-3">
                             <div>
-                                <h1 class="text-lg font-bold leading-tight">
+                                <h1 class="text-base sm:text-lg font-bold leading-tight">
                                     PT RAKHA NUSANTARA MEDIKA
                                 </h1>
                                 <p class="text-sm text-blue-200 font-semibold leading-tight">
@@ -97,12 +94,9 @@
                             </div>
                         </div>
                     </div>
-
-                    {{-- Sisi Kanan (Bisa ditambahkan item lain jika perlu) --}}
                     <div class="flex items-center">
                         {{-- Contoh: Tombol Notifikasi atau Profil bisa ditambahkan di sini --}}
                     </div>
-
                 </div>
             </div>
         </header>
@@ -113,7 +107,6 @@
 
     </div>
 
-    {{-- JavaScript untuk fungsionalitas sidebar (Tidak ada perubahan di sini) --}}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const sidebar = document.getElementById('sidebar');

@@ -24,7 +24,6 @@
                 </div>
             @endif
             
-            {{-- Tambahan notifikasi untuk akhir pekan --}}
             @if ($isWeekend)
                 <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md mb-4" role="alert">
                     <p class="font-bold">Akhir Pekan</p>
@@ -32,11 +31,9 @@
                 </div>
             @endif
 
-            {{-- Mengubah tata letak untuk mode belum absen dan sudah absen --}}
             @if ($absensiHariIni)
                 {{-- TAMPILAN JIKA PENGGUNA SUDAH ABSEN MASUK --}}
                 <div class="flex flex-col lg:flex-row gap-8">
-                    {{-- KOLOM KIRI: STATUS ABSENSI PENGGUNA --}}
                     <div class="w-full lg:w-2/3 bg-white p-6 md:p-8 rounded-xl shadow-sm">
                         <div class="flex flex-col md:flex-row items-start justify-between px-0">
                             <div>
@@ -50,10 +47,8 @@
                             </div>
                             <a href="{{ route('dashboard') }}" class="mt-4 md:mt-0 text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
                         </div>
-                        
                         <div class="mt-6 border-t pt-6">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {{-- KOTAK JAM MASUK --}}
                                 <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
                                     <div class="flex items-center text-emerald-800 mb-2">
                                         <i class="fas fa-sign-in-alt mr-2"></i>
@@ -66,8 +61,6 @@
                                         </a>
                                     @endif
                                 </div>
-
-                                {{-- KOTAK JAM KELUAR --}}
                                 <div class="bg-rose-50 p-4 rounded-lg border border-rose-200 flex flex-col justify-between">
                                     <div>
                                         <div class="flex items-center text-rose-800 mb-2">
@@ -92,8 +85,6 @@
                                     @endif
                                 </div>
                             </div>
-
-                            {{-- KOTAK ABSEN LEMBUR --}}
                             @if ($absensiHariIni->jam_keluar && $absensiHariIni->status == 'hadir')
                                 @if (is_null($lemburHariIni))
                                     <button type="button" id="btn-absen-lembur" class="w-full mt-6 bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition">
@@ -112,10 +103,7 @@
                             @endif
                         </div>
                     </div>
-
-                    {{-- KOLOM KANAN: REKAP DAN DAFTAR REKAN --}}
                     <div class="w-full lg:w-1/3 space-y-8">
-                        {{-- REKAP BULANAN PENGGUNA --}}
                         <div class="bg-white p-6 rounded-xl shadow-sm">
                             <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Rekap Bulan Ini</h2>
                             <p class="text-center text-gray-500 text-sm mb-6">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
@@ -146,8 +134,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        {{-- DAFTAR SEMUA REKAN DIVISI --}}
                         @if(isset($daftarRekan) && count($daftarRekan) > 0)
                         <div class="bg-white p-6 rounded-xl shadow-sm">
                             <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
@@ -184,13 +170,11 @@
                         <div class="w-full lg:w-2/3 bg-white p-6 md:p-8 rounded-xl shadow-sm">
                             <h2 class="text-2xl font-bold text-gray-800">Selesaikan Absen Keluar Sebelumnya</h2>
                             <p class="text-gray-600 mt-2">
-                                Anda belum melakukan absen keluar untuk tanggal **{{ \Carbon\Carbon::parse($unfinishedAbsensi->tanggal)->translatedFormat('l, j F Y') }}**.
+                                Anda belum melakukan absen keluar untuk tanggal <strong>{{ \Carbon\Carbon::parse($unfinishedAbsensi->tanggal)->translatedFormat('l, j F Y') }}</strong>.
                                 Silakan lengkapi data absensi Anda untuk melanjutkan.
                             </p>
-
                             <div class="mt-6 border-t pt-6">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {{-- KOTAK JAM MASUK HARI SEBELUMNYA --}}
                                     <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
                                         <div class="flex items-center text-emerald-800 mb-2">
                                             <i class="fas fa-sign-in-alt mr-2"></i>
@@ -198,8 +182,6 @@
                                         </div>
                                         <p class="text-3xl font-bold text-gray-800">{{ \Carbon\Carbon::parse($unfinishedAbsensi->jam_masuk)->format('H:i') }} <span class="text-lg font-medium">WIB</span></p>
                                     </div>
-                                    
-                                    {{-- FORM ABSEN KELUAR HARI SEBELUMNYA --}}
                                     <div class="bg-rose-50 p-4 rounded-lg border border-rose-200 flex flex-col justify-between">
                                         <div>
                                             <div class="flex items-center text-rose-800 mb-2">
@@ -215,8 +197,6 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        {{-- KOLOM KANAN: REKAP BULANAN --}}
                         <div class="w-full lg:w-1/3 space-y-8">
                             <div class="bg-white p-6 rounded-xl shadow-sm">
                                 <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Rekap Bulan Ini</h2>
@@ -248,8 +228,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- DAFTAR SEMUA REKAN DIVISI --}}
                             @if(isset($daftarRekan) && count($daftarRekan) > 0)
                             <div class="bg-white p-6 rounded-xl shadow-sm">
                                 <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
@@ -278,8 +256,6 @@
                             @endif
                         </div>
                     </div>
-
-                    {{-- Tambahkan MODAL baru untuk Absen Keluar Hari Sebelumnya --}}
                     <div id="modal-absen-keluar-unfinished" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
                         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
                             <form action="{{ route('absen.keluar', $unfinishedAbsensi->id) }}" method="POST" enctype="multipart/form-data" id="form-absen-keluar-unfinished">
@@ -287,29 +263,30 @@
                                 @method('PATCH')
                                 <input type="hidden" name="latitude_keluar" id="latitude-keluar-unfinished">
                                 <input type="hidden" name="longitude_keluar" id="longitude-keluar-unfinished">
-                                
                                 <div class="p-6">
                                     <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
                                     <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar hari sebelumnya.</p>
-                                    
                                     <div class="mt-6">
                                         <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
-                                        <div id="camera-container-keluar-unfinished" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                                            <video id="video-keluar-unfinished" class="w-full h-full object-cover" autoplay></video>
+                                        <div id="camera-container-keluar-unfinished" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
+                                            <video id="video-keluar-unfinished" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
                                             <canvas id="canvas-keluar-unfinished" class="hidden"></canvas>
-                                            <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                            <div id="snap-ui-keluar-unfinished" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
                                                 <button type="button" id="snap-keluar-unfinished" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
                                                     <i class="fas fa-camera"></i>
                                                 </button>
                                             </div>
-                                        </div>
-                                        <label for="lampiran-keluar-unfinished" id="upload-label-keluar-unfinished" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
-                                            <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar-unfinished">
-                                                <i id="upload-icon-keluar-unfinished" class="fas fa-camera text-3xl text-gray-400"></i>
-                                                <p id="upload-text-keluar-unfinished" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                                            <div id="preview-ui-keluar-unfinished" class="absolute inset-0 hidden">
+                                                <img id="preview-image-keluar-unfinished" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
+                                                <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
+                                                    <button type="button" id="retake-btn-keluar-unfinished" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
+                                                    <button type="button" id="use-photo-btn-keluar-unfinished" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                                </div>
                                             </div>
+                                        </div>
+                                        <div id="upload-label-keluar-unfinished" class="hidden">
                                             <input name="lampiran_keluar" id="lampiran-keluar-unfinished" type="file" class="hidden" accept="image/*" />
-                                        </label>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
@@ -322,7 +299,6 @@
                 @else
                     {{-- TAMPILAN JIKA BELUM ABSEN --}}
                     <div class="flex flex-col lg:flex-row gap-8">
-                        {{-- KOLOM KIRI: FORMULIR ABSEN --}}
                         <form action="{{ route('absen.store') }}" method="POST" enctype="multipart/form-data" id="form-absen" class="w-full lg:w-2/3">
                             @csrf
                             <input type="hidden" name="latitude" id="latitude">
@@ -357,16 +333,23 @@
                                                 <textarea name="keterangan" id="keterangan" rows="5" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Ada keperluan keluarga.">{{ old('keterangan') }}</textarea>
                                             </div>
                                             <div class="md:col-span-2">
-                                                <div id="camera-container" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                                                    <video id="video" class="w-full h-full object-cover" autoplay></video>
+                                                <div id="camera-container" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
+                                                    <video id="video" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
                                                     <canvas id="canvas" class="hidden"></canvas>
-                                                    <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                                    <div id="snap-ui" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
                                                         <button type="button" id="snap" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
                                                             <i class="fas fa-camera"></i>
                                                         </button>
                                                     </div>
+                                                    <div id="preview-ui" class="absolute inset-0 hidden">
+                                                        <img id="preview-image" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
+                                                        <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
+                                                            <button type="button" id="retake-btn" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
+                                                            <button type="button" id="use-photo-btn" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
+                                                <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[250px] hidden">
                                                     <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui">
                                                         <i id="upload-icon" class="fas fa-camera text-3xl text-gray-400"></i>
                                                         <p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
@@ -384,8 +367,6 @@
                                 </div>
                             </div>
                         </form>
-
-                        {{-- KOLOM KANAN: REKAP BULANAN --}}
                         <div class="w-full lg:w-1/3 space-y-8">
                             <div class="flex justify-end mb-4">
                                 <a href="{{ route('dashboard') }}" class="text-blue-600 hover:underline font-semibold hidden lg:block">Kembali ke Dashboard</a>
@@ -420,8 +401,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- DAFTAR SEMUA REKAN DIVISI --}}
                             @if(isset($daftarRekan) && count($daftarRekan) > 0)
                                 <div class="bg-white p-6 rounded-xl shadow-sm">
                                     <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
@@ -457,7 +436,6 @@
 
     {{-- MODAL UNTUK ABSEN KELUAR --}}
     @if ($absensiHariIni && is_null($absensiHariIni->jam_keluar) && $absensiHariIni->status == 'hadir')
-    <div id="absensi-data" data-id="{{ $absensiHariIni->id }}"></div>
     <div id="modal-absen-keluar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
             <form action="{{ route('absen.keluar', $absensiHariIni->id) }}" method="POST" enctype="multipart/form-data" id="form-absen-keluar">
@@ -465,29 +443,30 @@
                 @method('PATCH')
                 <input type="hidden" name="latitude_keluar" id="latitude-keluar">
                 <input type="hidden" name="longitude_keluar" id="longitude-keluar">
-                
                 <div class="p-6">
                     <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
                     <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar.</p>
-                    
                     <div class="mt-6">
                         <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
-                        <div id="camera-container-keluar" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                            <video id="video-keluar" class="w-full h-full object-cover" autoplay></video>
+                        <div id="camera-container-keluar" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
+                            <video id="video-keluar" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
                             <canvas id="canvas-keluar" class="hidden"></canvas>
-                            <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                            <div id="snap-ui-keluar" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
                                 <button type="button" id="snap-keluar" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
                                     <i class="fas fa-camera"></i>
                                 </button>
                             </div>
-                        </div>
-                        <label for="lampiran-keluar" id="upload-label-keluar" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
-                            <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar">
-                                <i id="upload-icon-keluar" class="fas fa-camera text-3xl text-gray-400"></i>
-                                <p id="upload-text-keluar" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                            <div id="preview-ui-keluar" class="absolute inset-0 hidden">
+                                <img id="preview-image-keluar" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
+                                <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
+                                    <button type="button" id="retake-btn-keluar" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
+                                    <button type="button" id="use-photo-btn-keluar" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                </div>
                             </div>
+                        </div>
+                        <div id="upload-label-keluar" class="hidden">
                             <input name="lampiran_keluar" id="lampiran-keluar" type="file" class="hidden" accept="image/*" />
-                        </label>
+                        </div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
@@ -503,38 +482,35 @@
     @if ($absensiHariIni && $absensiHariIni->jam_keluar && $absensiHariIni->status == 'hadir')
     <div id="modal-absen-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
-            {{-- ======================================================= --}}
-            {{-- PERUBAHAN DIMULAI DI SINI: Mengubah ke Form Biasa --}}
-            {{-- ======================================================= --}}
             <form action="{{ route('absen.lembur.store') }}" method="POST" enctype="multipart/form-data" id="form-absen-lembur">
                 @csrf
                 <input type="hidden" name="latitude_masuk" id="latitude-lembur">
                 <input type="hidden" name="longitude_masuk" id="longitude-lembur">
-                
                 <div class="p-6">
                     <h3 class="text-xl font-bold text-gray-800">Form Absen Lembur</h3>
                     <p class="text-gray-500 mt-1">Ambil foto selfie dan isi keterangan untuk memulai lembur.</p>
-                    
                     <div class="mt-6">
                         <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Lembur <span class="text-red-500">*</span></label>
-                        <div id="camera-container-lembur" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                            <video id="video-lembur" class="w-full h-full object-cover" autoplay></video>
+                        <div id="camera-container-lembur" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
+                            <video id="video-lembur" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
                             <canvas id="canvas-lembur" class="hidden"></canvas>
-                            <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                            <div id="snap-ui-lembur" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
                                 <button type="button" id="snap-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
                                     <i class="fas fa-camera"></i>
                                 </button>
                             </div>
-                        </div>
-                        <label for="lampiran-lembur" id="upload-label-lembur" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
-                            <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-lembur">
-                                <i id="upload-icon-lembur" class="fas fa-camera text-3xl text-gray-400"></i>
-                                <p id="upload-text-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                            <div id="preview-ui-lembur" class="absolute inset-0 hidden">
+                                <img id="preview-image-lembur" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
+                                <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
+                                    <button type="button" id="retake-btn-lembur" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
+                                    <button type="button" id="use-photo-btn-lembur" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                </div>
                             </div>
+                        </div>
+                        <div id="upload-label-lembur" class="hidden">
                             <input name="lampiran_masuk" id="lampiran-lembur" type="file" class="hidden" accept="image/*" />
-                        </label>
+                        </div>
                     </div>
-
                     <div class="mt-4">
                         <label for="keterangan-lembur" class="block text-md font-medium text-gray-700 mb-2">Keterangan Lembur <span class="text-red-500">*</span></label>
                         <textarea id="keterangan-lembur" name="keterangan" rows="3" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Menyelesaikan laporan bulanan." required></textarea>
@@ -542,59 +518,50 @@
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
                     <button type="button" id="btn-tutup-modal-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                    {{-- Mengubah type menjadi 'submit' --}}
                     <button type="submit" id="submit-button-lembur" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400">Kirim Absen Lembur</button>
                 </div>
             </form>
-            {{-- ======================================================= --}}
-            {{-- PERUBAHAN SELESAI DI SINI --}}
-            {{-- ======================================================= --}}
         </div>
     </div>
     @endif
-
 
     {{-- MODAL UNTUK ABSEN KELUAR LEMBUR --}}
     @if ($lemburHariIni && is_null($lemburHariIni->jam_keluar_lembur))
     <div id="modal-keluar-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
-            {{-- Menggunakan form HTML biasa --}}
             <form action="{{ route('absen.lembur.keluar', $lemburHariIni->id) }}" method="POST" enctype="multipart/form-data" id="form-keluar-lembur">
                 @csrf
                 @method('PATCH')
-                
-                {{-- Input tersembunyi untuk lokasi --}}
                 <input type="hidden" name="latitude_keluar" id="latitude-keluar-lembur">
                 <input type="hidden" name="longitude_keluar" id="longitude-keluar-lembur">
-                
                 <div class="p-6">
                     <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar Lembur</h3>
                     <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi selesai lembur.</p>
-                    
                     <div class="mt-6">
                         <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar Lembur <span class="text-red-500">*</span></label>
-                        <div id="camera-container-keluar-lembur" class="relative aspect-video rounded-lg overflow-hidden bg-gray-900 hidden">
-                            <video id="video-keluar-lembur" class="w-full h-full object-cover" autoplay></video>
+                        <div id="camera-container-keluar-lembur" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
+                            <video id="video-keluar-lembur" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
                             <canvas id="canvas-keluar-lembur" class="hidden"></canvas>
-                            <div class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                            <div id="snap-ui-keluar-lembur" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
                                 <button type="button" id="snap-keluar-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
                                     <i class="fas fa-camera"></i>
                                 </button>
                             </div>
-                        </div>
-                        <label for="lampiran-keluar-lembur" id="upload-label-keluar-lembur" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[150px]">
-                            <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui-keluar-lembur">
-                                <i id="upload-icon-keluar-lembur" class="fas fa-camera text-3xl text-gray-400"></i>
-                                <p id="upload-text-keluar-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                            <div id="preview-ui-keluar-lembur" class="absolute inset-0 hidden">
+                                <img id="preview-image-keluar-lembur" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
+                                <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
+                                    <button type="button" id="retake-btn-keluar-lembur" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
+                                    <button type="button" id="use-photo-btn-keluar-lembur" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                </div>
                             </div>
-                            {{-- Nama input disesuaikan --}}
+                        </div>
+                        <div id="upload-label-keluar-lembur" class="hidden">
                             <input name="lampiran_keluar" id="lampiran-keluar-lembur" type="file" class="hidden" accept="image/*" />
-                        </label>
+                        </div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
                     <button type="button" id="btn-tutup-modal-keluar-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                    {{-- Ubah type menjadi 'submit' --}}
                     <button type="submit" id="submit-button-keluar-lembur" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 disabled:bg-gray-400">Kirim Absen Keluar Lembur</button>
                 </div>
             </form>
@@ -614,102 +581,149 @@
             updateJam();
         }
 
+        // =========================================================================
+        // GENERIC CAMERA LOGIC
+        // =========================================================================
+        window.cameraInstances = {};
+        function setupCameraLogic(prefix) {
+            const cameraContainer = document.getElementById(`camera-container${prefix}`);
+            if (!cameraContainer) return;
+
+            const fileInput = document.getElementById(`lampiran${prefix}`);
+            const video = document.getElementById(`video${prefix}`);
+            const canvas = document.getElementById(`canvas${prefix}`);
+            const snapUI = document.getElementById(`snap-ui${prefix}`);
+            const snapButton = document.getElementById(`snap${prefix}`);
+            const previewUI = document.getElementById(`preview-ui${prefix}`);
+            const previewImage = document.getElementById(`preview-image${prefix}`);
+            const retakeButton = document.getElementById(`retake-btn${prefix}`);
+            const usePhotoButton = document.getElementById(`use-photo-btn${prefix}`);
+            
+            let stream;
+
+            const startCamera = async () => {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    video.srcObject = stream;
+                    video.onloadedmetadata = () => { snapButton.disabled = false; };
+                    video.classList.remove('hidden');
+                    snapUI.classList.remove('hidden');
+                    previewUI.classList.add('hidden');
+                    cameraContainer.classList.remove('hidden');
+                } catch (err) {
+                    alert('Tidak bisa mengakses kamera. Pastikan Anda memberikan izin pada browser.');
+                    cameraContainer.classList.add('hidden');
+                }
+            };
+            
+            const stopCamera = () => {
+                if (stream) { stream.getTracks().forEach(track => track.stop()); }
+                snapButton.disabled = true;
+            };
+
+            snapButton.addEventListener("click", function() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.save();
+                ctx.scale(-1, 1);
+                ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+                ctx.restore();
+
+                previewImage.src = canvas.toDataURL('image/png');
+                video.classList.add('hidden');
+                snapUI.classList.add('hidden');
+                previewUI.classList.remove('hidden');
+            });
+            
+            retakeButton.addEventListener('click', function() {
+                video.classList.remove('hidden');
+                snapUI.classList.remove('hidden');
+                previewUI.classList.add('hidden');
+            });
+
+            usePhotoButton.addEventListener('click', function() {
+                previewUI.classList.add('hidden');
+                canvas.toBlob(function(blob) {
+                    const file = new File([blob], `selfie${prefix.replace('-', '_')}_${Date.now()}.png`, { type: "image/png" });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInput.files = dataTransfer.files;
+                    stopCamera();
+                    document.dispatchEvent(new CustomEvent(`photoReady${prefix}`, { detail: { isReady: true } }));
+                }, 'image/png');
+            });
+
+            window.cameraInstances[prefix] = { startCamera, stopCamera };
+        }
+        
+        setupCameraLogic('');
+        setupCameraLogic('-keluar');
+        setupCameraLogic('-keluar-unfinished');
+        setupCameraLogic('-lembur');
+        setupCameraLogic('-keluar-lembur');
+
+        // =========================================================================
+        // MAIN FORM LOGIC (ABSEN MASUK)
+        // =========================================================================
         const formAbsen = document.getElementById('form-absen');
         if (formAbsen) {
             const hiddenStatusInput = document.getElementById('status');
-            const uploadLabel = document.getElementById('upload-label');
-            const fileInput = document.getElementById('lampiran');
-            const cameraContainer = document.getElementById('camera-container');
-            const uploadUI = document.getElementById('upload-ui');
-            const video = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
-            const snapButton = document.getElementById('snap');
             const submitButton = document.getElementById('submit-button');
             const latitudeInput = document.getElementById('latitude');
             const longitudeInput = document.getElementById('longitude');
-
-            let stream;
+            const cameraContainer = document.getElementById('camera-container');
+            const uploadLabel = document.getElementById('upload-label');
             let isLocationReady = false;
             let isPhotoReady = false;
 
-            function checkFormReadiness() {
+            document.addEventListener('photoReady', e => {
+                isPhotoReady = e.detail.isReady;
+                const existingSuccessMsg = cameraContainer.parentNode.querySelector('.success-message');
+                if (existingSuccessMsg) existingSuccessMsg.remove();
+                
+                if(isPhotoReady) {
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'success-message mt-2 text-center text-sm text-green-600 font-semibold p-2 bg-green-50 rounded-lg';
+                    successMsg.innerHTML = `<i class="fas fa-check-circle"></i> Foto berhasil diambil.`;
+                    cameraContainer.parentNode.insertBefore(successMsg, cameraContainer.nextSibling);
+                }
+                checkFormReadiness();
+            });
+
+            const checkFormReadiness = () => {
                 if (hiddenStatusInput.value === 'hadir') {
                     if (isLocationReady && isPhotoReady) {
                         submitButton.disabled = false;
                         submitButton.textContent = 'Kirim Absensi';
                     } else {
                         submitButton.disabled = true;
-                        submitButton.textContent = 'Mohon Ambil Foto & Lokasi';
+                        let text = 'Mohon ';
+                        if(!isPhotoReady) text += 'Ambil Foto';
+                        if(!isLocationReady && !isPhotoReady) text += ' & ';
+                        if(!isLocationReady) text += 'Izinkan Lokasi';
+                        submitButton.textContent = text;
                     }
                 } else {
                     submitButton.disabled = false;
                     submitButton.textContent = 'Kirim Absensi';
                 }
-            }
+            };
 
-            function setSuccessUI(fileName) {
-                uploadUI.innerHTML = `
-                    <div class="flex flex-col items-center justify-center text-center p-2 w-full">
-                        <i class="fas fa-check-circle text-3xl text-green-500"></i>
-                        <p class="mt-2 text-sm text-gray-700 font-semibold w-full truncate px-2" title="${fileName}">${fileName}</p>
-                        <button type="button" id="change-photo-btn" class="mt-2 text-xs text-blue-600 hover:underline font-medium">Ganti</button>
-                    </div>`;
-                uploadLabel.classList.replace('border-dashed', 'border-solid');
-                uploadLabel.classList.add('border-green-500', 'bg-green-50');
-            }
-            
-            function resetUploadUI() {
-                fileInput.value = '';
-                uploadUI.innerHTML = `<i id="upload-icon" class="fas fa-camera text-3xl text-gray-400"></i><p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>`;
-                uploadLabel.classList.remove('border-solid', 'border-green-500', 'bg-green-50', 'hidden');
-                uploadLabel.classList.add('border-dashed', 'border-gray-300');
-            }
-
-            async function startCamera() {
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    video.srcObject = stream;
-                    video.onloadedmetadata = () => { snapButton.disabled = false; };
-                } catch (err) {
-                    alert('Tidak bisa mengakses kamera. Pastikan Anda memberikan izin pada browser.');
-                    toggleUiForStatus('izin');
-                    setActiveButton('izin');
-                }
-            }
-
-            function stopCamera() {
-                if (stream) { stream.getTracks().forEach(track => track.stop()); }
-                snapButton.disabled = true;
-            }
-
-            function getLocation() {
+            const getLocation = () => {
                 isLocationReady = false;
                 checkFormReadiness();
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            latitudeInput.value = position.coords.latitude;
-                            longitudeInput.value = position.coords.longitude;
-                            isLocationReady = true;
-                            checkFormReadiness();
-                        },
-                        () => {
-                            alert('Tidak bisa mendapatkan lokasi. Pastikan GPS Anda aktif dan berikan izin pada browser.');
-                            isLocationReady = false;
-                            checkFormReadiness();
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            timeout: 20000,
-                            maximumAge: 0
-                        }
-                    );
-                } else {
-                    alert('Browser Anda tidak mendukung Geolocation.');
-                    isLocationReady = false;
-                    checkFormReadiness();
-                }
-            }
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        latitudeInput.value = position.coords.latitude;
+                        longitudeInput.value = position.coords.longitude;
+                        isLocationReady = true;
+                        checkFormReadiness();
+                    },
+                    () => { alert('Tidak bisa mendapatkan lokasi. Pastikan GPS Anda aktif dan berikan izin pada browser.'); isLocationReady = false; checkFormReadiness(); },
+                    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+                );
+            };
 
             const selectedStyles = {
                 hadir: 'bg-emerald-500 text-white border-emerald-500',
@@ -717,38 +731,7 @@
                 sakit: 'bg-red-500 text-white border-red-500'
             };
 
-            function toggleUiForStatus(status) {
-                const keteranganWajibSpan = document.getElementById('keterangan-wajib');
-                const keteranganTextarea = document.getElementById('keterangan');
-                
-                resetUploadUI();
-                stopCamera();
-                isPhotoReady = false;
-                isLocationReady = false;
-
-                if (status === 'hadir') {
-                    keteranganWajibSpan.classList.add('hidden');
-                    keteranganTextarea.disabled = false;
-                    keteranganTextarea.placeholder = 'Contoh: Kunjungan ke Rumah Sakit';
-                    keteranganTextarea.classList.add('bg-gray-100');
-                    cameraContainer.classList.remove('hidden');
-                    uploadLabel.classList.add('hidden');
-                    startCamera();
-                    getLocation();
-                } else {
-                    keteranganWajibSpan.classList.remove('hidden');
-                    keteranganTextarea.disabled = false;
-                    keteranganTextarea.placeholder = 'Contoh: Ada keperluan keluarga.';
-                    keteranganTextarea.classList.remove('bg-gray-100');
-                    cameraContainer.classList.add('hidden');
-                    uploadLabel.classList.remove('hidden');
-                    latitudeInput.value = '';
-                    longitudeInput.value = '';
-                }
-                checkFormReadiness();
-            }
-
-            function setActiveButton(status) {
+            const setActiveButton = (status) => {
                 document.querySelectorAll('.status-btn').forEach(btn => {
                     btn.classList.remove(...Object.values(selectedStyles).join(' ').split(' '));
                     btn.classList.add('border-gray-300', 'bg-white', 'text-gray-700');
@@ -758,7 +741,28 @@
                     activeButton.classList.remove('border-gray-300', 'bg-white', 'text-gray-700');
                     activeButton.classList.add(...selectedStyles[status].split(' '));
                 }
-            }
+            };
+
+            const toggleUiForStatus = (status) => {
+                const keteranganWajibSpan = document.getElementById('keterangan-wajib');
+                const existingSuccessMsg = cameraContainer.parentNode.querySelector('.success-message');
+                if (existingSuccessMsg) existingSuccessMsg.remove();
+                
+                isPhotoReady = false;
+                
+                if (status === 'hadir') {
+                    keteranganWajibSpan.classList.add('hidden');
+                    uploadLabel.classList.add('hidden');
+                    window.cameraInstances[''].startCamera();
+                    getLocation();
+                } else {
+                    keteranganWajibSpan.classList.remove('hidden');
+                    window.cameraInstances[''].stopCamera();
+                    cameraContainer.classList.add('hidden');
+                    uploadLabel.classList.remove('hidden');
+                }
+                checkFormReadiness();
+            };
             
             document.getElementById('status-buttons').addEventListener('click', function(e) {
                 if (e.target.matches('.status-btn')) {
@@ -769,702 +773,109 @@
                 }
             });
 
-            snapButton.addEventListener("click", function() {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(function(blob) {
-                    const file = new File([blob], "selfie_" + Date.now() + ".png", { type: "image/png" });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    fileInput.files = dataTransfer.files;
-                    
-                    stopCamera();
-                    cameraContainer.classList.add('hidden');
-                    uploadLabel.classList.remove('hidden');
-                    setSuccessUI(file.name);
-                    
-                    isPhotoReady = true;
-                    checkFormReadiness();
-                }, 'image/png');
-            });
-
-            fileInput.addEventListener('change', function() {
-                if (this.files && this.files.length > 0) {
-                    setSuccessUI(this.files[0].name);
-                    isPhotoReady = true;
-                } else {
-                    isPhotoReady = false;
-                }
-                checkFormReadiness();
-            });
-            
-            uploadLabel.addEventListener('click', function(e) {
-                if (e.target.id === 'change-photo-btn') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    isPhotoReady = false;
-                    checkFormReadiness();
-                    cameraContainer.classList.remove('hidden');
-                    uploadLabel.classList.add('hidden');
-                    startCamera();
-                } else {
-                    if (hiddenStatusInput.value === 'hadir') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        cameraContainer.classList.remove('hidden');
-                        uploadLabel.classList.add('hidden');
-                        startCamera();
-                    }
-                }
-            });
-
-            formAbsen.addEventListener('submit', function(e) {
-                if (hiddenStatusInput.value === 'hadir' && (!isLocationReady || !isPhotoReady)) {
-                    e.preventDefault();
-                    alert('Mohon ambil foto selfie dan izinkan akses lokasi terlebih dahulu.');
-                }
-            });
-
             setActiveButton(hiddenStatusInput.value);
             toggleUiForStatus(hiddenStatusInput.value);
         }
-        
-        // Logika untuk Absen Keluar (non-AJAX)
-        const btnAbsenKeluar = document.getElementById('btn-absen-keluar');
-        const modal = document.getElementById('modal-absen-keluar');
-        if (btnAbsenKeluar && modal) {
-            const formKeluar = document.getElementById('form-absen-keluar');
+
+        // =========================================================================
+        // MODAL ACTIVATION LOGIC
+        // =========================================================================
+        function setupModalLogic(btnId, modalId, prefix) {
+            const btn = document.getElementById(btnId);
+            const modal = document.getElementById(modalId);
+            if (!btn || !modal) return;
+
             const modalContent = modal.querySelector('.transform');
-            const btnTutupModal = document.getElementById('btn-tutup-modal-keluar');
+            const btnTutupModal = document.getElementById(`btn-tutup-modal${prefix}`);
+            const submitBtn = document.getElementById(`submit-button${prefix}`);
+            const latitudeInput = document.getElementById(`latitude${prefix}`);
+            const longitudeInput = document.getElementById(`longitude${prefix}`);
+            const keteranganInput = document.getElementById(`keterangan${prefix}`);
+            
+            let isLocationReady = false;
+            let isPhotoReady = false;
 
-            const latitudeKeluarInput = document.getElementById('latitude-keluar');
-            const longitudeKeluarInput = document.getElementById('longitude-keluar');
-            const cameraContainerKeluar = document.getElementById('camera-container-keluar');
-            const uploadLabelKeluar = document.getElementById('upload-label-keluar');
-            const fileInputKeluar = document.getElementById('lampiran-keluar');
-            const videoKeluar = document.getElementById('video-keluar');
-            const canvasKeluar = document.getElementById('canvas-keluar');
-            const snapButtonKeluar = document.getElementById('snap-keluar');
-            const uploadUiKeluar = document.getElementById('upload-ui-keluar');
-            const submitKeluarBtn = document.getElementById('submit-button-keluar');
+            const checkReadiness = () => {
+                const isKeteranganReady = keteranganInput ? keteranganInput.value.trim() !== '' : true;
+                const allReady = isLocationReady && isPhotoReady && isKeteranganReady;
+                submitBtn.disabled = !allReady;
 
-            let streamKeluar;
-            let isLocationReadyKeluar = false;
-            let isPhotoReadyKeluar = false;
-
-            function setSuccessUIKeluar(fileName) {
-                uploadUiKeluar.innerHTML = `
-                    <div class="flex flex-col items-center justify-center text-center p-2 w-full">
-                        <i class="fas fa-check-circle text-3xl text-green-500"></i>
-                        <p class="mt-2 text-sm text-gray-700 font-semibold w-full truncate px-2" title="${fileName}">${fileName}</p>
-                        <button type="button" id="change-photo-keluar-btn" class="mt-2 text-xs text-blue-600 hover:underline font-medium">Ganti</button>
-                    </div>`;
-                uploadLabelKeluar.classList.replace('border-dashed', 'border-solid');
-                uploadLabelKeluar.classList.add('border-green-500', 'bg-green-50');
-            }
-
-            function resetUploadUIKeluar() {
-                fileInputKeluar.value = '';
-                uploadUiKeluar.innerHTML = `<i id="upload-icon-keluar" class="fas fa-camera text-3xl text-gray-400"></i><p id="upload-text-keluar" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>`;
-                uploadLabelKeluar.classList.remove('border-solid', 'border-green-500', 'bg-green-50', 'hidden');
-                uploadLabelKeluar.classList.add('border-dashed', 'border-gray-300');
-            }
-
-            function checkFormReadinessKeluar() {
-                if (isLocationReadyKeluar && isPhotoReadyKeluar) {
-                    submitKeluarBtn.disabled = false;
-                    submitKeluarBtn.textContent = 'Kirim Absen Keluar';
+                if (allReady) {
+                    submitBtn.textContent = submitBtn.dataset.readyText || 'Kirim';
                 } else {
-                    submitKeluarBtn.disabled = true;
-                    submitKeluarBtn.textContent = 'Mohon Ambil Foto & Lokasi';
+                    // PERBAIKAN: Teks dinamis saat tombol disabled
+                    if (keteranganInput && !isKeteranganReady) {
+                        submitBtn.textContent = 'Mohon Isi Data Lengkap';
+                    } else {
+                        submitBtn.textContent = 'Mohon Ambil Foto & Lokasi';
+                    }
                 }
-            }
-            
-            async function startCameraKeluar() {
-                try {
-                    streamKeluar = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    videoKeluar.srcObject = streamKeluar;
-                    videoKeluar.onloadedmetadata = () => { 
-                        snapButtonKeluar.disabled = false; 
-                    };
-                    cameraContainerKeluar.classList.remove('hidden');
-                    uploadLabelKeluar.classList.add('hidden');
-                } catch (err) {
-                    alert('Tidak bisa mengakses kamera untuk absen keluar. Pastikan izin telah diberikan.');
-                    resetUploadUIKeluar();
-                }
-            }
+            };
 
-            function stopCameraKeluar() {
-                if (streamKeluar) { streamKeluar.getTracks().forEach(track => track.stop()); }
-                snapButtonKeluar.disabled = true;
-            }
+            const getLocation = () => {
+                isLocationReady = false;
+                checkReadiness();
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        latitudeInput.value = pos.coords.latitude;
+                        longitudeInput.value = pos.coords.longitude;
+                        isLocationReady = true;
+                        checkReadiness();
+                    },
+                    () => { alert('Gagal mendapatkan lokasi.'); isLocationReady = false; checkReadiness(); },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+            };
 
-            function getLocationKeluar() {
-                submitKeluarBtn.textContent = 'Mencari Lokasi...';
-                isLocationReadyKeluar = false;
-                checkFormReadinessKeluar();
-
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            latitudeKeluarInput.value = position.coords.latitude;
-                            longitudeKeluarInput.value = position.coords.longitude;
-                            isLocationReadyKeluar = true;
-                            checkFormReadinessKeluar();
-                        },
-                        () => {
-                            alert('Gagal mendapatkan lokasi untuk absen keluar.');
-                            isLocationReadyKeluar = false;
-                            checkFormReadinessKeluar();
-                        }, 
-                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                    );
-                }
-            }
-            
-            snapButtonKeluar.addEventListener("click", function() {
-                canvasKeluar.width = videoKeluar.videoWidth;
-                canvasKeluar.height = videoKeluar.videoHeight;
-                canvasKeluar.getContext('2d').drawImage(videoKeluar, 0, 0, canvasKeluar.width, canvasKeluar.height);
-                canvasKeluar.toBlob(function(blob) {
-                    const file = new File([blob], "selfie_keluar_" + Date.now() + ".png", { type: "image/png" });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    fileInputKeluar.files = dataTransfer.files;
-                    
-                    stopCameraKeluar();
-                    cameraContainerKeluar.classList.add('hidden');
-                    uploadLabelKeluar.classList.remove('hidden');
-                    setSuccessUIKeluar(file.name);
-
-                    isPhotoReadyKeluar = true;
-                    checkFormReadinessKeluar();
-
-                }, 'image/png');
-            });
-
-            uploadLabelKeluar.addEventListener('click', function(e) {
-                if (e.target.id === 'change-photo-keluar-btn') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    isPhotoReadyKeluar = false;
-                    checkFormReadinessKeluar();
-
-                    cameraContainerKeluar.classList.remove('hidden');
-                    uploadLabelKeluar.classList.add('hidden');
-                    startCameraKeluar();
-                } else if (fileInputKeluar.files.length === 0) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    cameraContainerKeluar.classList.remove('hidden');
-                    uploadLabelKeluar.classList.add('hidden');
-                    startCameraKeluar();
+            document.addEventListener(`photoReady${prefix}`, e => {
+                isPhotoReady = e.detail.isReady;
+                checkReadiness();
+                const cameraContainer = document.getElementById(`camera-container${prefix}`);
+                const existingSuccessMsg = cameraContainer.parentNode.querySelector('.success-message');
+                if (existingSuccessMsg) existingSuccessMsg.remove();
+                
+                if(isPhotoReady) {
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'success-message mt-2 text-center text-sm text-green-600 font-semibold p-2 bg-green-50 rounded-lg';
+                    successMsg.innerHTML = `<i class="fas fa-check-circle"></i> Foto berhasil diambil.`;
+                    cameraContainer.parentNode.insertBefore(successMsg, cameraContainer.nextSibling);
                 }
             });
 
-            function openModal() {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
+            if (keteranganInput) {
+                keteranganInput.addEventListener('input', checkReadiness);
+            }
+
+            const openModal = () => {
+                modal.classList.remove('hidden'); modal.classList.add('flex');
                 setTimeout(() => modalContent.classList.remove('scale-95', 'opacity-0'), 10);
-                startCameraKeluar();
-                getLocationKeluar();
-            }
+                window.cameraInstances[prefix].startCamera();
+                getLocation();
+                submitBtn.dataset.readyText = submitBtn.textContent;
+            };
 
-            function closeModal() {
+            const closeModal = () => {
                 modalContent.classList.add('scale-95', 'opacity-0');
                 setTimeout(() => {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                    stopCameraKeluar();
-                    resetUploadUIKeluar();
-                    isLocationReadyKeluar = false;
-                    isPhotoReadyKeluar = false;
-                    checkFormReadinessKeluar();
+                    modal.classList.add('hidden'); modal.classList.remove('flex');
+                    window.cameraInstances[prefix].stopCamera();
+                    const cameraContainer = document.getElementById(`camera-container${prefix}`);
+                    const existingSuccessMsg = cameraContainer.parentNode.querySelector('.success-message');
+                    if (existingSuccessMsg) existingSuccessMsg.remove();
+                    if(keteranganInput) keteranganInput.value = '';
+                    isLocationReady = isPhotoReady = false;
+                    checkReadiness();
                 }, 200);
-            }
+            };
 
-            if (btnAbsenKeluar) btnAbsenKeluar.addEventListener('click', openModal);
-            if (btnTutupModal) btnTutupModal.addEventListener('click', closeModal);
-        }
-        
-        // Logika untuk Absen Keluar HARI SEBELUMNYA
-        const btnAbsenKeluarUnfinished = document.getElementById('btn-absen-keluar-unfinished');
-        const modalUnfinished = document.getElementById('modal-absen-keluar-unfinished');
-        if (btnAbsenKeluarUnfinished && modalUnfinished) {
-            const formKeluarUnfinished = document.getElementById('form-absen-keluar-unfinished');
-            const modalContentUnfinished = modalUnfinished.querySelector('.transform');
-            const btnTutupModalUnfinished = document.getElementById('btn-tutup-modal-keluar-unfinished');
-
-            const latitudeKeluarUnfinishedInput = document.getElementById('latitude-keluar-unfinished');
-            const longitudeKeluarUnfinishedInput = document.getElementById('longitude-keluar-unfinished');
-            const cameraContainerKeluarUnfinished = document.getElementById('camera-container-keluar-unfinished');
-            const uploadLabelKeluarUnfinished = document.getElementById('upload-label-keluar-unfinished');
-            const fileInputKeluarUnfinished = document.getElementById('lampiran-keluar-unfinished');
-            const videoKeluarUnfinished = document.getElementById('video-keluar-unfinished');
-            const canvasKeluarUnfinished = document.getElementById('canvas-keluar-unfinished');
-            const snapButtonKeluarUnfinished = document.getElementById('snap-keluar-unfinished');
-            const uploadUiKeluarUnfinished = document.getElementById('upload-ui-keluar-unfinished');
-            const submitKeluarUnfinishedBtn = document.getElementById('submit-button-keluar-unfinished');
-
-            let streamKeluarUnfinished;
-            let isLocationReadyKeluarUnfinished = false;
-            let isPhotoReadyKeluarUnfinished = false;
-
-            function setSuccessUIKeluarUnfinished(fileName) {
-                uploadUiKeluarUnfinished.innerHTML = `
-                    <div class="flex flex-col items-center justify-center text-center p-2 w-full">
-                        <i class="fas fa-check-circle text-3xl text-green-500"></i>
-                        <p class="mt-2 text-sm text-gray-700 font-semibold w-full truncate px-2" title="${fileName}">${fileName}</p>
-                        <button type="button" id="change-photo-keluar-unfinished-btn" class="mt-2 text-xs text-blue-600 hover:underline font-medium">Ganti</button>
-                    </div>`;
-                uploadLabelKeluarUnfinished.classList.replace('border-dashed', 'border-solid');
-                uploadLabelKeluarUnfinished.classList.add('border-green-500', 'bg-green-50');
-            }
-
-            function resetUploadUIKeluarUnfinished() {
-                fileInputKeluarUnfinished.value = '';
-                uploadUiKeluarUnfinished.innerHTML = `<i id="upload-icon-keluar-unfinished" class="fas fa-camera text-3xl text-gray-400"></i><p id="upload-text-keluar-unfinished" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>`;
-                uploadLabelKeluarUnfinished.classList.remove('border-solid', 'border-green-500', 'bg-green-50', 'hidden');
-                uploadLabelKeluarUnfinished.classList.add('border-dashed', 'border-gray-300');
-            }
-
-            function checkFormReadinessKeluarUnfinished() {
-                if (isLocationReadyKeluarUnfinished && isPhotoReadyKeluarUnfinished) {
-                    submitKeluarUnfinishedBtn.disabled = false;
-                    submitKeluarUnfinishedBtn.textContent = 'Kirim Absen Keluar';
-                } else {
-                    submitKeluarUnfinishedBtn.disabled = true;
-                    submitKeluarUnfinishedBtn.textContent = 'Mohon Ambil Foto & Lokasi';
-                }
-            }
-            
-            async function startCameraKeluarUnfinished() {
-                try {
-                    streamKeluarUnfinished = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    videoKeluarUnfinished.srcObject = streamKeluarUnfinished;
-                    videoKeluarUnfinished.onloadedmetadata = () => { 
-                        snapButtonKeluarUnfinished.disabled = false; 
-                    };
-                    cameraContainerKeluarUnfinished.classList.remove('hidden');
-                    uploadLabelKeluarUnfinished.classList.add('hidden');
-                } catch (err) {
-                    alert('Tidak bisa mengakses kamera untuk absen keluar. Pastikan izin telah diberikan.');
-                    resetUploadUIKeluarUnfinished();
-                }
-            }
-
-            function stopCameraKeluarUnfinished() {
-                if (streamKeluarUnfinished) { streamKeluarUnfinished.getTracks().forEach(track => track.stop()); }
-                snapButtonKeluarUnfinished.disabled = true;
-            }
-
-            function getLocationKeluarUnfinished() {
-                submitKeluarUnfinishedBtn.textContent = 'Mencari Lokasi...';
-                isLocationReadyKeluarUnfinished = false;
-                checkFormReadinessKeluarUnfinished();
-
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            latitudeKeluarUnfinishedInput.value = position.coords.latitude;
-                            longitudeKeluarUnfinishedInput.value = position.coords.longitude;
-                            isLocationReadyKeluarUnfinished = true;
-                            checkFormReadinessKeluarUnfinished();
-                        },
-                        () => {
-                            alert('Gagal mendapatkan lokasi untuk absen keluar.');
-                            isLocationReadyKeluarUnfinished = false;
-                            checkFormReadinessKeluarUnfinished();
-                        }, 
-                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                    );
-                }
-            }
-            
-            snapButtonKeluarUnfinished.addEventListener("click", function() {
-                canvasKeluarUnfinished.width = videoKeluarUnfinished.videoWidth;
-                canvasKeluarUnfinished.height = videoKeluarUnfinished.videoHeight;
-                canvasKeluarUnfinished.getContext('2d').drawImage(videoKeluarUnfinished, 0, 0, canvasKeluarUnfinished.width, canvasKeluarUnfinished.height);
-                canvasKeluarUnfinished.toBlob(function(blob) {
-                    const file = new File([blob], "selfie_keluar_unfinished_" + Date.now() + ".png", { type: "image/png" });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    fileInputKeluarUnfinished.files = dataTransfer.files;
-                    
-                    stopCameraKeluarUnfinished();
-                    cameraContainerKeluarUnfinished.classList.add('hidden');
-                    uploadLabelKeluarUnfinished.classList.remove('hidden');
-                    setSuccessUIKeluarUnfinished(file.name);
-
-                    isPhotoReadyKeluarUnfinished = true;
-                    checkFormReadinessKeluarUnfinished();
-
-                }, 'image/png');
-            });
-
-            uploadLabelKeluarUnfinished.addEventListener('click', function(e) {
-                if (e.target.id === 'change-photo-keluar-unfinished-btn') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    isPhotoReadyKeluarUnfinished = false;
-                    checkFormReadinessKeluarUnfinished();
-
-                    cameraContainerKeluarUnfinished.classList.remove('hidden');
-                    uploadLabelKeluarUnfinished.classList.add('hidden');
-                    startCameraKeluarUnfinished();
-                } else if (fileInputKeluarUnfinished.files.length === 0) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    cameraContainerKeluarUnfinished.classList.remove('hidden');
-                    uploadLabelKeluarUnfinished.classList.add('hidden');
-                    startCameraKeluarUnfinished();
-                }
-            });
-
-            function openModalUnfinished() {
-                modalUnfinished.classList.remove('hidden');
-                modalUnfinished.classList.add('flex');
-                setTimeout(() => modalContentUnfinished.classList.remove('scale-95', 'opacity-0'), 10);
-                startCameraKeluarUnfinished();
-                getLocationKeluarUnfinished();
-            }
-
-            function closeModalUnfinished() {
-                modalContentUnfinished.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    modalUnfinished.classList.add('hidden');
-                    modalUnfinished.classList.remove('flex');
-                    stopCameraKeluarUnfinished();
-                    resetUploadUIKeluarUnfinished();
-                    isLocationReadyKeluarUnfinished = false;
-                    isPhotoReadyKeluarUnfinished = false;
-                    checkFormReadinessKeluarUnfinished();
-                }, 200);
-            }
-
-            if (btnAbsenKeluarUnfinished) btnAbsenKeluarUnfinished.addEventListener('click', openModalUnfinished);
-            if (btnTutupModalUnfinished) btnTutupModalUnfinished.addEventListener('click', closeModalUnfinished);
+            btn.addEventListener('click', openModal);
+            btnTutupModal.addEventListener('click', closeModal);
         }
 
-        // --- LOGIKA BARU UNTUK ABSENSI LEMBUR (NON-AJAX) ---
-
-        // Masuk Lembur
-        const btnAbsenLembur = document.getElementById('btn-absen-lembur');
-        const modalLembur = document.getElementById('modal-absen-lembur');
-        if(modalLembur) {
-            const modalContentLembur = modalLembur.querySelector('.transform');
-            const btnTutupModalLembur = document.getElementById('btn-tutup-modal-lembur');
-            const submitLemburBtn = document.getElementById('submit-button-lembur');
-            const latitudeLemburInput = document.getElementById('latitude-lembur');
-            const longitudeLemburInput = document.getElementById('longitude-lembur');
-            const cameraContainerLembur = document.getElementById('camera-container-lembur');
-            const uploadLabelLembur = document.getElementById('upload-label-lembur');
-            const fileInputLembur = document.getElementById('lampiran-lembur');
-            const videoLembur = document.getElementById('video-lembur');
-            const canvasLembur = document.getElementById('canvas-lembur');
-            const snapButtonLembur = document.getElementById('snap-lembur');
-            const uploadUiLembur = document.getElementById('upload-ui-lembur');
-            const keteranganLemburInput = document.getElementById('keterangan-lembur');
-            
-            let streamLembur;
-            let isLocationReadyLembur = false;
-            let isPhotoReadyLembur = false;
-
-            function setSuccessUILembur(fileName) {
-                uploadUiLembur.innerHTML = `<div class="flex flex-col items-center justify-center text-center p-2 w-full"><i class="fas fa-check-circle text-3xl text-green-500"></i><p class="mt-2 text-sm text-gray-700 font-semibold w-full truncate px-2" title="${fileName}">${fileName}</p><button type="button" id="change-photo-lembur-btn" class="mt-2 text-xs text-blue-600 hover:underline font-medium">Ganti</button></div>`;
-                uploadLabelLembur.classList.replace('border-dashed', 'border-solid');
-                uploadLabelLembur.classList.add('border-green-500', 'bg-green-50');
-            }
-
-            function resetUploadUILembur() {
-                fileInputLembur.value = '';
-                uploadUiLembur.innerHTML = `<i id="upload-icon-lembur" class="fas fa-camera text-3xl text-gray-400"></i><p id="upload-text-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>`;
-                uploadLabelLembur.classList.remove('border-solid', 'border-green-500', 'bg-green-50', 'hidden');
-                uploadLabelLembur.classList.add('border-dashed', 'border-gray-300');
-            }
-            
-            function checkFormReadinessLembur() {
-                // Hanya periksa foto dan lokasi, karena keterangan sudah 'required' di HTML
-                if (isLocationReadyLembur && isPhotoReadyLembur && keteranganLemburInput.value.trim() !== '') {
-                    submitLemburBtn.disabled = false;
-                    submitLemburBtn.textContent = 'Kirim Absen Lembur';
-                } else {
-                    submitLemburBtn.disabled = true;
-                    submitLemburBtn.textContent = 'Mohon Isi Data Lengkap';
-                }
-            }
-
-            async function startCameraLembur() {
-                try {
-                    streamLembur = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    videoLembur.srcObject = streamLembur;
-                    videoLembur.onloadedmetadata = () => { snapButtonLembur.disabled = false; };
-                    cameraContainerLembur.classList.remove('hidden');
-                    uploadLabelLembur.classList.add('hidden');
-                } catch (err) {
-                    alert('Tidak bisa mengakses kamera untuk absen lembur.');
-                    resetUploadUILembur();
-                }
-            }
-
-            function stopCameraLembur() {
-                if (streamLembur) { streamLembur.getTracks().forEach(track => track.stop()); }
-                snapButtonLembur.disabled = true;
-            }
-
-            function getLocationLembur() {
-                submitLemburBtn.textContent = 'Mencari Lokasi...';
-                isLocationReadyLembur = false;
-                checkFormReadinessLembur();
-
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            latitudeLemburInput.value = position.coords.latitude;
-                            longitudeLemburInput.value = position.coords.longitude;
-                            isLocationReadyLembur = true;
-                            checkFormReadinessLembur();
-                        },
-                        () => {
-                            alert('Gagal mendapatkan lokasi untuk absen lembur.');
-                            isLocationReadyLembur = false;
-                            checkFormReadinessLembur();
-                        }, 
-                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                    );
-                }
-            }
-
-            snapButtonLembur.addEventListener("click", function() {
-                canvasLembur.width = videoLembur.videoWidth;
-                canvasLembur.height = videoLembur.videoHeight;
-                canvasLembur.getContext('2d').drawImage(videoLembur, 0, 0, canvasLembur.width, canvasLembur.height);
-                canvasLembur.toBlob(function(blob) {
-                    const file = new File([blob], "selfie_lembur_" + Date.now() + ".png", { type: "image/png" });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    fileInputLembur.files = dataTransfer.files;
-                    
-                    stopCameraLembur();
-                    cameraContainerLembur.classList.add('hidden');
-                    uploadLabelLembur.classList.remove('hidden');
-                    setSuccessUILembur(file.name);
-
-                    isPhotoReadyLembur = true;
-                    checkFormReadinessLembur();
-                }, 'image/png');
-            });
-
-            keteranganLemburInput.addEventListener('input', checkFormReadinessLembur);
-
-            uploadLabelLembur.addEventListener('click', function(e) {
-                if (e.target.id === 'change-photo-lembur-btn') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    isPhotoReadyLembur = false;
-                    checkFormReadinessLembur();
-                    cameraContainerLembur.classList.remove('hidden');
-                    uploadLabelLembur.classList.add('hidden');
-                    startCameraLembur();
-                } else if (fileInputLembur.files.length === 0) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    cameraContainerLembur.classList.remove('hidden');
-                    uploadLabelLembur.classList.add('hidden');
-                    startCameraLembur();
-                }
-            });
-
-            // =======================================================
-            // KODE AJAX DIHAPUS DARI SINI
-            // =======================================================
-            
-            btnTutupModalLembur.addEventListener('click', function() {
-                isLocationReadyLembur = false;
-                isPhotoReadyLembur = false;
-                resetUploadUILembur();
-                keteranganLemburInput.value = '';
-                checkFormReadinessLembur();
-                closeModalLembur();
-            });
-
-            function openModalLembur() {
-                modalLembur.classList.remove('hidden');
-                modalLembur.classList.add('flex');
-                setTimeout(() => modalContentLembur.classList.remove('scale-95', 'opacity-0'), 10);
-                startCameraLembur();
-                getLocationLembur();
-            }
-
-            function closeModalLembur() {
-                modalContentLembur.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    modalLembur.classList.add('hidden');
-                    modalLembur.classList.remove('flex');
-                    stopCameraLembur();
-                }, 200);
-            }
-
-            if (btnAbsenLembur) btnAbsenLembur.addEventListener('click', openModalLembur);
-            if (btnTutupModalLembur) btnTutupModalLembur.addEventListener('click', closeModalLembur);
-        }
-
-        // Keluar Lembur
-        const btnKeluarLembur = document.getElementById('btn-absen-keluar-lembur');
-        const modalKeluarLembur = document.getElementById('modal-keluar-lembur');
-        if(modalKeluarLembur) {
-            const modalContentKeluarLembur = modalKeluarLembur.querySelector('.transform');
-            const btnTutupModalKeluarLembur = document.getElementById('btn-tutup-modal-keluar-lembur');
-            const submitKeluarLemburBtn = document.getElementById('submit-button-keluar-lembur');
-            const latitudeKeluarLemburInput = document.getElementById('latitude-keluar-lembur');
-            const longitudeKeluarLemburInput = document.getElementById('longitude-keluar-lembur');
-            const cameraContainerKeluarLembur = document.getElementById('camera-container-keluar-lembur');
-            const uploadLabelKeluarLembur = document.getElementById('upload-label-keluar-lembur');
-            const fileInputKeluarLembur = document.getElementById('lampiran-keluar-lembur');
-            const videoKeluarLembur = document.getElementById('video-keluar-lembur');
-            const canvasKeluarLembur = document.getElementById('canvas-keluar-lembur');
-            const snapButtonKeluarLembur = document.getElementById('snap-keluar-lembur');
-            const uploadUiKeluarLembur = document.getElementById('upload-ui-keluar-lembur');
-            const formKeluarLembur = document.getElementById('form-keluar-lembur');
-            
-            let streamKeluarLembur;
-            let isLocationReadyKeluarLembur = false;
-            let isPhotoReadyKeluarLembur = false;
-
-            function setSuccessUIKeluarLembur(fileName) {
-                uploadUiKeluarLembur.innerHTML = `<div class="flex flex-col items-center justify-center text-center p-2 w-full"><i class="fas fa-check-circle text-3xl text-green-500"></i><p class="mt-2 text-sm text-gray-700 font-semibold w-full truncate px-2" title="${fileName}">${fileName}</p><button type="button" id="change-photo-keluar-lembur-btn" class="mt-2 text-xs text-blue-600 hover:underline font-medium">Ganti</button></div>`;
-                uploadLabelKeluarLembur.classList.replace('border-dashed', 'border-solid');
-                uploadLabelKeluarLembur.classList.add('border-green-500', 'bg-green-50');
-            }
-
-            function resetUploadUIKeluarLembur() {
-                fileInputKeluarLembur.value = '';
-                uploadUiKeluarLembur.innerHTML = `<i id="upload-icon-keluar-lembur" class="fas fa-camera text-3xl text-gray-400"></i><p id="upload-text-keluar-lembur" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>`;
-                uploadLabelKeluarLembur.classList.remove('border-solid', 'border-green-500', 'bg-green-50', 'hidden');
-                uploadLabelKeluarLembur.classList.add('border-dashed', 'border-gray-300');
-            }
-            
-            function checkFormReadinessKeluarLembur() {
-                if (isLocationReadyKeluarLembur && isPhotoReadyKeluarLembur) {
-                    submitKeluarLemburBtn.disabled = false;
-                    submitKeluarLemburBtn.textContent = 'Kirim Absen Keluar Lembur';
-                } else {
-                    submitKeluarLemburBtn.disabled = true;
-                    submitKeluarLemburBtn.textContent = 'Mohon Ambil Foto & Lokasi';
-                }
-            }
-
-            async function startCameraKeluarLembur() {
-                try {
-                    streamKeluarLembur = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    videoKeluarLembur.srcObject = streamKeluarLembur;
-                    videoKeluarLembur.onloadedmetadata = () => { snapButtonKeluarLembur.disabled = false; };
-                    cameraContainerKeluarLembur.classList.remove('hidden');
-                    uploadLabelKeluarLembur.classList.add('hidden');
-                } catch (err) {
-                    alert('Tidak bisa mengakses kamera untuk absen keluar lembur.');
-                    resetUploadUIKeluarLembur();
-                }
-            }
-
-            function stopCameraKeluarLembur() {
-                if (streamKeluarLembur) { streamKeluarLembur.getTracks().forEach(track => track.stop()); }
-                snapButtonKeluarLembur.disabled = true;
-            }
-
-            function getLocationKeluarLembur() {
-                submitKeluarLemburBtn.textContent = 'Mencari Lokasi...';
-                isLocationReadyKeluarLembur = false;
-                checkFormReadinessKeluarLembur();
-
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            latitudeKeluarLemburInput.value = position.coords.latitude;
-                            longitudeKeluarLemburInput.value = position.coords.longitude;
-                            isLocationReadyKeluarLembur = true;
-                            checkFormReadinessKeluarLembur();
-                        },
-                        () => {
-                            alert('Gagal mendapatkan lokasi untuk absen keluar lembur.');
-                            isLocationReadyKeluarLembur = false;
-                            checkFormReadinessKeluarLembur();
-                        }, 
-                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                    );
-                }
-            }
-            
-            snapButtonKeluarLembur.addEventListener("click", function() {
-                canvasKeluarLembur.width = videoKeluarLembur.videoWidth;
-                canvasKeluarLembur.height = videoKeluarLembur.videoHeight;
-                canvasKeluarLembur.getContext('2d').drawImage(videoKeluarLembur, 0, 0, canvasKeluarLembur.width, canvasKeluarLembur.height);
-                canvasKeluarLembur.toBlob(function(blob) {
-                    const file = new File([blob], "selfie_keluar_lembur_" + Date.now() + ".png", { type: "image/png" });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    fileInputKeluarLembur.files = dataTransfer.files;
-                    
-                    stopCameraKeluarLembur();
-                    cameraContainerKeluarLembur.classList.add('hidden');
-                    uploadLabelKeluarLembur.classList.remove('hidden');
-                    setSuccessUIKeluarLembur(file.name);
-
-                    isPhotoReadyKeluarLembur = true;
-                    checkFormReadinessKeluarLembur();
-                }, 'image/png');
-            });
-
-            uploadLabelKeluarLembur.addEventListener('click', function(e) {
-                if (e.target.id === 'change-photo-keluar-lembur-btn') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    isPhotoReadyKeluarLembur = false;
-                    checkFormReadinessKeluarLembur();
-                    cameraContainerKeluarLembur.classList.remove('hidden');
-                    uploadLabelKeluarLembur.classList.add('hidden');
-                    startCameraKeluarLembur();
-                } else if (fileInputKeluarLembur.files.length === 0) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    cameraContainerKeluarLembur.classList.remove('hidden');
-                    uploadLabelKeluarLembur.classList.add('hidden');
-                    startCameraKeluarLembur();
-                }
-            });
-
-            btnTutupModalKeluarLembur.addEventListener('click', function() {
-                isLocationReadyKeluarLembur = false;
-                isPhotoReadyKeluarLembur = false;
-                resetUploadUIKeluarLembur();
-                checkFormReadinessKeluarLembur();
-                closeModalKeluarLembur();
-            });
-
-            function openModalKeluarLembur() {
-                modalKeluarLembur.classList.remove('hidden');
-                modalKeluarLembur.classList.add('flex');
-                setTimeout(() => modalContentKeluarLembur.classList.remove('scale-95', 'opacity-0'), 10);
-                startCameraKeluarLembur();
-                getLocationKeluarLembur();
-            }
-
-            function closeModalKeluarLembur() {
-                modalContentKeluarLembur.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    modalKeluarLembur.classList.add('hidden');
-                    modalKeluarLembur.classList.remove('flex');
-                    stopCameraKeluarLembur();
-                }, 200);
-            }
-
-            if (btnKeluarLembur) btnKeluarLembur.addEventListener('click', openModalKeluarLembur);
-            if (btnTutupModalKeluarLembur) btnTutupModalKeluarLembur.addEventListener('click', closeModalKeluarLembur);
-        }
+        setupModalLogic('btn-absen-keluar', 'modal-absen-keluar', '-keluar');
+        setupModalLogic('btn-absen-keluar-unfinished', 'modal-absen-keluar-unfinished', '-keluar-unfinished');
+        setupModalLogic('btn-absen-lembur', 'modal-absen-lembur', '-lembur');
+        setupModalLogic('btn-absen-keluar-lembur', 'modal-keluar-lembur', '-keluar-lembur');
     });
     </script>
     @endpush

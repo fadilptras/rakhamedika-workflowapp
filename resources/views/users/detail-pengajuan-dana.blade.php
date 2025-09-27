@@ -13,7 +13,7 @@
                     </div>
                 @endif
                 
-                {{-- Bagian Detail Pengajuan (Tidak Berubah) --}}
+                {{-- Bagian Detail Pengajuan --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Nama Pemohon</label>
@@ -41,11 +41,9 @@
                     </div>
                 </div>
 
-                {{-- Bagian Rincian Dana (Tidak Berubah) --}}
+                {{-- Bagian Rincian Dana --}}
                 <div class="mt-6">
-                    <label class="block text-gray-700 font-medium mb-2">
-                        Rincian Penggunaan Dana
-                    </label>
+                    <label class="block text-gray-700 font-medium mb-2">Rincian Penggunaan Dana</label>
                     <div class="overflow-x-auto">
                         <table class="min-w-full border border-gray-200 text-sm rounded-lg">
                             <thead class="bg-gray-100">
@@ -74,7 +72,7 @@
                     </div>
                 </div>
 
-                {{-- Bagian Lampiran (Tidak Berubah) --}}
+                {{-- Bagian Lampiran --}}
                 @if ($pengajuanDana->lampiran)
                     <div class="mt-6">
                         <label class="block text-gray-700 font-medium mb-2">Lampiran Dokumen</label>
@@ -88,25 +86,19 @@
                 
                 <hr class="my-8">
 
-                {{-- =============================================== --}}
-                {{-- PERUBAHAN UTAMA: TAMPILAN TIMELINE STATUS BARU --}}
-                {{-- =============================================== --}}
+                {{-- Tampilan Timeline Status --}}
                 <div class="bg-white rounded-lg p-4 md:p-6 mt-8">
                     <h2 class="text-xl font-bold text-gray-800 mb-6">Status Pengajuan</h2>
                     <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-x-4 md:space-y-0">
-                        {{-- TAHAP 1: DIAJUKAN --}}
                         <div class="flex flex-col items-center w-full md:w-1/3 text-center">
                             <div class="w-12 h-12 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold shadow-md">1</div>
                             <p class="mt-2 text-sm font-semibold text-gray-800">Diajukan</p>
                             <p class="text-xs text-gray-500">{{ $pengajuanDana->created_at->format('d/m/Y') }}</p>
                             <p class="text-xs text-green-600 font-medium">✔ Selesai</p>
                         </div>
-
                         <div class="hidden md:block h-1 w-full {{ $pengajuanDana->status_atasan != 'menunggu' ? 'bg-blue-600' : 'bg-gray-300' }}"></div>
-                        
-                        {{-- TAHAP 2: KEPALA DIVISI --}}
                         <div class="flex flex-col items-center w-full md:w-1/3 text-center">
-                            <div class="w-12 h-12 flex items-center justify-center rounded-full {{ $pengajuanDana->status_atasan == 'disetujui' ? 'bg-blue-600' : 'bg-gray-300' }} text-white font-bold shadow-md">2</div>
+                            <div class="w-12 h-12 flex items-center justify-center rounded-full {{ $pengajuanDana->status_atasan == 'disetujui' ? 'bg-blue-600' : ($pengajuanDana->status_atasan == 'ditolak' ? 'bg-red-500' : 'bg-gray-300') }} text-white font-bold shadow-md">2</div>
                             <p class="mt-2 text-sm font-semibold text-gray-800">Disetujui Kepala Divisi</p>
                             @if ($pengajuanDana->status_atasan == 'disetujui')
                                 <p class="text-xs text-green-600 font-medium">✔ Selesai</p>
@@ -116,16 +108,13 @@
                                 <p class="text-xs text-gray-500">Menunggu...</p>
                             @endif
                         </div>
-
-                        <div class="hidden md:block h-1 w-full {{ $pengajuanDana->status_hrd != 'menunggu' ? 'bg-blue-600' : 'bg-gray-300' }}"></div>
-
-                        {{-- TAHAP 3: KEPALA FINANCE --}}
+                        <div class="hidden md:block h-1 w-full {{ $pengajuanDana->status_finance != 'menunggu' && $pengajuanDana->status_atasan == 'disetujui' ? 'bg-blue-600' : 'bg-gray-300' }}"></div>
                         <div class="flex flex-col items-center w-full md:w-1/3 text-center">
-                            <div class="w-12 h-12 flex items-center justify-center rounded-full {{ $pengajuanDana->status_hrd == 'disetujui' ? 'bg-blue-600' : 'bg-gray-300' }} text-white font-bold shadow-md">3</div>
+                            <div class="w-12 h-12 flex items-center justify-center rounded-full {{ $pengajuanDana->status_finance == 'disetujui' ? 'bg-blue-600' : ($pengajuanDana->status_finance == 'ditolak' ? 'bg-red-500' : 'bg-gray-300') }} text-white font-bold shadow-md">3</div>
                             <p class="mt-2 text-sm font-semibold text-gray-800">Disetujui Kepala Finance</p>
-                            @if ($pengajuanDana->status_hrd == 'disetujui')
+                            @if ($pengajuanDana->status_finance == 'disetujui')
                                 <p class="text-xs text-green-600 font-medium">✔ Selesai</p>
-                            @elseif ($pengajuanDana->status_hrd == 'ditolak')
+                            @elseif ($pengajuanDana->status_finance == 'ditolak')
                                 <p class="text-xs text-red-600 font-medium">❌ Ditolak</p>
                             @else
                                 <p class="text-xs text-gray-500">Menunggu...</p>
@@ -134,9 +123,7 @@
                     </div>
                 </div>
 
-                {{-- =============================================== --}}
-                {{-- PERUBAHAN UTAMA: TAMPILAN CATATAN BARU --}}
-                {{-- =============================================== --}}
+                {{-- Tampilan Catatan --}}
                 <div class="mt-8">
                     <h3 class="text-lg font-semibold text-gray-800 mb-3">Catatan</h3>
                     <div class="overflow-x-auto">
@@ -163,13 +150,13 @@
                                 </tr>
                                 <tr class="border-t">
                                     <td class="px-4 py-2">Kepala Finance</td>
-                                    <td class="px-4 py-2">{{ $pengajuanDana->catatan_hrd ?? '-' }}</td>
+                                    <td class="px-4 py-2">{{ $pengajuanDana->catatan_finance ?? '-' }}</td>
                                     <td class="px-4 py-2">
                                         <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs
-                                            @if ($pengajuanDana->status_hrd == 'menunggu') bg-gray-100 text-gray-600
-                                            @elseif ($pengajuanDana->status_hrd == 'disetujui') bg-green-100 text-green-600
+                                            @if ($pengajuanDana->status_finance == 'menunggu' || $pengajuanDana->status_finance == null) bg-gray-100 text-gray-600
+                                            @elseif ($pengajuanDana->status_finance == 'disetujui') bg-green-100 text-green-600
                                             @else bg-red-100 text-red-600 @endif">
-                                            {{ ucfirst($pengajuanDana->status_hrd) }}
+                                            {{ ucfirst($pengajuanDana->status_finance ?? 'menunggu') }}
                                         </span>
                                     </td>
                                 </tr>
@@ -178,16 +165,8 @@
                     </div>
                 </div>
 
-                {{-- Tombol Aksi Persetujuan (Tidak Berubah) --}}
-                @php
-                    $user = Auth::user();
-                    $userJabatan = strtolower($user->jabatan);
-                    $isKepalaDivisi = $user->is_kepala_divisi;
-                    
-                    $isApprover = ($isKepalaDivisi && $pengajuanDana->status_atasan == 'menunggu') ||
-                                  ($userJabatan == 'kepala finance dan gudang' && $pengajuanDana->status_atasan == 'disetujui' && $pengajuanDana->status_hrd == 'menunggu');
-                @endphp
-                @if ($isApprover)
+                {{-- Logika untuk Menampilkan Tombol Persetujuan --}}
+                @can('approve', $pengajuanDana)
                     <div class="bg-white rounded-lg shadow p-4 md:p-6 mt-8">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Tindakan Persetujuan</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -210,7 +189,7 @@
                             </form>
                         </div>
                     </div>
-                @endif
+                @endcan
             </div>
         </div>
     </div>

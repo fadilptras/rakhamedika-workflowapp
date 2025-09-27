@@ -14,6 +14,9 @@ use App\Http\Controllers\RekapAbsenController;
 use App\Http\Controllers\Admin\AdminPengajuanDanaController;
 use App\Http\Controllers\Admin\AdminLemburController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\Admin\AdminPengajuanDokumenController;
+use App\Http\Controllers\Admin\AdminAgendaController;
 
 // Route utama, langsung arahkan ke halaman login
 Route::get('/', fn() => redirect()->route('login'));
@@ -25,7 +28,6 @@ Route::controller(LoginController::class)->middleware('guest')->group(function (
 });
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
-Route::view('/register', 'auth.register')->middleware('guest')->name('register');
 Route::view('/forgot-password', 'auth.forgot-password')->middleware('guest')->name('password.request');
 
 
@@ -69,10 +71,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/pengajuan-dana/{pengajuanDana}/approve', [PengajuanDanaController::class, 'approve'])->name('pengajuan_dana.approve');
     Route::post('/pengajuan-dana/{pengajuanDana}/reject', [PengajuanDanaController::class, 'reject'])->name('pengajuan_dana.reject');
 
-    Route::get('/pengajuan-dokumen', [PengajuanDokumenController::class, 'pengajuan_dokumen'])->name('pengajuan_dokumen');
+    // Di dalam Route::middleware('auth')->group(...)
+    Route::get('/pengajuan-dokumen', [PengajuanDokumenController::class, 'index'])->name('pengajuan_dokumen.index');
+    Route::post('/pengajuan-dokumen', [PengajuanDokumenController::class, 'store'])->name('pengajuan_dokumen.store');
+    Route::get('/pengajuan-dokumen/{dokumen}/download', [PengajuanDokumenController::class, 'download'])->name('pengajuan_dokumen.download');
     
     // Rekap Absensi Karyawan
     Route::get('/rekap-absen', [RekapAbsenController::class, 'index'])->name('rekap_absen.index');
+
+    // Route untuk fitur Agenda/Kalender
+    Route::get('/agendas', [AgendaController::class, 'index'])->name('agendas.index');
+    Route::post('/agendas', [AgendaController::class, 'store'])->name('agendas.store');
+    Route::get('/get-users', [AgendaController::class, 'getUsers'])->name('agendas.getUsers');
 
 });
 
@@ -108,27 +118,42 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         // Rute untuk Rekap Absensi Bulanan & download PDF
         Route::get('/rekap', [AbsensiController::class, 'rekap'])->name('rekap');
         Route::get('/rekap/pdf', [AbsensiController::class, 'downloadPdf'])->name('rekap.downloadPdf');
+        Route::get('/rekap/excel', [AbsensiController::class, 'downloadExcel'])->name('rekap.downloadExcel');
     });
+
 
     // Rute untuk Rekap Lembur (terpisah)
     Route::prefix('lembur')->name('lembur.')->group(function () {
         Route::get('/', [AdminLemburController::class, 'index'])->name('index');
         Route::get('/pdf', [AdminLemburController::class, 'downloadPdf'])->name('downloadPdf');
     });
-
+        
     // Manajemen Cuti (HANYA UNTUK MELIHAT)
-    Route::get('/cuti', [AdminCutiController::class, 'index'])->name('cuti.index');
-    
-    // PINDAHKAN RUTE PENGATURAN KE ATAS RUTE SHOW
-    Route::get('/cuti/pengaturan', [AdminCutiController::class, 'pengaturanCuti'])->name('cuti.pengaturan');
-    Route::post('/cuti/pengaturan', [AdminCutiController::class, 'updatePengaturanCuti'])->name('cuti.updatePengaturan');
-    
-    // RUTE DINAMIS DENGAN PARAMETER HARUS DI BAWAH
-    Route::get('/cuti/{cuti}', [AdminCutiController::class, 'show'])->name('cuti.show');
+    Route::prefix('cuti')->name('cuti.')->group(function () {
+        Route::get('/', [AdminCutiController::class, 'index'])->name('index');
+        Route::get('/pengaturan', [AdminCutiController::class, 'pengaturanCuti'])->name('pengaturan');
+        Route::post('/pengaturan', [AdminCutiController::class, 'updatePengaturanCuti'])->name('updatePengaturan');
+        Route::get('/{cuti}', [AdminCutiController::class, 'show'])->name('show');
+    });
 
-    // Rekap Pengajuan Dana (HANYA UNTUK MELIHAT)
-    Route::prefix('pengajuan-dana')->name('pengajuan_dana.')->group(function () {
+    // == PERBAIKAN DI SINI ==
+    // Hapus 'admin/' dari URL dan 'admin.' dari nama rute
+    Route::prefix('pengajuan-dana')->name('pengajuan_dana.')->group(function() {
         Route::get('/', [AdminPengajuanDanaController::class, 'index'])->name('index');
         Route::get('/{pengajuanDana}', [AdminPengajuanDanaController::class, 'show'])->name('show');
     });
+
+    Route::prefix('pengajuan-dokumen')->name('pengajuan-dokumen.')->group(function() {
+        Route::get('/', [AdminPengajuanDokumenController::class, 'index'])->name('index');
+        Route::get('/{dokumen}', [AdminPengajuanDokumenController::class, 'show'])->name('show');
+        Route::put('/{dokumen}', [AdminPengajuanDokumenController::class, 'update'])->name('update');
+    });
+
+    Route::prefix('agenda')->name('agenda.')->group(function () {
+        Route::get('/', [AdminAgendaController::class, 'index'])->name('index');
+        Route::post('/', [AdminAgendaController::class, 'store'])->name('store');
+        Route::get('/get-all-users', [AdminAgendaController::class, 'getAllUsers'])->name('getAllUsers');
+        Route::get('/events', [AdminAgendaController::class, 'getAdminAgendas'])->name('getEvents');
+    });
+    
 });

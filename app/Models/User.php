@@ -61,4 +61,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Lembur::class);
     }
+
+    public function invitedAgendas()
+    {
+        return $this->belongsToMany(Agenda::class, 'agenda_user', 'user_id', 'agenda_id');
+    }
+
+    public function pengajuanDokumens(): HasMany
+    {
+        return $this->hasMany(PengajuanDokumen::class);
+    }
 }

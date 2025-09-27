@@ -144,8 +144,11 @@
                     @endphp
                     <tr class="hover:bg-zinc-700/30">
                         <td class="px-4 py-3 flex items-center gap-3">
-                            <img src="{{ isset($record->user->profile_picture) ? asset('storage/' . $record->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name ?? 'U').'&background=4f46e5&color=e0e7ff' }}"
-                                 alt="{{ $record->user->name ?? '' }}" class="w-10 h-10 rounded-full object-cover">
+                            <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-zinc-600 shadow-md">
+                                {{-- 2. IMG di dalamnya mengisi penuh bingkai tersebut --}}
+                                <img src="{{ isset($record->user->profile_picture) ? asset('storage/' . $record->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name ?? 'U').'&background=4f46e5&color=e0e7ff' }}"
+                                     alt="{{ $record->user->name ?? '' }}" class="w-full h-full object-cover">
+                            </div>
                             <div>
                                 <p class="font-semibold text-white">{{ $record->user->name ?? 'User Dihapus' }}</p>
                                 <p class="text-xs text-zinc-400">{{ $record->user->divisi ?? '-' }}</p>

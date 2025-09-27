@@ -3,45 +3,53 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\PengajuanDana;
-use Illuminate\Support\Facades\Auth;
+use App\Models\User; // Tambahkan ini untuk mengambil data karyawan
+use Illuminate\Http\Request;
 
 class AdminPengajuanDanaController extends Controller
 {
     /**
-     * Menampilkan daftar semua pengajuan dana.
+     * Menampilkan daftar semua pengajuan dana dari user.
      */
-    public function index(Request $request)
+    public function index(Request $request) // Tambahkan Request untuk menerima input filter
     {
+        // Query dasar dengan relasi user
         $query = PengajuanDana::with('user');
 
-        // Logika filter
-        if ($request->filled('status')) {
-            $query->where(function($q) use ($request) {
-                $q->where('status_atasan', $request->status)
-                  ->orWhere('status_hrd', $request->status)
-                  ->orWhere('status_direktur', $request->status);
-            });
-        }
-        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_akhir')) {
-            $query->whereBetween('created_at', [$request->tanggal_mulai, $request->tanggal_akhir]);
+        // Filter berdasarkan NAMA KARYAWAN
+        if ($request->filled('karyawan_id')) {
+            $query->where('user_id', $request->karyawan_id);
         }
 
-        $pengajuanDanas = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Filter berdasarkan DIVISI
+        if ($request->filled('divisi')) {
+            $query->where('divisi', $request->divisi);
+        }
 
-        return view('admin.pengajuan-dana.index', [
-            'title' => 'Rekap Pengajuan Dana',
-            'pengajuanDanas' => $pengajuanDanas,
-        ]);
+        // Filter berdasarkan RANGE TANGGAL
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = $request->start_date . ' 00:00:00';
+            $endDate = $request->end_date . ' 23:59:59';
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }
+        
+        // Ambil data setelah difilter, urutkan dari yang terbaru
+        $pengajuanDana = $query->latest()->get();
+
+        // Ambil data untuk dropdown filter
+        $karyawanList = User::orderBy('name')->get(); // Ambil semua user untuk dropdown
+        $divisiList = PengajuanDana::select('divisi')->distinct()->whereNotNull('divisi')->orderBy('divisi')->get();
+
+        return view('admin.pengajuan-dana.index', compact('pengajuanDana', 'karyawanList', 'divisiList'));
     }
 
     /**
-     * Menampilkan halaman detail pengajuan dana untuk admin.
+     * Menampilkan detail pengajuan dana.
      */
     public function show(PengajuanDana $pengajuanDana)
     {
-        $title = 'Detail Pengajuan Dana';
-        return view('admin.pengajuan-dana.show', compact('pengajuanDana', 'title'));
+        // Cukup kirim data ke view
+        return view('admin.pengajuan-dana.show', compact('pengajuanDana'));
     }
 }
