@@ -25,10 +25,12 @@ class PengajuanDana extends Model
         'catatan_atasan',
         'status_finance',
         'catatan_finance',
-        // 'status_direktur',
-        // 'catatan_direktur',
+        'status_direktur',
+        'catatan_direktur',
         'created_at',
         'updated_at',
+        'invoice',
+        'bukti_transfer',
     ];
 
     protected $casts = [

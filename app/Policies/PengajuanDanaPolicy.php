@@ -8,42 +8,80 @@ use Illuminate\Auth\Access\Response;
 
 class PengajuanDanaPolicy
 {
-    /**
-     * Menentukan apakah user yang sedang login boleh menyetujui (approve/reject) 
-     * sebuah pengajuan dana.
-     */
+    public function view(User $user, PengajuanDana $pengajuanDana): bool
+    {
+        if ($user->id === $pengajuanDana->user_id || $user->jabatan === 'HRD') {
+            return true;
+        }
+        $directApprover = $this->getApprover($pengajuanDana->user);
+        if ($directApprover && $user->id === $directApprover->id) {
+            return true;
+        }
+        $financeHead = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
+        if ($financeHead && $user->id === $financeHead->id) {
+            return true;
+        }
+        return false;
+    }
+
     public function approve(User $user, PengajuanDana $pengajuanDana): bool
     {
-        // Aturan 1: User adalah Kepala Divisi dari divisi yang mengajukan, DAN
-        // status pengajuan dari atasan masih 'menunggu'.
-        if ($user->is_kepala_divisi 
-            && $user->divisi === $pengajuanDana->user->divisi 
-            && $pengajuanDana->status_atasan === 'menunggu') {
-            return true;
+        $pemohon = $pengajuanDana->user;
+        if ($pemohon->is_kepala_divisi) {
+            $direktur = User::where('jabatan', 'Direktur')->first();
+            if ($direktur && $user->id === $direktur->id && $pengajuanDana->status_direktur === 'menunggu') {
+                return true;
+            }
+        } 
+        else {
+            $atasanPemohon = $this->getApprover($pemohon);
+            if ($atasanPemohon && $user->id === $atasanPemohon->id && $pengajuanDana->status_atasan === 'menunggu') {
+                return true;
+            }
         }
-
-        // =======================================================================
-        // LOGIKA BARU SESUAI IDE ANDA: Mencari Kepala Finance secara dinamis
-        // =======================================================================
-        // 1. Cari siapa user yang merupakan kepala dari divisi "Finance dan Gudang"
-        $kepalaFinance = User::where('divisi', 'Finance dan Gudang')
-                             ->where('is_kepala_divisi', true)
-                             ->first();
-
-        // 2. Terapkan Aturan:
-        // User boleh approve JIKA:
-        // - Seorang Kepala Finance berhasil ditemukan, DAN
-        // - ID user yang login SAMA DENGAN ID Kepala Finance yang ditemukan, DAN
-        // - Status dari Kepala Divisi sebelumnya sudah 'disetujui', DAN
-        // - Status dari Finance sendiri masih 'menunggu' atau belum diisi (null).
-        if ($kepalaFinance 
-            && $user->id === $kepalaFinance->id
-            && $pengajuanDana->status_atasan === 'disetujui' 
-            && ($pengajuanDana->status_finance === 'menunggu' || $pengajuanDana->status_finance === null)) {
-            return true;
+        $kepalaFinance = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
+        if ($kepalaFinance && $user->id === $kepalaFinance->id) {
+            $atasanApproved = $pengajuanDana->status_atasan === 'disetujui';
+            $direkturApproved = $pengajuanDana->status_direktur === 'disetujui';
+            $financeWaiting = $pengajuanDana->status_finance === 'menunggu' || $pengajuanDana->status_finance === null;
+            if (($atasanApproved || $direkturApproved) && $financeWaiting) {
+                return true;
+            }
         }
-
-        // Jika tidak ada aturan yang cocok, maka tidak diizinkan.
         return false;
+    }
+
+    // --- PERUBAHAN NAMA METHOD DI SINI ---
+    public function uploadBuktiTransfer(User $user, PengajuanDana $pengajuanDana): bool
+    {
+        $kepalaFinance = User::where('jabatan', 'Kepala Finance')->first();
+        return $kepalaFinance 
+                && $user->id === $kepalaFinance->id 
+                && $pengajuanDana->status === 'disetujui'
+                && is_null($pengajuanDana->bukti_transfer);
+    }
+
+    // --- METHOD BARU DITAMBAHKAN DI SINI ---
+    public function uploadFinalInvoice(User $user, PengajuanDana $pengajuanDana): bool
+    {
+        $isOwner = $user->id === $pengajuanDana->user_id;
+        $isApproved = $pengajuanDana->status === 'disetujui';
+        $transferUploaded = !is_null($pengajuanDana->bukti_transfer);
+        $invoiceNotYetUploaded = is_null($pengajuanDana->invoice);
+        return $isOwner && $isApproved && $transferUploaded && $invoiceNotYetUploaded;
+    }
+
+    private function getApprover(User $user): ?User
+    {
+        if ($user->jabatan === 'Direktur') return null;
+        if ($user->is_kepala_divisi) return User::where('jabatan', 'Direktur')->first();
+        if ($user->divisi) {
+            $approver = User::where('divisi', $user->divisi)
+                            ->where('is_kepala_divisi', true)
+                            ->where('id', '!=', $user->id)
+                            ->first();
+            if ($approver) return $approver;
+        }
+        return User::where('jabatan', 'Direktur')->first();
     }
 }

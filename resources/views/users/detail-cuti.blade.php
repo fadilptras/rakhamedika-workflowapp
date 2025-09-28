@@ -14,7 +14,8 @@
                         <h1 class="text-3xl font-bold text-gray-900">Detail Pengajuan Cuti</h1>
                         <p class="text-sm text-gray-500 mt-1">Diajukan pada {{ $cuti->created_at->format('d F Y, H:i') }}</p>
                     </div>
-                    <a href="{{ route('cuti') }}" class="mt-4 sm:mt-0 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800">
+                    {{-- --- PERBAIKAN DI SINI --- --}}
+                    <a href="{{ route('cuti.create') }}" class="mt-4 sm:mt-0 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800">
                         <i class="fas fa-arrow-left"></i>
                         Kembali ke Riwayat
                     </a>
@@ -106,7 +107,6 @@
                     @if($cuti->catatan_approval)
                         <div>
                             <h3 class="text-lg font-semibold text-gray-800">Catatan dari Approver</h3>
-                            {{-- Kotak catatan yang sudah dirapikan --}}
                             <div class="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-sm text-gray-700">
                                 <p>{{ $cuti->catatan_approval }}</p>
                             </div>
@@ -124,7 +124,6 @@
                                     <div class="space-y-4">
                                         <div>
                                             <label for="catatan" class="block text-sm font-medium text-gray-700 mb-1">Catatan (Opsional)</label>
-                                            {{-- INI BAGIAN YANG DIPERBAIKI --}}
                                             <textarea name="catatan" id="catatan" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2"></textarea>
                                         </div>
                                         <div class="flex items-center gap-4">

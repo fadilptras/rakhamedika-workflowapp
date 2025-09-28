@@ -49,13 +49,11 @@ Route::middleware('auth')->group(function () {
     // --- AKHIR TAMBAHAN ---
 
     // Cuti
-    Route::get('/cuti', [CutiController::class, 'create'])->name('cuti');
+    Route::get('/cuti', [CutiController::class, 'create'])->name('cuti.create'); // Nama diubah dari 'cuti' menjadi 'cuti.create'
     Route::post('/cuti', [CutiController::class, 'store'])->name('cuti.store');
-    // --- Rute Baru untuk Cuti ---
     Route::get('/cuti/{cuti}', [CutiController::class, 'show'])->name('cuti.show');
     Route::match(['PUT', 'PATCH'], '/cuti/{cuti}/status', [CutiController::class, 'updateStatus'])->name('cuti.updateStatus');
     Route::post('/cuti/{cuti}/cancel', [CutiController::class, 'cancel'])->name('cuti.cancel');
-    // Fitur Lainnya
     
     // Notifikasi
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
@@ -70,6 +68,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/pengajuan-dana/{pengajuanDana}', [PengajuanDanaController::class, 'show'])->name('pengajuan_dana.show');
     Route::post('/pengajuan-dana/{pengajuanDana}/approve', [PengajuanDanaController::class, 'approve'])->name('pengajuan_dana.approve');
     Route::post('/pengajuan-dana/{pengajuanDana}/reject', [PengajuanDanaController::class, 'reject'])->name('pengajuan_dana.reject');
+    // --- PERUBAHAN DI SINI ---
+    // Mengubah nama route untuk lebih jelas (bukti transfer oleh finance)
+    Route::post('/pengajuan-dana/{pengajuanDana}/upload-bukti-transfer', [PengajuanDanaController::class, 'uploadBuktiTransfer'])
+        ->name('pengajuan_dana.upload_bukti_transfer');
+
+    // --- TAMBAHAN BARU DI SINI ---
+    // Route baru untuk upload invoice final oleh pemohon
+    Route::post('/pengajuan-dana/{pengajuanDana}/upload-final-invoice', [PengajuanDanaController::class, 'uploadFinalInvoice'])
+        ->name('pengajuan_dana.upload_final_invoice');
 
     // Di dalam Route::middleware('auth')->group(...)
     Route::get('/pengajuan-dokumen', [PengajuanDokumenController::class, 'index'])->name('pengajuan_dokumen.index');
