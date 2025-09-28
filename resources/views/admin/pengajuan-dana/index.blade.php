@@ -1,21 +1,23 @@
 <x-layout-admin>
     <x-slot:title>Kelola Pengajuan Dana</x-slot:title>
 
-    <div class="p-6">
-        <h1 class="text-2xl font-bold text-white mb-6">Manajemen Pengajuan Dana Karyawan</h1>
-
-        {{-- Form Filter --}}
-        <div class="my-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
-            <h3 class="text-lg font-semibold text-white mb-4">Filter Pengajuan Dana</h3>
-            <form action="{{ route('admin.pengajuan_dana.index') }}" method="GET">
-                <div class="flex flex-wrap items-end gap-4">
+    <div class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700">
+        <div class="p-6 border-b border-zinc-700">
+            <h2 class="text-xl font-bold text-white">Rekap Pengajuan Dana Karyawan</h2>
+            <p class="text-sm text-zinc-400 mt-1">Pantau semua riwayat pengajuan dana yang masuk.</p>
+        </div>
+        
+        {{-- FORM FILTER --}}
+        <div class="p-6">
+            <form method="GET" action="{{ route('admin.pengajuan_dana.index') }}">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 lg:grid-cols-6 gap-4 items-end">
                     {{-- Filter Karyawan --}}
-                    <div class="flex-1 min-w-[200px]">
-                        <label for="karyawan_id" class="block text-sm font-medium text-zinc-300">Karyawan</label>
-                        <select id="karyawan_id" name="karyawan_id" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <div class="md:col-span-2">
+                        <label for="karyawan_id" class="block text-sm font-medium text-zinc-400 mb-1">Nama Karyawan</label>
+                        <select name="karyawan_id" id="karyawan_id" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
                             <option value="">Semua Karyawan</option>
-                            @foreach($karyawanList as $karyawan)
-                                <option value="{{ $karyawan->id }}" @selected(request('karyawan_id') == $karyawan->id)>
+                            @foreach ($karyawanList as $karyawan)
+                                <option value="{{ $karyawan->id }}" {{ request('karyawan_id') == $karyawan->id ? 'selected' : '' }}>
                                     {{ $karyawan->name }}
                                 </option>
                             @endforeach
@@ -23,103 +25,78 @@
                     </div>
 
                     {{-- Filter Divisi --}}
-                    <div class="flex-1 min-w-[180px]">
-                        <label for="divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
-                        <select id="divisi" name="divisi" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <div class="md:col-span-1">
+                        <label for="divisi" class="block text-sm font-medium text-zinc-400 mb-1">Divisi</label>
+                        <select name="divisi" id="divisi" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
                             <option value="">Semua Divisi</option>
-                             @foreach($divisiList as $item)
-                                <option value="{{ $item->divisi }}" @selected(request('divisi') == $item->divisi)>
+                            @foreach ($divisiList as $item)
+                                <option value="{{ $item->divisi }}" {{ request('divisi') == $item->divisi ? 'selected' : '' }}>
                                     {{ $item->divisi }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
                     
-                    {{-- Filter Tanggal Mulai --}}
-                    <div class="flex-1 min-w-[150px]">
-                        <label for="start_date" class="block text-sm font-medium text-zinc-300">Dari Tanggal</label>
-                        <input type="date" id="start_date" name="start_date" value="{{ request('start_date') }}" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    {{-- Filter Tanggal --}}
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-zinc-400 mb-1">Dari Tanggal</label>
+                        <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
+                    </div>
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-zinc-400 mb-1">Sampai</label>
+                        <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
                     </div>
 
-                    {{-- Filter Tanggal Akhir --}}
-                    <div class="flex-1 min-w-[150px]">
-                        <label for="end_date" class="block text-sm font-medium text-zinc-300">Sampai Tanggal</label>
-                        <input type="date" id="end_date" name="end_date" value="{{ request('end_date') }}" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-
-                    {{-- Tombol Aksi --}}
-                    <div class="flex items-end gap-2">
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
-                            <i class="fas fa-filter mr-2"></i> Filter
-                        </button>
-                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors">
-                            Reset
-                        </a>
+                    {{-- Tombol --}}
+                    <div class="flex gap-2">
+                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">Filter</button>
+                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="w-full bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg text-center">Reset</a>
                     </div>
                 </div>
             </form>
         </div>
 
-        {{-- Tabel Pengajuan Dana --}}
-        <div class="overflow-x-auto bg-zinc-800 rounded-lg shadow-lg border border-zinc-700">
-            <table class="min-w-full text-sm text-left text-zinc-300">
-                <thead class="bg-zinc-700 text-xs uppercase font-semibold text-zinc-200">
+        <div class="relative overflow-x-auto">
+            <table class="w-full text-sm text-left text-zinc-300">
+                <thead class="text-xs text-zinc-400 uppercase bg-zinc-700/50">
                     <tr>
-                        <th class="px-4 py-3">Karyawan</th>
-                        <th class="px-4 py-3">Tanggal</th>
-                        <th class="px-4 py-3">Keperluan</th>
-                        <th class="px-4 py-3">Jumlah</th>
-                        <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3 text-center">Aksi</th>
+                        <th scope="col" class="px-6 py-3">Tanggal</th>
+                        <th scope="col" class="px-6 py-3">Nama Karyawan</th>
+                        <th scope="col" class="px-6 py-3">Judul Pengajuan</th>
+                        <th scope="col" class="px-6 py-3">Total Dana</th>
+                        <th scope="col" class="px-6 py-3">Status Final</th>
+                        <th scope="col" class="px-6 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-700">
-                    @forelse ($pengajuanDana as $item)
-                        <tr class="hover:bg-zinc-700/30">
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <div class="font-semibold text-white">{{ $item->user->name }}</div>
-                                <div class="text-xs text-zinc-400">{{ $item->divisi ?? 'Divisi Kosong' }}</div>
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                {{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d M Y') }}
-                            </td>
-                            <td class="px-4 py-3">{{ Str::limit($item->judul_pengajuan, 40) }}</td>
-                            <td class="px-4 py-3 font-mono text-white whitespace-nowrap">
-                                Rp {{ number_format($item->total_dana, 0, ',', '.') }}
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                @php
-                                    $statusText = 'Menunggu Atasan';
-                                    $statusClass = 'bg-yellow-500/10 text-yellow-400';
-
-                                    if ($item->status_atasan === 'ditolak' || $item->status_finance === 'ditolak') {
-                                        $statusText = 'Ditolak';
-                                        $statusClass = 'bg-red-500/10 text-red-400';
-                                    } elseif ($item->status_atasan === 'disetujui' && $item->status_finance === 'disetujui') {
-                                        $statusText = 'Disetujui';
-                                        $statusClass = 'bg-green-500/10 text-green-400';
-                                    } elseif ($item->status_atasan === 'disetujui') {
-                                        $statusText = 'Menunggu Finance';
-                                        $statusClass = 'bg-indigo-500/10 text-indigo-400';
-                                    }
-                                @endphp
-                                <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs capitalize {{ $statusClass }}">
-                                    {{ $statusText }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <a href="{{ route('admin.pengajuan_dana.show', $item->id) }}" class="text-indigo-400 hover:underline text-sm font-medium">
-                                    Lihat Detail
-                                </a>
-                            </td>
-                        </tr>
+                <tbody>
+                    @forelse ($pengajuanDana as $pengajuan)
+                    <tr class="bg-zinc-800 border-b border-zinc-700 hover:bg-zinc-700/50">
+                        <td class="px-6 py-4">{{ $pengajuan->created_at->format('d M Y') }}</td>
+                        <td class="px-6 py-4 font-medium text-white">{{ $pengajuan->user->name }}</td>
+                        <td class="px-6 py-4">{{ $pengajuan->judul_pengajuan }}</td>
+                        <td class="px-6 py-4 font-mono">Rp {{ number_format($pengajuan->total_dana, 0, ',', '.') }}</td>
+                        <td class="px-6 py-4">
+                            {{-- --- LOGIKA STATUS BARU --- --}}
+                            @if ($pengajuan->status == 'disetujui')
+                                <span class="font-bold bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full text-xs">Disetujui</span>
+                            @elseif ($pengajuan->status == 'ditolak')
+                                <span class="font-bold bg-red-500/10 text-red-400 px-2 py-1 rounded-full text-xs">Ditolak</span>
+                            @elseif ($pengajuan->status == 'diproses')
+                                <span class="font-bold bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full text-xs">Diproses</span>
+                            @else
+                                <span class="font-bold bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded-full text-xs">Diajukan</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <a href="{{ route('admin.pengajuan_dana.show', $pengajuan) }}" class="font-medium text-amber-400 hover:underline">Lihat Detail</a>
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-10 text-zinc-400">
-                                <i class="fas fa-folder-open fa-2x mb-3"></i>
-                                <p>Tidak ada data pengajuan dana yang cocok dengan filter.</p>
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-zinc-500">
+                            Tidak ada data untuk ditampilkan. Coba sesuaikan filter Anda.
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>

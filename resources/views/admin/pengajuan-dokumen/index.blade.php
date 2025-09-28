@@ -1,49 +1,57 @@
 <x-layout-admin>
     <x-slot:title>Kelola Pengajuan Dokumen</x-slot:title>
-    <div class="p-6">
-        <h1 class="text-2xl font-bold text-white mb-6">Manajemen Pengajuan Dokumen Karyawan</h1>
-        <div class="overflow-x-auto bg-zinc-800 rounded-lg shadow-lg border border-zinc-700">
-            <table class="min-w-full text-sm text-left text-zinc-300">
-                <thead class="bg-zinc-700 text-xs uppercase font-semibold text-zinc-200">
+
+    <div class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700">
+        <div class="p-6 border-b border-zinc-700">
+            <h2 class="text-xl font-bold text-white">Rekap Pengajuan Dokumen</h2>
+        </div>
+        
+        {{-- --- FORM FILTER BARU --- --}}
+        <div class="p-6">
+            <form method="GET" action="{{ route('admin.pengajuan-dokumen.index') }}">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-zinc-400 mb-1">Dari Tanggal</label>
+                        <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
+                    </div>
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-zinc-400 mb-1">Sampai Tanggal</label>
+                        <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">Filter</button>
+                        <a href="{{ route('admin.pengajuan-dokumen.index') }}" class="w-full bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg text-center">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="relative overflow-x-auto">
+            <table class="w-full text-sm text-left text-zinc-300">
+                {{-- ... header tabel ... --}}
+                <thead class="text-xs text-zinc-400 uppercase bg-zinc-700/50">
                     <tr>
-                        <th class="px-4 py-3">Karyawan</th>
-                        <th class="px-4 py-3">Jenis Dokumen</th>
-                        <th class="px-4 py-3">Tanggal Pengajuan</th>
-                        <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3 text-center">Aksi</th>
+                        <th scope="col" class="px-6 py-3">Tanggal</th>
+                        <th scope="col" class="px-6 py-3">Nama Karyawan</th>
+                        <th scope="col" class="px-6 py-3">Jenis Dokumen</th>
+                        <th scope="col" class="px-6 py-3">Status</th>
+                        <th scope="col" class="px-6 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-700">
-                    @forelse($pengajuanDokumens as $dokumen)
-                    <tr class="hover:bg-zinc-700/30">
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <div class="font-semibold text-white">{{ $dokumen->user->name }}</div>
-                            <div class="text-xs text-zinc-400">{{ $dokumen->user->divisi ?? 'Divisi Kosong' }}</div>
-                        </td>
-                        <td class="px-4 py-3 font-medium">{{ $dokumen->jenis_dokumen }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap">{{ $dokumen->created_at->translatedFormat('d M Y') }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs capitalize
-                                @if($dokumen->status == 'diajukan') bg-yellow-500/10 text-yellow-400
-                                @elseif($dokumen->status == 'diproses') bg-blue-500/10 text-blue-400
-                                @elseif($dokumen->status == 'selesai') bg-green-500/10 text-green-400
-                                @elseif($dokumen->status == 'ditolak') bg-red-500/10 text-red-400
-                                @endif">
-                                {{ $dokumen->status }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <a href="{{ route('admin.pengajuan-dokumen.show', $dokumen) }}" class="text-indigo-400 hover:underline text-sm font-medium">
-                                Lihat & Proses
-                            </a>
+                <tbody>
+                    @forelse ($pengajuanDokumens as $dokumen)
+                    <tr class="bg-zinc-800 border-b border-zinc-700 hover:bg-zinc-700/50">
+                        <td class="px-6 py-4">{{ $dokumen->created_at->format('d M Y') }}</td>
+                        <td class="px-6 py-4 font-medium text-white">{{ $dokumen->user->name }}</td>
+                        <td class="px-6 py-4">{{ $dokumen->jenis_dokumen }}</td>
+                        <td class="px-6 py-4">{{ ucfirst($dokumen->status) }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <a href="{{ route('admin.pengajuan-dokumen.show', $dokumen) }}" class="font-medium text-amber-400 hover:underline">Detail</a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center py-10 text-zinc-400">
-                            <i class="fas fa-folder-open fa-2x mb-3"></i>
-                            <p>Tidak ada pengajuan dokumen yang masuk.</p>
-                        </td>
+                        <td colspan="5" class="px-6 py-10 text-center text-zinc-500">Tidak ada data untuk ditampilkan.</td>
                     </tr>
                     @endforelse
                 </tbody>

@@ -15,9 +15,19 @@ class AdminAgendaController extends Controller
      * Menampilkan halaman utama agenda untuk admin.
      * Mengambil SEMUA AGENDA untuk ditampilkan di daftar.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $allAgendas = Agenda::with('creator')->orderBy('start_time', 'desc')->get();
+        $query = Agenda::with('creator');
+
+        // --- LOGIKA FILTER TANGGAL ---
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            // Filter berdasarkan tanggal mulai agenda (start_time)
+            $query->whereDate('start_time', '>=', $request->start_date)
+                  ->whereDate('start_time', '<=', $request->end_date);
+        }
+
+        $allAgendas = $query->orderBy('start_time', 'desc')->get();
+        
         return view('admin.agenda.index', [
             'title' => 'Kelola Agenda',
             'allAgendas' => $allAgendas

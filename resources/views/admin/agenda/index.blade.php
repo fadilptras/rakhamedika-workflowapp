@@ -39,21 +39,35 @@
         {{-- KOLOM KANAN: DAFTAR SEMUA AGENDA --}}
         <div class="lg:col-span-1 bg-zinc-800 rounded-xl shadow-lg border border-zinc-700 p-6 flex flex-col">
             <h2 class="text-xl font-bold text-white mb-4 flex-shrink-0">Semua Agenda</h2>
-            <div class="space-y-3 overflow-y-auto flex-grow">
+
+            {{-- --- FORM FILTER TANGGAL --- --}}
+            <form method="GET" action="{{ route('admin.agenda.index') }}" class="mb-4 flex-shrink-0">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-zinc-400 mb-1">Dari Tanggal</label>
+                        <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white text-sm">
+                    </div>
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-zinc-400 mb-1">Sampai Tanggal</label>
+                        <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white text-sm">
+                    </div>
+                </div>
+                <div class="flex gap-2 mt-3">
+                    <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">Filter</button>
+                    <a href="{{ route('admin.agenda.index') }}" class="w-full bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg text-center">Reset</a>
+                </div>
+            </form>
+
+            <div class="space-y-3 overflow-y-auto flex-grow border-t border-zinc-700 pt-4">
                 @forelse ($allAgendas as $agenda)
                     <div class="bg-zinc-700/50 p-4 rounded-lg border-l-4" style="border-color: {{ $agenda->color ?? '#F59E0B' }};">
                         <p class="font-bold text-white">{{ $agenda->title }}</p>
-                        
-                        {{-- ====================================================== --}}
-                        {{-- PERBAIKAN FORMAT TANGGAL ADA DI BARIS DI BAWAH INI --}}
-                        {{-- ====================================================== --}}
                         <p class="text-sm text-zinc-400">{{ \Carbon\Carbon::parse($agenda->start_time)->isoFormat('dddd, D MMMM YYYY [pukul] HH:mm') }}</p>
-                        
                         <p class="text-xs text-zinc-500 mt-1">Dibuat oleh: {{ $agenda->creator->name ?? 'N/A' }}</p>
                     </div>
                 @empty
                     <div class="h-full flex items-center justify-center text-center text-zinc-500">
-                        <p>Belum ada agenda yang dibuat.</p>
+                        <p>Tidak ada agenda yang cocok dengan filter Anda.</p>
                     </div>
                 @endforelse
             </div>
