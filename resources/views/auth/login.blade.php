@@ -9,6 +9,7 @@
   <style>
     body {
       font-family: 'Poppins', sans-serif;
+      /* Background gambar dihapus dari sini */
     }
     .animated-image {
       animation: float 6s ease-in-out infinite;
@@ -19,13 +20,13 @@
     }
   </style>
 </head>
-{{-- --- PERUBAHAN DI SINI: Warna background diubah menjadi hex code #DBDBDB --- --}}
-<body class="bg-[#DBDBDB]">
+{{-- --- PERUBAHAN BACKGROUND KEMBALI KE ABU-ABU --- --}}
+<body class="bg-gray-100">
 
   <div class="flex items-center justify-center min-h-screen p-4">
     <div class="flex w-full max-w-4xl rounded-lg shadow-lg bg-white overflow-hidden">
       
-      <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-500 to-blue-600 items-center justify-center p-8">
+      <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-700 to-indigo-900 items-center justify-center p-8">
         <div class="text-center">
           <img 
             src="{{ asset('asset/images/ilustrasi1.png') }}"
@@ -97,7 +98,8 @@
             </div>
 
             <div>
-              <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+              {{-- --- PERUBAHAN WARNA TOMBOL --- --}}
+              <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-700 to-indigo-900 hover:from-blue-800 hover:to-indigo-950 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
                 Masuk
               </button>
             </div>

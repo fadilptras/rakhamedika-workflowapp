@@ -351,8 +351,8 @@
                                                 </div>
                                                 <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[250px] hidden">
                                                     <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui">
-                                                        <i id="upload-icon" class="fas fa-camera text-3xl text-gray-400"></i>
-                                                        <p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Buka Kamera & Ambil Foto</span></p>
+                                                        <i id="upload-icon" class="fas fa-paperclip text-3xl text-gray-400"></i>
+                                                        <p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Sertakan Lampiran</span></p>
                                                     </div>
                                                     <input name="lampiran" id="lampiran" type="file" class="hidden" accept="image/*,application/pdf" />
                                                 </label>

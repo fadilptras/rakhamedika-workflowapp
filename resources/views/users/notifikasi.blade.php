@@ -1,7 +1,7 @@
 <x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
 
-    <div class="flex-1 overflow-auto bg-gray-100 py-12 px-4 md:px-8">
+    <div class="flex-1 overflow-auto bg-gray-100 py-12 px-0 md:px-0">
         <div class="max-w-6xl mx-auto">
             {{-- Container Notifikasi --}}
             <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">

@@ -4,7 +4,7 @@
     {{-- Ikon (Font Awesome) --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <div class="bg-gray-100 p-0 md:p-0 min-h-screen">
+    <div class="bg-gray-100 font-sans bg-gradient-to-br from-sky-50 to-blue-100 p-0 md:p-0 min-h-screen">
         <div class="max-w-7xl mx-auto space-y-6">
 
             <div class="flex items-right">
@@ -114,38 +114,38 @@
                     <div class="space-y-4">
                         @forelse ($cutiRequests as $cuti)
                         <a href="{{ route('cuti.show', $cuti) }}" class="block p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-300">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full
-                                        @if($cuti->status == 'disetujui') bg-green-100 text-green-600
-                                        @elseif($cuti->status == 'ditolak') bg-red-100 text-red-600
-                                        @elseif($cuti->status == 'dibatalkan') bg-gray-100 text-gray-500
-                                        @else bg-yellow-100 text-yellow-600 @endif">
-                                        <i class="fas 
-                                            @if($cuti->status == 'disetujui') fa-check
-                                            @elseif($cuti->status == 'ditolak') fa-times
-                                            @elseif($cuti->status == 'dibatalkan') fa-ban
-                                            @else fa-clock @endif"></i>
-                                    </div>
-                                    <div class="ml-4">
-                                        <p class="font-semibold text-gray-800">
-                                            {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d M Y') }} - {{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d M Y') }}
-                                        </p>
-                                        <p class="text-sm text-gray-500">
-                                            Durasi: {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($cuti->tanggal_selesai)) + 1 }} hari • Diajukan: {{ \Carbon\Carbon::parse($cuti->created_at)->format('d M Y') }}
-                                        </p>
-                                    </div>
+                            <div class="flex items-start justify-between gap-4"> {{-- Diubah menjadi flex-row dan diberi jarak --}}
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full
+                                    @if($cuti->status == 'disetujui') bg-green-100 text-green-600
+                                    @elseif($cuti->status == 'ditolak') bg-red-100 text-red-600
+                                    @elseif($cuti->status == 'dibatalkan') bg-gray-100 text-gray-500
+                                    @else bg-yellow-100 text-yellow-600 @endif">
+                                    <i class="fas
+                                        @if($cuti->status == 'disetujui') fa-check
+                                        @elseif($cuti->status == 'ditolak') fa-times
+                                        @elseif($cuti->status == 'dibatalkan') fa-ban
+                                        @else fa-clock @endif"></i>
                                 </div>
-                                <div class="mt-3 sm:mt-0">
-                                    <span class="px-3 py-1 text-xs font-bold rounded-full 
-                                        @if($cuti->status == 'disetujui') bg-green-100 text-green-800
-                                        @elseif($cuti->status == 'ditolak') bg-red-100 text-red-800
-                                        @elseif($cuti->status == 'dibatalkan') bg-gray-100 text-gray-800
-                                        @else bg-yellow-100 text-yellow-800 @endif">
-                                        {{ ucfirst($cuti->status) }}
-                                    </span>
+                                <div class="ml-4">
+                                    <p class="font-semibold text-gray-800">
+                                        {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d M Y') }} - {{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d M Y') }}
+                                    </p>
+                                    <p class="text-sm text-gray-500">
+                                        Durasi: {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($cuti->tanggal_selesai)) + 1 }} hari • Diajukan: {{ \Carbon\Carbon::parse($cuti->created_at)->format('d M Y') }}
+                                    </p>
                                 </div>
                             </div>
+                            <div class="flex-shrink-0"> {{-- Dihapus mt-3 agar tidak ada margin atas di mobile --}}
+                                <span class="px-3 py-1 text-xs font-bold rounded-full
+                                    @if($cuti->status == 'disetujui') bg-green-100 text-green-800
+                                    @elseif($cuti->status == 'ditolak') bg-red-100 text-red-800
+                                    @elseif($cuti->status == 'dibatalkan') bg-gray-100 text-gray-800
+                                    @else bg-yellow-100 text-yellow-800 @endif">
+                                    {{ ucfirst($cuti->status) }}
+                                </span>
+                            </div>
+                        </div>
                         </a>
                         @empty
                         <div class="text-center py-10 border-2 border-dashed rounded-xl">

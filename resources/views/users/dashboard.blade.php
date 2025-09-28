@@ -162,15 +162,24 @@
 
                          <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Acara <span class="text-red-500">*</span></label>
-                            <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
-                               <div class="sm:col-span-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <div>
+                                    <label for="agenda_date" class="block text-xs font-medium text-gray-500 mb-1">Tanggal</label>
                                     <input type="text" id="agenda_date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Pilih Tanggal">
                                </div>
-                               <div class="sm:col-span-2">
-                                    <input type="text" id="start_hour" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Mulai">
+                               <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label for="start_hour" class="block text-xs font-medium text-gray-500 mb-1">Mulai</label>
+                                        <input type="text" id="start_hour" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Jam">
+                                    </div>
+                                    <div>
+                                        <label for="end_hour" class="block text-xs font-medium text-gray-500 mb-1">Selesai</label>
+                                        <input type="text" id="end_hour" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Jam">
+                                    </div>
                                </div>
                             </div>
                             <small id="start_time-error" class="text-red-500 text-xs mt-1 hidden"></small>
+                            <small id="end_time-error" class="text-red-500 text-xs mt-1 hidden"></small>
                         </div>
                     </div>
 
@@ -199,6 +208,12 @@
                     <button type="submit" id="save-agenda-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Simpan Agenda</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="agenda-detail-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white/90 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl shadow-blue-900/20 w-full max-w-2xl mx-4 p-6 transform transition-all" id="agenda-detail-content">
+            {{-- KONTEN DETAIL AKAN DIISI OLEH JAVASCRIPT --}}
         </div>
     </div>
 
@@ -239,15 +254,13 @@
                         const endTime = event.end ? formatTime(event.end) : '';
                         
                         const agendaHTML = `
-                            <div class="flex items-center gap-4 p-4 rounded-xl bg-white/80 shadow-md shadow-blue-500/10 border border-blue-200 transition-all duration-200 hover:shadow-xl hover:border-blue-400 hover:bg-white">
+                            <div data-event-id="${event.id}" class="agenda-item-clickable flex items-center gap-4 p-4 rounded-xl bg-white/80 shadow-md shadow-blue-500/10 border border-blue-200 transition-all duration-200 hover:shadow-xl hover:border-blue-400 hover:bg-white cursor-pointer">
                                 <div class="flex-shrink-0 text-center bg-blue-100 text-blue-800 rounded-lg px-3 py-2 w-20">
                                     <p class="font-bold text-sm">${startTime}</p>
                                     ${endTime ? `<p class="text-xs">${endTime}</p>` : ''}
                                 </div>
                                 <div class="flex-grow border-l-4 pl-4" style="border-color: ${event.backgroundColor || event.borderColor || '#3B82F6'}">
-                                    
                                     <p class="font-semibold text-gray-900 text-base">${event.extendedProps.fullTitle}</p>
-                                    
                                     <p class="text-xs text-gray-500">${formatFullDate(event.start)}</p>
                                     ${event.extendedProps.location ? `<p class="text-sm text-gray-500 mt-1">${event.extendedProps.location}</p>` : ''}
                                 </div>
@@ -261,6 +274,16 @@
                             <p class="font-semibold">Tidak ada agenda</p><p class="text-sm opacity-80">Pilih tanggal lain atau tambah agenda baru.</p>
                         </div>`;
                 }
+                
+                document.querySelectorAll('.agenda-item-clickable').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const eventId = item.dataset.eventId;
+                        const event = calendar.getEventById(eventId);
+                        if (event) {
+                            showAgendaDetails(event);
+                        }
+                    });
+                });
             }
 
             const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -292,7 +315,84 @@
             });
             calendar.render();
 
-            // === AWAL DARI KODE BARU UNTUK MODAL ===
+            const detailModal = document.getElementById('agenda-detail-modal');
+            const detailContent = document.getElementById('agenda-detail-content');
+
+            function showAgendaDetails(event) {
+                const props = event.extendedProps;
+                const startTime = formatTime(event.start);
+                const endTime = event.end ? formatTime(event.end) : '';
+
+                let guestsHTML = '<p class="text-gray-500 text-sm">Tidak ada tamu yang diundang.</p>';
+                if (props.guests && props.guests.length > 0) {
+                    guestsHTML = `<div class="flex flex-wrap gap-2">${props.guests.map(guest => `<span class="bg-gray-200 text-gray-800 text-xs font-semibold px-2.5 py-1 rounded-full">${guest}</span>`).join('')}</div>`;
+                }
+
+                const contentHTML = `
+                    <div class="flex justify-between items-start pb-3 mb-4 border-b border-black/10">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider" style="color: ${event.backgroundColor || '#3B82F6'}">Detail Agenda</p>
+                            <h4 class="text-2xl font-bold text-gray-900 mt-1">${props.fullTitle}</h4>
+                        </div>
+                        <button id="close-detail-modal-btn" class="text-gray-400 hover:text-gray-800 transition-colors"><i class="fas fa-times text-2xl"></i></button>
+                    </div>
+                    <div class="max-h-[60vh] overflow-y-auto pr-3 -mr-3 space-y-5 text-sm">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-calendar-alt fa-fw text-gray-400 text-lg mt-1"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500">Waktu & Tanggal</p>
+                                    <p class="font-semibold text-gray-800">${formatFullDate(event.start)}</p>
+                                    <p class="text-gray-600">${startTime} - ${endTime} WIB</p>
+                                </div>
+                            </div>
+                            ${props.location ? `
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-map-marker-alt fa-fw text-gray-400 text-lg mt-1"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500">Lokasi</p>
+                                    <p class="font-semibold text-gray-800">${props.location}</p>
+                                </div>
+                            </div>` : ''}
+                        </div>
+                        ${props.description ? `
+                        <div>
+                            <h5 class="font-bold text-gray-800 mb-2 flex items-center gap-2"><i class="fas fa-align-left fa-fw text-gray-400"></i>Deskripsi</h5>
+                            <div class="text-gray-700 bg-gray-100 p-4 rounded-lg border text-sm">${props.description.replace(/\n/g, '<br>')}</div>
+                        </div>` : ''}
+                        <div>
+                            <h5 class="font-bold text-gray-800 mb-2 flex items-center gap-2"><i class="fas fa-user-tie fa-fw text-gray-400"></i>Penyelenggara</h5>
+                            <p class="text-gray-600">${props.organizer}</p>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-users fa-fw text-gray-400"></i>Tamu Undangan</h5>
+                            ${guestsHTML}
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-black/10 text-right">
+                        <button id="close-detail-modal-bottom-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Tutup</button>
+                    </div>
+                `;
+
+                detailContent.innerHTML = contentHTML;
+                detailModal.classList.remove('hidden');
+                setTimeout(() => detailContent.classList.add('scale-100'), 10);
+
+                document.getElementById('close-detail-modal-btn').addEventListener('click', closeDetailModal);
+                document.getElementById('close-detail-modal-bottom-btn').addEventListener('click', closeDetailModal);
+            }
+            
+            function closeDetailModal() {
+                detailContent.classList.remove('scale-100');
+                setTimeout(() => detailModal.classList.add('hidden'), 200);
+            }
+
+            detailModal.addEventListener('click', (e) => {
+                if (e.target === detailModal) {
+                    closeDetailModal();
+                }
+            });
+            
             const agendaModal = document.getElementById('agenda-modal');
             const agendaModalContent = document.getElementById('agenda-modal-content');
             const addAgendaBtn = document.getElementById('add-agenda-btn');
@@ -300,14 +400,15 @@
             const cancelBtn = document.getElementById('cancel-btn');
             const agendaForm = document.getElementById('agenda-form');
             
-            // Inisialisasi Flatpickr untuk tanggal dan jam
             const agendaDate = flatpickr("#agenda_date", { dateFormat: "Y-m-d", altInput: true, altFormat: "d F Y", locale: "id" });
             const startHour = flatpickr("#start_hour", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
+            const endHour = flatpickr("#end_hour", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
             
             function openModal() {
                 agendaForm.reset();
                 agendaDate.setDate(new Date());
                 startHour.clear();
+                endHour.clear();
                 agendaModal.classList.remove('hidden');
                 setTimeout(() => agendaModalContent.classList.add('scale-100'), 10);
             }
@@ -322,12 +423,11 @@
             cancelBtn.addEventListener('click', closeModal);
             agendaModal.addEventListener('click', (e) => { if (e.target === agendaModal) closeModal(); });
             
-            // PERUBAHAN DI SINI: Fetch user untuk mengisi div checkbox
             const guestContainer = document.getElementById('guest-list-container');
             fetch("{{ route('agendas.getUsers') }}")
                 .then(response => response.json())
                 .then(users => {
-                    guestContainer.innerHTML = ''; // Kosongkan container
+                    guestContainer.innerHTML = '';
                     if (users.length > 0) {
                         users.forEach(user => {
                             const checkboxHTML = `
@@ -355,11 +455,15 @@
                 clearValidationErrors();
                 
                 const dateValue = document.getElementById('agenda_date').value;
-                const timeValue = document.getElementById('start_hour').value;
+                const startTimeValue = document.getElementById('start_hour').value;
+                const endTimeValue = document.getElementById('end_hour').value;
 
                 const formData = new FormData(this);
-                if (dateValue && timeValue) {
-                    formData.append('start_time', `${dateValue} ${timeValue}`);
+                if (dateValue && startTimeValue) {
+                    formData.append('start_time', `${dateValue} ${startTimeValue}`);
+                }
+                if (dateValue && endTimeValue) {
+                    formData.append('end_time', `${dateValue} ${endTimeValue}`);
                 }
 
                 const saveButton = document.getElementById('save-agenda-btn');

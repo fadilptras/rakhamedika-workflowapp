@@ -4,7 +4,7 @@
     {{-- Chart.js untuk Diagram --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <div class="p-4 md:p-6 lg:p-8">
+    <div class="p-0 md:p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
 
             {{-- Header dan Tombol Kembali --}}

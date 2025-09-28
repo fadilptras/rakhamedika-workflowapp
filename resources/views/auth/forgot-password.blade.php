@@ -7,7 +7,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Poppins', sans-serif; }
+    body { 
+      font-family: 'Poppins', sans-serif; 
+      /* Background gambar dihapus dari sini */
+    }
     .animated-image {
       animation: float 6s ease-in-out infinite;
     }
@@ -17,10 +20,12 @@
     }
   </style>
 </head>
+{{-- --- PERUBAHAN BACKGROUND KEMBALI KE ABU-ABU --- --}}
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
  <div class="flex w-full max-w-4xl rounded-lg shadow-lg bg-white overflow-hidden">
-    <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-500 to-blue-600 items-center justify-center p-8">
+    {{-- --- PERUBAHAN WARNA GRADIEN PANEL --- --}}
+    <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-700 to-indigo-900 items-center justify-center p-8">
         <div class="text-center">
             <img 
             src="{{ asset('asset/images/ilustrasi1.png') }}" 
@@ -28,7 +33,6 @@
             class="w-full max-w-xs mx-auto animated-image"
           />
           <h2 class="text-2xl font-bold text-white mt-12">Kami Siap Membantu Anda</h2>
-          <p class="text-blue-100 mt-2">Untuk melakukan reset password, silakan hubungi Administrator</p>
         </div>
     </div>
 
@@ -43,18 +47,19 @@
             <p class="font-semibold text-gray-800">Kontak Admin:</p>
             <ul class="list-disc list-inside mt-2 space-y-2 text-gray-700">
                 <li>
-                    <strong>Email:</strong> 
-                    <a href="mailto:admin@proyekanda.com" class="text-blue-600 hover:underline">admin@proyekanda.com</a>
+                    <strong>Email :</strong> 
+                    <a href="mailto:admin@rakhanusantaramedika.com" class="text-xs text-blue-600 hover:underline">admin@rakhanusantaramedika.com</a>
                 </li>
                 <li>
-                    <strong>WhatsApp:</strong> 
-                    <a href="https://wa.me/6281234567890" target="_blank" class="text-blue-600 hover:underline">0812-3456-7890</a>
+                    <strong>WhatsApp :</strong> 
+                    <a href="https://wa.me/6281572496312" target="_blank" class="text-blue-600 hover:underline">0815-7249-6312</a>
                 </li>
             </ul>
         </div>
 
         <div class="pt-4">
-            <a href="{{ route('login') }}" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 transition">
+            {{-- --- PERUBAHAN WARNA TOMBOL --- --}}
+            <a href="{{ route('login') }}" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-700 to-indigo-900 hover:from-blue-800 hover:to-indigo-950 transition">
                 Kembali ke Halaman Login
             </a>
         </div>

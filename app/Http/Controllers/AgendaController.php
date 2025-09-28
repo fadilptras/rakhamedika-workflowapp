@@ -6,7 +6,7 @@ use App\Models\Agenda;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon; // Pastikan untuk mengimpor Carbon
+use Carbon\Carbon;
 
 class AgendaController extends Controller
 {
@@ -24,26 +24,25 @@ class AgendaController extends Controller
                       $subQuery->where('user_id', $user->id);
                   });
         })
-        ->with('creator') 
+        ->with(['creator', 'guests']) // Muat relasi guests juga
         ->get();
 
         $events = [];
         foreach ($agendas as $agenda) {
             if ($agenda->creator) {
                 $events[] = [
-                    // PERUBAHAN 1: Judul untuk FullCalendar kita potong pendek
+                    'id' => $agenda->id, // Tambahkan ID agenda
                     'title' => \Illuminate\Support\Str::limit($agenda->title, 15), 
-                    
                     'start' => $agenda->start_time,
                     'end' => $agenda->end_time,
                     'backgroundColor' => $agenda->color,
                     'borderColor' => $agenda->color,
                     'extendedProps' => [
-                        // PERUBAHAN 2: Kita simpan judul asli yang panjang di sini
                         'fullTitle' => $agenda->title, 
-                        
+                        'description' => $agenda->description, // Tambahkan deskripsi
                         'location' => $agenda->location,
-                        'organizer' => $agenda->creator->name, 
+                        'organizer' => $agenda->creator->name,
+                        'guests' => $agenda->guests->pluck('name')->toArray() // Ambil nama tamu dari relasi
                     ]
                 ];
             }
@@ -62,27 +61,21 @@ class AgendaController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'start_time' => 'required|date_format:Y-m-d H:i',
+            'end_time' => 'required|date_format:Y-m-d H:i|after:start_time', // Tambahkan validasi end_time
             'location' => 'nullable|string|max:255',
             'color' => 'nullable|string|max:7',
             'guests' => 'nullable|array',
             'guests.*' => 'exists:users,id',
         ]);
-
-        // Mengambil start_time dan mengubahnya menjadi objek Carbon
-        $startTime = Carbon::parse($validated['start_time']);
-
-        // Membuat end_time secara otomatis (1 jam setelah start_time)
-        $endTime = $startTime->copy()->addHour();
-
-        // Membuat agenda baru dengan semua data yang dibutuhkan
+        
         $agenda = Agenda::create([
             'title' => $validated['title'],
             'description' => $validated['description'],
             'start_time' => $validated['start_time'],
-            'end_time' => $endTime, // Menyertakan end_time yang sudah dihitung
+            'end_time' => $validated['end_time'], // Gunakan end_time dari form
             'location' => $validated['location'],
             'color' => $validated['color'],
-            'user_id' => Auth::id(), // ID user yang sedang login
+            'user_id' => Auth::id(),
         ]);
 
         // Jika ada tamu yang diundang, lampirkan ke agenda

@@ -4,7 +4,7 @@
     {{-- Font Awesome untuk ikon --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <div class="bg-gray-50 p-4 md:p-8 min-h-screen">
+    <div class="bg-gray-100 font-sans bg-gradient-to-br from-sky-50 to-blue-100 p-0 md:p-0 min-h-screen">
         <div class="max-w-4xl mx-auto">
             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
                 
@@ -27,8 +27,10 @@
                         @if ($cuti->status == 'diajukan')
                             <p class="flex items-center text-base font-medium text-yellow-600">
                                 <i class="fas fa-clock fa-fw mr-3"></i>
+                                <span>
                                 Menunggu persetujuan dari: 
                                 <span class="font-bold ml-1">{{ $approver?->name ?? 'Atasan belum ditentukan' }}</span>
+                            </span>
                             </p>
                         @elseif($cuti->status == 'disetujui')
                             <p class="flex items-center text-base font-medium text-green-600">
