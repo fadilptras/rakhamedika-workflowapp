@@ -24,25 +24,28 @@ class AgendaController extends Controller
                       $subQuery->where('user_id', $user->id);
                   });
         })
-        ->with(['creator', 'guests']) // Muat relasi guests juga
+        ->with(['creator', 'guests'])
         ->get();
 
         $events = [];
         foreach ($agendas as $agenda) {
             if ($agenda->creator) {
                 $events[] = [
-                    'id' => $agenda->id, // Tambahkan ID agenda
-                    'title' => \Illuminate\Support\Str::limit($agenda->title, 15), 
+                    'id' => $agenda->id,
+                    'title' => \Illuminate\Support\Str::limit($agenda->title, 15),
                     'start' => $agenda->start_time,
                     'end' => $agenda->end_time,
                     'backgroundColor' => $agenda->color,
                     'borderColor' => $agenda->color,
                     'extendedProps' => [
-                        'fullTitle' => $agenda->title, 
-                        'description' => $agenda->description, // Tambahkan deskripsi
+                        'fullTitle' => $agenda->title,
+                        'description' => $agenda->description,
                         'location' => $agenda->location,
                         'organizer' => $agenda->creator->name,
-                        'guests' => $agenda->guests->pluck('name')->toArray() // Ambil nama tamu dari relasi
+                        'guests' => $agenda->guests->pluck('name')->toArray(),
+                        'guest_ids' => $agenda->guests->pluck('id')->toArray(), // PENTING untuk edit form
+                        // PENAMBAHAN: Flag untuk mengecek apakah user saat ini adalah pembuat agenda
+                        'is_creator' => $agenda->user_id === $user->id 
                     ]
                 ];
             }
@@ -56,12 +59,11 @@ class AgendaController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi input dari form
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'start_time' => 'required|date_format:Y-m-d H:i',
-            'end_time' => 'required|date_format:Y-m-d H:i|after:start_time', // Tambahkan validasi end_time
+            'end_time' => 'required|date_format:Y-m-d H:i|after:start_time',
             'location' => 'nullable|string|max:255',
             'color' => 'nullable|string|max:7',
             'guests' => 'nullable|array',
@@ -72,18 +74,60 @@ class AgendaController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'],
             'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'], // Gunakan end_time dari form
+            'end_time' => $validated['end_time'],
             'location' => $validated['location'],
             'color' => $validated['color'],
             'user_id' => Auth::id(),
         ]);
 
-        // Jika ada tamu yang diundang, lampirkan ke agenda
         if (!empty($validated['guests'])) {
             $agenda->guests()->sync($validated['guests']);
         }
 
-        return response()->json(['message' => 'Agenda berhasil dibuat!']);
+        return redirect()->route('dashboard')->with('success', 'Agenda berhasil dibuat!');
+    }
+    
+    /**
+     * FUNGSI BARU: Update agenda yang sudah ada.
+     */
+    public function update(Request $request, Agenda $agenda)
+    {
+        // Pastikan hanya pembuat agenda yang bisa mengedit
+        if ($agenda->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Anda tidak memiliki izin untuk mengedit agenda ini.'], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'start_time' => 'required|date_format:Y-m-d H:i',
+            'end_time' => 'required|date_format:Y-m-d H:i|after:start_time',
+            'location' => 'nullable|string|max:255',
+            'color' => 'nullable|string|max:7',
+            'guests' => 'nullable|array',
+            'guests.*' => 'exists:users,id',
+        ]);
+
+        $agenda->update($validated);
+        $agenda->guests()->sync($validated['guests'] ?? []);
+
+        return redirect()->route('dashboard')->with('success', 'Agenda berhasil diperbarui!');
+    }
+
+    /**
+     * FUNGSI BARU: Hapus agenda.
+     */
+    public function destroy(Agenda $agenda)
+    {
+        // Pastikan hanya pembuat agenda yang bisa menghapus
+        if ($agenda->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Anda tidak memiliki izin untuk menghapus agenda ini.'], 403);
+        }
+
+        $agenda->guests()->sync([]); // Lepaskan semua relasi tamu
+        $agenda->delete();
+
+        return redirect()->route('dashboard')->with('success', 'Agenda berhasil dihapus!');
     }
 
     /**
@@ -91,7 +135,6 @@ class AgendaController extends Controller
      */
     public function getUsers()
     {
-        // Ambil semua user kecuali diri sendiri, hanya id dan nama
         $users = User::where('id', '!=', Auth::id())
                      ->select('id', 'name')
                      ->orderBy('name', 'asc')

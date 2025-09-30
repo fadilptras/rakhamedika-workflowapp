@@ -13,15 +13,12 @@ class AdminAgendaController extends Controller
 {
     /**
      * Menampilkan halaman utama agenda untuk admin.
-     * Mengambil SEMUA AGENDA untuk ditampilkan di daftar.
      */
     public function index(Request $request)
     {
         $query = Agenda::with('creator');
 
-        // --- LOGIKA FILTER TANGGAL ---
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            // Filter berdasarkan tanggal mulai agenda (start_time)
             $query->whereDate('start_time', '>=', $request->start_date)
                   ->whereDate('start_time', '<=', $request->end_date);
         }
@@ -39,22 +36,30 @@ class AdminAgendaController extends Controller
      */
     public function getAdminAgendas()
     {
-        // Ambil semua agenda dari semua user
-        $agendas = Agenda::with('creator')->get();
+        $agendas = Agenda::with(['creator', 'guests'])->get();
 
         $events = $agendas->map(function($agenda) {
-            // Pastikan creator ada untuk menghindari error
             if ($agenda->creator) {
                 return [
-                    'title' => $agenda->title,
+                    'id' => $agenda->id, 
+                    'title' => \Illuminate\Support\Str::limit($agenda->title, 15), 
                     'start' => $agenda->start_time,
                     'end' => $agenda->end_time,
                     'backgroundColor' => $agenda->color,
                     'borderColor' => $agenda->color,
+                    'extendedProps' => [
+                        'fullTitle' => $agenda->title, 
+                        'description' => $agenda->description,
+                        'location' => $agenda->location,
+                        'organizer' => $agenda->creator->name,
+                        // Kirim nama tamu untuk ditampilkan & ID untuk mencocokkan di form edit
+                        'guests' => $agenda->guests->pluck('name')->toArray(),
+                        'guest_ids' => $agenda->guests->pluck('id')->toArray(),
+                    ]
                 ];
             }
             return null;
-        })->filter(); // Hapus item null jika ada creator yang terhapus
+        })->filter();
 
         return response()->json($events);
     }
@@ -84,7 +89,7 @@ class AdminAgendaController extends Controller
             'end_time' => $endTime,
             'location' => $validated['location'],
             'color' => $validated['color'],
-            'user_id' => Auth::id(),
+            'user_id' => Auth::id(), // Admin yang sedang login
         ]);
 
         if (!empty($validated['guests'])) {
@@ -92,6 +97,43 @@ class AdminAgendaController extends Controller
         }
 
         return redirect()->route('admin.agenda.index')->with('success', 'Agenda berhasil dibuat!');
+    }
+
+    /**
+     * Update agenda yang sudah ada.
+     */
+    public function update(Request $request, Agenda $agenda)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'start_time' => 'required|date_format:Y-m-d H:i',
+            'location' => 'nullable|string|max:255',
+            'color' => 'nullable|string|max:7',
+            'guests' => 'nullable|array',
+            'guests.*' => 'exists:users,id',
+        ]);
+
+        $startTime = Carbon::parse($validated['start_time']);
+        $endTime = $startTime->copy()->addHour(); // Tetap set durasi 1 jam
+
+        $agendaData = array_merge($validated, ['end_time' => $endTime]);
+
+        $agenda->update($agendaData);
+        $agenda->guests()->sync($validated['guests'] ?? []);
+
+        return redirect()->route('admin.agenda.index')->with('success', 'Agenda berhasil diperbarui!');
+    }
+
+    /**
+     * Hapus agenda.
+     */
+    public function destroy(Agenda $agenda)
+    {
+        $agenda->guests()->sync([]); // Lepaskan relasi tamu
+        $agenda->delete();
+
+        return redirect()->route('admin.agenda.index')->with('success', 'Agenda berhasil dihapus!');
     }
 
     /**

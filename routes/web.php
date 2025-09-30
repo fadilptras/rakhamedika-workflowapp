@@ -90,6 +90,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/agendas', [AgendaController::class, 'index'])->name('agendas.index');
     Route::post('/agendas', [AgendaController::class, 'store'])->name('agendas.store');
     Route::get('/get-users', [AgendaController::class, 'getUsers'])->name('agendas.getUsers');
+    Route::put('/agendas/{agenda}', [AgendaController::class, 'update'])->name('agendas.update');
+    Route::delete('/agendas/{agenda}', [AgendaController::class, 'destroy'])->name('agendas.destroy');
 
 });
 
@@ -157,10 +159,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
 
     Route::prefix('agenda')->name('agenda.')->group(function () {
+        // [GET] Menampilkan halaman utama kalender dan daftar agenda
         Route::get('/', [AdminAgendaController::class, 'index'])->name('index');
+
+        // [POST] Menyimpan agenda baru dari modal
         Route::post('/', [AdminAgendaController::class, 'store'])->name('store');
+
+        // [GET] Mengambil data semua user untuk ditampilkan di form
         Route::get('/get-all-users', [AdminAgendaController::class, 'getAllUsers'])->name('getAllUsers');
+
+        // [GET] Mengambil data event untuk ditampilkan di FullCalendar
         Route::get('/events', [AdminAgendaController::class, 'getAdminAgendas'])->name('getEvents');
+
+        // [PUT] Mengupdate agenda yang sudah ada
+        Route::put('/{agenda}', [AdminAgendaController::class, 'update'])->name('update');
+
+        // [DELETE] Menghapus agenda
+        Route::delete('/{agenda}', [AdminAgendaController::class, 'destroy'])->name('destroy');
     });
     
 });

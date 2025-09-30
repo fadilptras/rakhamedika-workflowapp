@@ -1,7 +1,7 @@
 <x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
 
-    <div class="bg-slate-100 min-h-screen">
+    <div class="bg-gradient-to-br from-sky-50 to-blue-100 min-h-screen">
         <div class="container mx-auto p-0 md:p-0">
             
             <form action="{{ route('pengajuan_dana.store') }}" method="POST" enctype="multipart/form-data">
@@ -163,6 +163,8 @@
                                 <td class="px-6 py-4">
                                     @if ($pengajuan->status == 'diajukan')
                                         <span class="font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
+                                    @elseif ($pengajuan->status == 'diproses')
+                                        <span class="font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Diproses</span>
                                     @elseif ($pengajuan->status == 'disetujui')
                                         <span class="font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>
                                     @elseif ($pengajuan->status == 'ditolak')
@@ -184,6 +186,8 @@
                                 <div class="font-bold text-slate-800 text-base pr-4">{{ $pengajuan->judul_pengajuan }}</div>
                                 @if ($pengajuan->status == 'diajukan')
                                     <span class="flex-shrink-0 font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
+                                @elseif ($pengajuan->status == 'diproses')
+                                    <span class="flex-shrink-0 font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Diproses</span>
                                 @elseif ($pengajuan->status == 'disetujui')
                                     <span class="flex-shrink-0 font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>
                                 @elseif ($pengajuan->status == 'ditolak')

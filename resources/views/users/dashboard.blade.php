@@ -57,6 +57,24 @@
 
     <div class="flex flex-col h-full bg-gradient-to-br from-sky-50 to-blue-100">
         <main class="flex-1 overflow-y-auto min-h-screen p-0 lg:p-6">
+
+            @if (session('success'))
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md mb-6 mx-6 lg:mx-0" role="alert">
+                    <p class="font-bold">Sukses!</p>
+                    <p>{{ session('success') }}</p>
+                </div>
+            @endif
+            @if ($errors->any())
+                <div class="mb-6 mx-6 lg:mx-0 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 text-sm rounded-md" role="alert">
+                    <p class="font-bold">Terjadi Kesalahan</p>
+                    <ul class="mt-1 list-disc list-inside">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
                 <div class="lg:col-span-1 space-y-6">
@@ -138,76 +156,76 @@
     </div>
 
     <div id="agenda-modal" class="fixed inset-0 bg-black bg-opacity-60 z-40 hidden flex items-center justify-center p-4">
-        <div class="bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl shadow-blue-900/20 w-full max-w-3xl mx-4 p-6 transform transition-all" id="agenda-modal-content">
-            <div class="flex justify-between items-center border-b border-black/10 pb-3 mb-6">
+        <div class="bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl shadow-blue-900/20 w-full max-w-3xl mx-4 p-6 flex flex-col max-h-[90vh] transform transition-all" id="agenda-modal-content">
+            
+            <div class="flex-shrink-0 flex justify-between items-center border-b border-black/10 pb-3 mb-6">
                 <h4 class="text-xl font-bold text-gray-800">Buat Agenda Baru</h4>
                 <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800"><i class="fas fa-times text-2xl"></i></button>
             </div>
 
-            <form id="agenda-form">
-                @csrf
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                    
-                    <div class="space-y-6">
-                        <div>
-                            <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Judul Agenda <span class="text-red-500">*</span></label>
-                            <input type="text" id="title" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Contoh: Rapat Evaluasi Bulanan">
-                            <small id="title-error" class="text-red-500 text-xs mt-1 hidden"></small>
-                        </div>
-
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
-                            <textarea id="description" name="description" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Jelaskan detail agenda di sini..."></textarea>
-                        </div>
-
-                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Acara <span class="text-red-500">*</span></label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                               <div>
-                                    <label for="agenda_date" class="block text-xs font-medium text-gray-500 mb-1">Tanggal</label>
-                                    <input type="text" id="agenda_date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Pilih Tanggal">
-                               </div>
-                               <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label for="start_hour" class="block text-xs font-medium text-gray-500 mb-1">Mulai</label>
-                                        <input type="text" id="start_hour" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Jam">
-                                    </div>
-                                    <div>
-                                        <label for="end_hour" class="block text-xs font-medium text-gray-500 mb-1">Selesai</label>
-                                        <input type="text" id="end_hour" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Jam">
-                                    </div>
-                               </div>
-                            </div>
-                            <small id="start_time-error" class="text-red-500 text-xs mt-1 hidden"></small>
-                            <small id="end_time-error" class="text-red-500 text-xs mt-1 hidden"></small>
-                        </div>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Undang Karyawan</label>
-                            <div id="guest-list-container" class="h-40 overflow-y-auto rounded-lg border bg-white/70 p-3 space-y-2">
-                                <p class="text-gray-400">Memuat karyawan...</p>
-                            </div>
-                        </div>
+            <div class="flex-grow overflow-y-auto -mr-3 pr-3">
+                <form id="agenda-form" method="POST">
+                    @csrf
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                         
-                        <div>
-                            <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
-                            <input type="text" id="location" name="location" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Contoh: Ruang Meeting Lt. 2">
+                        <div class="space-y-6">
+                            <div>
+                                <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Judul Agenda <span class="text-red-500">*</span></label>
+                                <input type="text" id="title" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Contoh: Rapat Evaluasi Bulanan">
+                                <small id="title-error" class="text-red-500 text-xs mt-1 hidden"></small>
+                            </div>
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+                                <textarea id="description" name="description" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Jelaskan detail agenda di sini..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Acara <span class="text-red-500">*</span></label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                   <div>
+                                        <label for="agenda_date" class="block text-xs font-medium text-gray-500 mb-1">Tanggal</label>
+                                        <input type="text" id="agenda_date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Pilih Tanggal">
+                                   </div>
+                                   <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label for="start_hour" class="block text-xs font-medium text-gray-500 mb-1">Mulai</label>
+                                            <input type="text" id="start_hour" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Jam">
+                                        </div>
+                                        <div>
+                                            <label for="end_hour" class="block text-xs font-medium text-gray-500 mb-1">Selesai</label>
+                                            <input type="text" id="end_hour" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Jam">
+                                        </div>
+                                   </div>
+                                </div>
+                                <small id="start_time-error" class="text-red-500 text-xs mt-1 hidden"></small>
+                                <small id="end_time-error" class="text-red-500 text-xs mt-1 hidden"></small>
+                            </div>
                         </div>
 
-                        <div>
-                            <label for="color" class="block text-sm font-medium text-gray-700 mb-1">Warna Label</label>
-                            <input type="color" id="color" name="color" value="#3B82F6" class="w-full h-10 px-1 py-1 border border-gray-300 rounded-lg cursor-pointer">
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Undang Karyawan</label>
+                                <div id="guest-list-container" class="h-40 overflow-y-auto rounded-lg border bg-white/70 p-3 space-y-2">
+                                    <p class="text-gray-400">Memuat karyawan...</p>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
+                                <input type="text" id="location" name="location" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white/70" placeholder="Contoh: Ruang Meeting Lt. 2">
+                            </div>
+                            <div>
+                                <label for="color" class="block text-sm font-medium text-gray-700 mb-1">Warna Label</label>
+                                <input type="color" id="color" name="color" value="#3B82F6" class="w-full h-10 px-1 py-1 border border-gray-300 rounded-lg cursor-pointer">
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex justify-end mt-8 pt-4 border-t border-black/10">
-                    <button type="button" id="cancel-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg mr-2">Batal</button>
-                    <button type="submit" id="save-agenda-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Simpan Agenda</button>
-                </div>
-            </form>
+                    {{-- Tombol dipindahkan ke dalam form --}}
+                    <div class="flex-shrink-0 flex justify-end mt-6 pt-4 border-t border-black/10">
+                        <button type="button" id="cancel-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg mr-2">Batal</button>
+                        <button type="submit" id="save-agenda-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Simpan Agenda</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -221,16 +239,38 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+    
+    {{-- =================================================================================== --}}
+    {{-- =================== KODE SCRIPT LENGKAP YANG SUDAH DIPERBAIKI =================== --}}
+    {{-- =================================================================================== --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // === INISIALISASI ELEMEN DOM ===
             const calendarEl = document.getElementById('mini-calendar');
             const agendaListContainer = document.getElementById('agenda-list-container');
             const agendaListTitle = document.getElementById('agenda-list-title');
             let selectedDateEl = null;
 
+            const detailModal = document.getElementById('agenda-detail-modal');
+            const detailContent = document.getElementById('agenda-detail-content');
+            const agendaModal = document.getElementById('agenda-modal');
+            const addAgendaBtn = document.getElementById('add-agenda-btn');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const agendaForm = document.getElementById('agenda-form');
+            const modalTitle = agendaModal.querySelector('h4');
+            const saveButton = document.getElementById('save-agenda-btn');
+
+            // === INISIALISASI FLATPCIKR ===
+            const agendaDate = flatpickr("#agenda_date", { dateFormat: "Y-m-d", altInput: true, altFormat: "d F Y", locale: "id" });
+            const startHour = flatpickr("#start_hour", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
+            const endHour = flatpickr("#end_hour", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
+            
+            // === FUNGSI BANTUAN ===
             function formatFullDate(date) { return date.toLocaleString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
             function formatTime(date) { return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }); }
 
+            // === LOGIKA KALENDER & LIST AGENDA (TIDAK BERUBAH) ===
             function updateAgendaList(selectedDate) {
                 const allEvents = calendar.getEvents();
                 const startOfWeek = new Date(selectedDate);
@@ -252,14 +292,13 @@
                     eventsThisWeek.sort((a, b) => a.start - b.start).forEach(event => {
                         const startTime = formatTime(event.start);
                         const endTime = event.end ? formatTime(event.end) : '';
-                        
                         const agendaHTML = `
                             <div data-event-id="${event.id}" class="agenda-item-clickable flex items-center gap-4 p-4 rounded-xl bg-white/80 shadow-md shadow-blue-500/10 border border-blue-200 transition-all duration-200 hover:shadow-xl hover:border-blue-400 hover:bg-white cursor-pointer">
                                 <div class="flex-shrink-0 text-center bg-blue-100 text-blue-800 rounded-lg px-3 py-2 w-20">
                                     <p class="font-bold text-sm">${startTime}</p>
                                     ${endTime ? `<p class="text-xs">${endTime}</p>` : ''}
                                 </div>
-                                <div class="flex-grow border-l-4 pl-4" style="border-color: ${event.backgroundColor || event.borderColor || '#3B82F6'}">
+                                <div class="flex-grow border-l-4 pl-4" style="border-color: ${event.backgroundColor || '#3B82F6'}">
                                     <p class="font-semibold text-gray-900 text-base">${event.extendedProps.fullTitle}</p>
                                     <p class="text-xs text-gray-500">${formatFullDate(event.start)}</p>
                                     ${event.extendedProps.location ? `<p class="text-sm text-gray-500 mt-1">${event.extendedProps.location}</p>` : ''}
@@ -268,20 +307,14 @@
                         agendaListContainer.innerHTML += agendaHTML;
                     });
                 } else {
-                     agendaListContainer.innerHTML = `
-                        <div class="flex flex-col items-center justify-center h-full text-center text-blue-700 p-4 bg-blue-100/70 rounded-xl border border-blue-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 opacity-50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            <p class="font-semibold">Tidak ada agenda</p><p class="text-sm opacity-80">Pilih tanggal lain atau tambah agenda baru.</p>
-                        </div>`;
+                     agendaListContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-blue-700 p-4 bg-blue-100/70 rounded-xl border border-blue-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 opacity-50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><p class="font-semibold">Tidak ada agenda</p><p class="text-sm opacity-80">Pilih tanggal lain atau tambah agenda baru.</p></div>`;
                 }
                 
                 document.querySelectorAll('.agenda-item-clickable').forEach(item => {
                     item.addEventListener('click', () => {
                         const eventId = item.dataset.eventId;
                         const event = calendar.getEventById(eventId);
-                        if (event) {
-                            showAgendaDetails(event);
-                        }
+                        if (event) showAgendaDetails(event);
                     });
                 });
             }
@@ -289,7 +322,7 @@
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth', headerToolbar: { left: 'prev', center: 'title', right: 'next' },
                 aspectRatio: 1.2, height: 'auto', locale: 'id',
-                buttonText: { today: 'hari ini', month: 'bulan', week: 'minggu', day: 'hari' },
+                buttonText: { today: 'hari ini' },
                 events: "{{ route('agendas.index') }}",
                 dateClick: function(info) {
                     if (selectedDateEl) { selectedDateEl.classList.remove('selected-date'); }
@@ -304,20 +337,12 @@
                         const dayEl = document.querySelector(`.fc-day[data-date="${dateString}"]`);
                         if (dayEl) dayEl.classList.add('fc-day-has-event');
                     });
-                    const selectedDayEl = document.querySelector('.selected-date');
-                    let currentDate = new Date();
-                    if (selectedDayEl) {
-                        const dateStr = selectedDayEl.dataset.date + 'T00:00:00Z';
-                        currentDate = new Date(dateStr);
-                    }
-                    updateAgendaList(currentDate);
+                    updateAgendaList(calendar.getDate());
                 }
             });
             calendar.render();
 
-            const detailModal = document.getElementById('agenda-detail-modal');
-            const detailContent = document.getElementById('agenda-detail-content');
-
+            // === FUNGSI UNTUK MENAMPILKAN MODAL DETAIL ===
             function showAgendaDetails(event) {
                 const props = event.extendedProps;
                 const startTime = formatTime(event.start);
@@ -326,6 +351,32 @@
                 let guestsHTML = '<p class="text-gray-500 text-sm">Tidak ada tamu yang diundang.</p>';
                 if (props.guests && props.guests.length > 0) {
                     guestsHTML = `<div class="flex flex-wrap gap-2">${props.guests.map(guest => `<span class="bg-gray-200 text-gray-800 text-xs font-semibold px-2.5 py-1 rounded-full">${guest}</span>`).join('')}</div>`;
+                }
+
+                // --- PERBAIKAN UTAMA DI SINI ---
+                let actionButtonsHTML = '';
+                if (props.is_creator) {
+                    const editButton = `<button type="button" id="edit-agenda-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg">Edit</button>`;
+                    
+                    // 1. Dapatkan token CSRF dari form utama
+                    const csrfToken = document.querySelector('form#agenda-form input[name="_token"]').value;
+
+                    // 2. Buat form hapus dengan input yang benar
+                    const deleteUrl = "{{ route('agendas.destroy', ['agenda' => ':id']) }}".replace(':id', event.id);
+                    const deleteForm = `
+                        <form action="${deleteUrl}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus agenda ini?')" class="ml-2">
+                            <input type="hidden" name="_token" value="${csrfToken}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Hapus</button>
+                        </form>
+                    `;
+                    actionButtonsHTML = `
+                        <button id="close-detail-modal-bottom-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg mr-auto">Tutup</button>
+                        ${editButton}
+                        ${deleteForm}
+                    `;
+                } else {
+                    actionButtonsHTML = `<button id="close-detail-modal-bottom-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg ml-auto">Tutup</button>`;
                 }
 
                 const contentHTML = `
@@ -338,91 +389,124 @@
                     </div>
                     <div class="max-h-[60vh] overflow-y-auto pr-3 -mr-3 space-y-5 text-sm">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-calendar-alt fa-fw text-gray-400 text-lg mt-1"></i>
-                                <div>
-                                    <p class="text-xs text-gray-500">Waktu & Tanggal</p>
-                                    <p class="font-semibold text-gray-800">${formatFullDate(event.start)}</p>
-                                    <p class="text-gray-600">${startTime} - ${endTime} WIB</p>
-                                </div>
-                            </div>
-                            ${props.location ? `
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-map-marker-alt fa-fw text-gray-400 text-lg mt-1"></i>
-                                <div>
-                                    <p class="text-xs text-gray-500">Lokasi</p>
-                                    <p class="font-semibold text-gray-800">${props.location}</p>
-                                </div>
-                            </div>` : ''}
+                            <div class="flex items-start gap-3"><i class="fas fa-calendar-alt fa-fw text-gray-400 text-lg mt-1"></i><div><p class="text-xs text-gray-500">Waktu & Tanggal</p><p class="font-semibold text-gray-800">${formatFullDate(event.start)}</p><p class="text-gray-600">${startTime} - ${endTime} WIB</p></div></div>
+                            ${props.location ? `<div class="flex items-start gap-3"><i class="fas fa-map-marker-alt fa-fw text-gray-400 text-lg mt-1"></i><div><p class="text-xs text-gray-500">Lokasi</p><p class="font-semibold text-gray-800">${props.location}</p></div></div>` : ''}
                         </div>
-                        ${props.description ? `
-                        <div>
-                            <h5 class="font-bold text-gray-800 mb-2 flex items-center gap-2"><i class="fas fa-align-left fa-fw text-gray-400"></i>Deskripsi</h5>
-                            <div class="text-gray-700 bg-gray-100 p-4 rounded-lg border text-sm">${props.description.replace(/\n/g, '<br>')}</div>
-                        </div>` : ''}
-                        <div>
-                            <h5 class="font-bold text-gray-800 mb-2 flex items-center gap-2"><i class="fas fa-user-tie fa-fw text-gray-400"></i>Penyelenggara</h5>
-                            <p class="text-gray-600">${props.organizer}</p>
-                        </div>
-                        <div>
-                            <h5 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-users fa-fw text-gray-400"></i>Tamu Undangan</h5>
-                            ${guestsHTML}
-                        </div>
+                        ${props.description ? `<div><h5 class="font-bold text-gray-800 mb-2 flex items-center gap-2"><i class="fas fa-align-left fa-fw text-gray-400"></i>Deskripsi</h5><div class="text-gray-700 bg-gray-100 p-4 rounded-lg border text-sm">${props.description.replace(/\n/g, '<br>')}</div></div>` : ''}
+                        <div><h5 class="font-bold text-gray-800 mb-2 flex items-center gap-2"><i class="fas fa-user-tie fa-fw text-gray-400"></i>Penyelenggara</h5><p class="text-gray-600">${props.organizer}</p></div>
+                        <div><h5 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-users fa-fw text-gray-400"></i>Tamu Undangan</h5>${guestsHTML}</div>
                     </div>
-                    <div class="mt-6 pt-4 border-t border-black/10 text-right">
-                        <button id="close-detail-modal-bottom-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Tutup</button>
+                    <div class="mt-6 pt-4 border-t border-black/10 flex items-center">
+                        ${actionButtonsHTML}
                     </div>
                 `;
 
                 detailContent.innerHTML = contentHTML;
                 detailModal.classList.remove('hidden');
-                setTimeout(() => detailContent.classList.add('scale-100'), 10);
-
+                
                 document.getElementById('close-detail-modal-btn').addEventListener('click', closeDetailModal);
                 document.getElementById('close-detail-modal-bottom-btn').addEventListener('click', closeDetailModal);
-            }
-            
-            function closeDetailModal() {
-                detailContent.classList.remove('scale-100');
-                setTimeout(() => detailModal.classList.add('hidden'), 200);
-            }
 
-            detailModal.addEventListener('click', (e) => {
-                if (e.target === detailModal) {
-                    closeDetailModal();
+                if (props.is_creator) {
+                    document.getElementById('edit-agenda-btn').addEventListener('click', () => openModalForEdit(event));
                 }
-            });
+            }
             
-            const agendaModal = document.getElementById('agenda-modal');
-            const agendaModalContent = document.getElementById('agenda-modal-content');
-            const addAgendaBtn = document.getElementById('add-agenda-btn');
-            const closeModalBtn = document.getElementById('close-modal-btn');
-            const cancelBtn = document.getElementById('cancel-btn');
-            const agendaForm = document.getElementById('agenda-form');
+            function closeDetailModal() { detailModal.classList.add('hidden'); }
+            detailModal.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
             
-            const agendaDate = flatpickr("#agenda_date", { dateFormat: "Y-m-d", altInput: true, altFormat: "d F Y", locale: "id" });
-            const startHour = flatpickr("#start_hour", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
-            const endHour = flatpickr("#end_hour", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
-            
-            function openModal() {
+            // --- FUNGSI UNTUK MEMBUKA MODAL (CREATE) ---
+            function openModalForCreate() {
+                // Hapus input _method jika ada dari mode edit sebelumnya
+                const existingMethodInput = agendaForm.querySelector('input[name="_method"]');
+                if (existingMethodInput) existingMethodInput.remove();
+
                 agendaForm.reset();
+                agendaForm.setAttribute('action', "{{ route('agendas.store') }}"); // Set action untuk create
+                
+                modalTitle.textContent = 'Buat Agenda Baru';
+                saveButton.textContent = 'Simpan Agenda';
+                document.getElementById('color').value = '#3B82F6';
                 agendaDate.setDate(new Date());
                 startHour.clear();
                 endHour.clear();
+                document.querySelectorAll('input[name="guests[]"]').forEach(cb => cb.checked = false);
                 agendaModal.classList.remove('hidden');
-                setTimeout(() => agendaModalContent.classList.add('scale-100'), 10);
             }
 
-            function closeModal() {
-                agendaModalContent.classList.remove('scale-100');
-                setTimeout(() => agendaModal.classList.add('hidden'), 200);
+            // --- FUNGSI UNTUK MEMBUKA MODAL (EDIT) ---
+            function openModalForEdit(event) {
+                closeDetailModal();
+                const existingMethodInput = agendaForm.querySelector('input[name="_method"]');
+                if (existingMethodInput) existingMethodInput.remove();
+
+                agendaForm.reset();
+                const updateUrl = "{{ route('agendas.update', ['agenda' => ':id']) }}".replace(':id', event.id);
+                agendaForm.setAttribute('action', updateUrl); // Set action untuk update
+
+                // Tambahkan input tersembunyi untuk method spoofing (PUT)
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'PUT';
+                agendaForm.appendChild(methodInput);
+                
+                modalTitle.textContent = 'Edit Agenda';
+                saveButton.textContent = 'Update Agenda';
+                
+                document.getElementById('title').value = event.extendedProps.fullTitle;
+                document.getElementById('description').value = event.extendedProps.description || '';
+                document.getElementById('location').value = event.extendedProps.location || '';
+                document.getElementById('color').value = event.backgroundColor || '#3B82F6';
+                
+                // Set tanggal dan jam
+                agendaDate.setDate(event.start, true, "Y-m-d");
+                startHour.setDate(event.start, true, "H:i");
+                if (event.end) endHour.setDate(event.end, true, "H:i");
+                
+                document.querySelectorAll('input[name="guests[]"]').forEach(cb => {
+                    cb.checked = event.extendedProps.guest_ids.includes(parseInt(cb.value));
+                });
+                agendaModal.classList.remove('hidden');
             }
 
-            addAgendaBtn.addEventListener('click', openModal);
+            function closeModal() { agendaModal.classList.add('hidden'); }
+
+            // --- EVENT LISTENERS ---
+            addAgendaBtn.addEventListener('click', openModalForCreate);
             closeModalBtn.addEventListener('click', closeModal);
             cancelBtn.addEventListener('click', closeModal);
             agendaModal.addEventListener('click', (e) => { if (e.target === agendaModal) closeModal(); });
+
+            // Event listener untuk form submit, sekarang menggabungkan tanggal dan jam
+            agendaForm.addEventListener('submit', function(e) {
+                // Hapus input lama jika ada
+                this.querySelector('input[name="start_time"]')?.remove();
+                this.querySelector('input[name="end_time"]')?.remove();
+
+                // Buat input baru untuk start_time dan end_time
+                const dateValue = document.getElementById('agenda_date')._flatpickr.input.value;
+                const startHourValue = document.getElementById('start_hour')._flatpickr.input.value;
+                const endHourValue = document.getElementById('end_hour')._flatpickr.input.value;
+
+                if (dateValue && startHourValue) {
+                    const startTimeInput = document.createElement('input');
+                    startTimeInput.type = 'hidden';
+                    startTimeInput.name = 'start_time';
+                    startTimeInput.value = `${dateValue} ${startHourValue}`;
+                    this.appendChild(startTimeInput);
+                }
+
+                if (dateValue && endHourValue) {
+                    const endTimeInput = document.createElement('input');
+                    endTimeInput.type = 'hidden';
+                    endTimeInput.name = 'end_time';
+                    endTimeInput.value = `${dateValue} ${endHourValue}`;
+                    this.appendChild(endTimeInput);
+                }
+            });
             
+            // --- MENGAMBIL DAFTAR KARYAWAN UNTUK DIUNDANG (TIDAK BERUBAH) ---
             const guestContainer = document.getElementById('guest-list-container');
             fetch("{{ route('agendas.getUsers') }}")
                 .then(response => response.json())
@@ -430,69 +514,17 @@
                     guestContainer.innerHTML = '';
                     if (users.length > 0) {
                         users.forEach(user => {
-                            const checkboxHTML = `
+                            guestContainer.insertAdjacentHTML('beforeend', `
                                 <div class="flex items-center">
                                     <input id="guest-${user.id}" name="guests[]" value="${user.id}" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                     <label for="guest-${user.id}" class="ml-3 block text-sm font-medium text-gray-700">${user.name}</label>
                                 </div>
-                            `;
-                            guestContainer.insertAdjacentHTML('beforeend', checkboxHTML);
+                            `);
                         });
                     } else {
                         guestContainer.innerHTML = '<p class="text-gray-500 text-sm">Tidak ada karyawan lain untuk diundang.</p>';
                     }
                 });
-            
-            function clearValidationErrors() {
-                document.querySelectorAll('small[id$="-error"]').forEach(el => {
-                    el.classList.add('hidden');
-                    el.textContent = '';
-                });
-            }
-
-            agendaForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                clearValidationErrors();
-                
-                const dateValue = document.getElementById('agenda_date').value;
-                const startTimeValue = document.getElementById('start_hour').value;
-                const endTimeValue = document.getElementById('end_hour').value;
-
-                const formData = new FormData(this);
-                if (dateValue && startTimeValue) {
-                    formData.append('start_time', `${dateValue} ${startTimeValue}`);
-                }
-                if (dateValue && endTimeValue) {
-                    formData.append('end_time', `${dateValue} ${endTimeValue}`);
-                }
-
-                const saveButton = document.getElementById('save-agenda-btn');
-                saveButton.disabled = true; saveButton.innerHTML = 'Menyimpan...';
-
-                fetch("{{ route('agendas.store') }}", {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value, 'Accept': 'application/json' },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
-                        alert(data.message);
-                        closeModal();
-                        calendar.refetchEvents();
-                    } else if (data.errors) {
-                        Object.keys(data.errors).forEach(key => {
-                            const errorElement = document.getElementById(`${key}-error`);
-                            if(errorElement) {
-                                errorElement.textContent = data.errors[key][0];
-                                errorElement.classList.remove('hidden');
-                            }
-                        });
-                    }
-                })
-                .catch(error => { console.error('Error:', error); alert('Terjadi kesalahan.'); })
-                .finally(() => { saveButton.disabled = false; saveButton.innerHTML = 'Simpan Agenda'; });
-            });
         });
     </script>
     @endpush
