@@ -123,7 +123,10 @@
                         }
 
                         if ($record->status == 'hadir') {
-                            $isLate = $jamMasuk && $jamMasuk->gt(\Carbon\Carbon::createFromTimeString('08:00:00'));
+                            $batasWaktuMasuk = \Carbon\Carbon::createFromTimeString('08:00:00', 'Asia/Jakarta');
+                            $waktuMasukKaryawan = $jamMasuk ? \Carbon\Carbon::parse($jamMasuk, 'Asia/Jakarta') : null;
+
+                            $isLate = $waktuMasukKaryawan && $waktuMasukKaryawan->gt($batasWaktuMasuk);
                             
                             if ($isLate) {
                                 $statusText = 'Hadir (Terlambat)';

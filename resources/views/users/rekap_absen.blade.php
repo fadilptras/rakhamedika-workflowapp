@@ -104,42 +104,56 @@
                         <tbody class="divide-y divide-gray-200">
                             @forelse($detailHarian as $item)
                                 @php
-                                    $jamMasuk = $item->jam_masuk ? \Carbon\Carbon::parse($item->jam_masuk) : null;
-                                    $jamKeluar = $item->jam_keluar ? \Carbon\Carbon::parse($item->jam_keluar) : null;
-                                    $totalJam = ($jamMasuk && $jamKeluar) ? $jamMasuk->diff($jamKeluar)->format('%H jam %I mnt') : '-';
+                                    // ======================= PERBAIKAN UTAMA DI SINI =======================
                                     
-                                    $isLate = ($item->status == 'hadir' && $jamMasuk && $jamMasuk->format('H:i:s') > '08:00:00');
+                                    // 1. Perbaikan Logika Total Jam Kerja Lintas Hari
+                                    $totalJam = '-';
+                                    if ($item->jam_masuk && $item->jam_keluar) {
+                                        // Gabungkan tanggal asli dengan jam
+                                        $waktuMasuk = \Carbon\Carbon::parse($item->tanggal->toDateString() . ' ' . $item->jam_masuk);
+                                        $waktuKeluar = \Carbon\Carbon::parse($item->tanggal->toDateString() . ' ' . $item->jam_keluar);
+
+                                        // Jika jam keluar lebih kecil dari jam masuk, tambahkan 1 hari
+                                        if ($waktuKeluar->lt($waktuMasuk)) {
+                                            $waktuKeluar->addDay();
+                                        }
+
+                                        // Hitung durasi dalam format yang lebih baik
+                                        $totalMenit = $waktuKeluar->diffInMinutes($waktuMasuk);
+                                        $jam = floor($totalMenit / 60);
+                                        $menit = $totalMenit % 60;
+                                        $totalJam = "$jam jam $menit mnt";
+                                    }
+
+                                    // 2. Perbaikan Logika Pengecekan Terlambat
+                                    $isLate = false;
+                                    if ($item->status == 'hadir' && $item->jam_masuk) {
+                                         $waktuMasukKaryawan = \Carbon\Carbon::parse($item->jam_masuk, 'Asia/Jakarta');
+                                         $batasWaktuMasuk = \Carbon\Carbon::createFromTimeString('08:00:00', 'Asia/Jakarta');
+                                         $isLate = $waktuMasukKaryawan->gt($batasWaktuMasuk);
+                                    }
+                                    
                                     $keteranganText = $item->keterangan ?: '-';
 
+                                    // Logika untuk badge status (tidak berubah)
                                     $statusBadge = '';
                                     switch($item->status) {
-                                        case 'hadir':
-                                            $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-green-100 text-green-800">Hadir</span>';
-                                            break;
-                                        case 'sakit':
-                                            $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-red-100 text-red-800">Sakit</span>';
-                                            break;
-                                        case 'izin':
-                                            $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-yellow-100 text-yellow-800">Izin</span>';
-                                            break;
-                                        case 'cuti':
-                                            $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-purple-100 text-purple-800">Cuti</span>';
-                                            break;
-                                        case 'alpa':
-                                            $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-gray-200 text-gray-800">Alpa</span>';
-                                            break;
-                                        default:
-                                            $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-gray-100 text-gray-500">-</span>';
-                                            break;
+                                        case 'hadir': $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-green-100 text-green-800">Hadir</span>'; break;
+                                        case 'sakit': $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-red-100 text-red-800">Sakit</span>'; break;
+                                        case 'izin': $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-yellow-100 text-yellow-800">Izin</span>'; break;
+                                        case 'cuti': $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-purple-100 text-purple-800">Cuti</span>'; break;
+                                        case 'alpa': $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-gray-200 text-gray-800">Alpa</span>'; break;
+                                        default: $statusBadge = '<span class="px-2.5 py-1 font-semibold leading-tight rounded-full text-xs capitalize bg-gray-100 text-gray-500">-</span>'; break;
                                     }
+                                    // ======================= AKHIR PERBAIKAN =======================
                                 @endphp
                                 <tr class="hover:bg-gray-50 {{ $item->is_weekend ? 'bg-gray-50' : '' }}">
                                     <td class="py-3 px-4 text-sm whitespace-nowrap {{ $item->is_weekend ? 'text-gray-400' : 'text-gray-700' }}">{{ $item->tanggal->translatedFormat('l, d F Y') }}</td>
                                     <td class="py-3 px-4 text-center">
                                         {!! $statusBadge !!}
                                     </td>
-                                    <td class="py-3 px-4 text-sm text-center font-mono {{ $item->is_weekend ? 'text-gray-400' : 'text-gray-700' }}">{{ $item->jam_masuk ? $jamMasuk->format('H:i:s') : '-' }}</td>
-                                    <td class="py-3 px-4 text-sm text-center font-mono {{ $item->is_weekend ? 'text-gray-400' : 'text-gray-700' }}">{{ $item->jam_keluar ? $jamKeluar->format('H:i:s') : '-' }}</td>
+                                    <td class="py-3 px-4 text-sm text-center font-mono {{ $item->is_weekend ? 'text-gray-400' : 'text-gray-700' }}">{{ $item->jam_masuk ? \Carbon\Carbon::parse($item->jam_masuk)->format('H:i:s') : '-' }}</td>
+                                    <td class="py-3 px-4 text-sm text-center font-mono {{ $item->is_weekend ? 'text-gray-400' : 'text-gray-700' }}">{{ $item->jam_keluar ? \Carbon\Carbon::parse($item->jam_keluar)->format('H:i:s') : '-' }}</td>
                                     <td class="py-3 px-4 text-sm text-center font-mono {{ $item->is_weekend ? 'text-gray-400' : 'text-gray-700' }}">{{ $totalJam }}</td>
                                     <td class="py-3 px-4 text-sm {{ $item->is_weekend ? 'text-gray-400' : 'text-gray-700' }}">
                                         @if($isLate)

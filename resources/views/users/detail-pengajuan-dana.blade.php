@@ -1,8 +1,11 @@
 <x-layout-users>
     <x-slot:title>Detail Pengajuan Dana</x-slot:title>
 
-    <div class="container mx-auto p-4 md:p-6">
-        <x-back-button href="{{ route('pengajuan_dana.index') }}">Kembali ke Rekap Pengajuan</x-back-button>
+    <div class="container mx-auto p-0 md:p-0">
+        {{-- --- PERUBAHAN DI SINI --- --}}
+        @if(Auth::id() == $pengajuanDana->user_id)
+            <x-back-button href="{{ route('pengajuan_dana.index') }}">Kembali ke Rekap Pengajuan</x-back-button>
+        @endif
 
         <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-4">
             {{-- ... (bagian atas tidak ada perubahan) ... --}}
@@ -94,6 +97,12 @@
                         case 'disetujui': $bgColor = 'bg-green-100 text-green-600'; $textColor = 'text-green-700'; $icon = 'fa-check-circle'; break;
                         case 'ditolak': $bgColor = 'bg-red-100 text-red-600'; $textColor = 'text-red-700'; $icon = 'fa-times-circle'; break;
                         case 'skipped': $bgColor = 'bg-slate-100 text-slate-400'; $textColor = 'text-slate-500'; $icon = 'fa-minus-circle'; $statusText = 'Dilewati'; break;
+                        default: // MENANGANI KASUS 'menunggu' ATAU NILAI LAINNYA
+                            $bgColor = 'bg-yellow-100 text-yellow-600';
+                            $textColor = 'text-yellow-700';
+                            $icon = 'fa-clock';
+                            $statusText = 'Menunggu';
+                            break;
                     }
                 @endphp
                 <div class="flex items-start gap-4">
@@ -111,6 +120,12 @@
                         case 'disetujui': $bgColor = 'bg-green-100 text-green-600'; $textColor = 'text-green-700'; $icon = 'fa-check-circle'; break;
                         case 'ditolak': $bgColor = 'bg-red-100 text-red-600'; $textColor = 'text-red-700'; $icon = 'fa-times-circle'; break;
                         case 'skipped': $bgColor = 'bg-slate-100 text-slate-400'; $textColor = 'text-slate-500'; $icon = 'fa-minus-circle'; $statusText = 'Dilewati'; break;
+                        default: // MENANGANI KASUS 'menunggu' ATAU NILAI LAINNYA
+                            $bgColor = 'bg-yellow-100 text-yellow-600';
+                            $textColor = 'text-yellow-700';
+                            $icon = 'fa-clock';
+                            $statusText = 'Menunggu';
+                            break;
                     }
                 @endphp
                 <div class="flex items-start gap-4">

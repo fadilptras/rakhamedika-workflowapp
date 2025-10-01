@@ -83,11 +83,15 @@ class PengajuanDanaController extends Controller
         if (!$atasan && $user->jabatan !== 'Direktur') {
             $atasan = User::where('jabatan', 'Direktur')->first();
         }
-        if ($atasan) Notification::send($atasan, new PengajuanDanaNotification($pengajuanDana));
+
+        if ($atasan) {
+            Notification::send($atasan, new PengajuanDanaNotification($pengajuanDana, 'baru'));
+        }
         $hrd = User::where('jabatan', 'HRD')->first();
         if ($hrd && (!$atasan || $atasan->id !== $hrd->id)) {
-            Notification::send($hrd, new PengajuanDanaNotification($pengajuanDana));
+            Notification::send($hrd, new PengajuanDanaNotification($pengajuanDana, 'baru'));
         }
+        
         return redirect()->route('pengajuan_dana.index')->with('success', 'Pengajuan dana berhasil dikirim!');
     }
 
@@ -97,6 +101,7 @@ class PengajuanDanaController extends Controller
         
         $pemohon = $pengajuanDana->user;
         $updateData = [];
+        $tipeNotifikasiUntukPemohon = '';
 
         if ($pengajuanDana->status_atasan === 'menunggu' || $pengajuanDana->status_direktur === 'menunggu') {
             if ($pemohon->is_kepala_divisi) {
@@ -107,18 +112,24 @@ class PengajuanDanaController extends Controller
                 $updateData['catatan_atasan'] = $request->catatan_persetujuan;
             }
             $updateData['status'] = 'diproses'; 
+            $tipeNotifikasiUntukPemohon = 'disetujui_atasan';
+
             $kepalaFinance = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
             if ($kepalaFinance) {
-                Notification::send($kepalaFinance, new PengajuanDanaNotification($pengajuanDana));
+                Notification::send($kepalaFinance, new PengajuanDanaNotification($pengajuanDana, 'baru'));
             }
         }
         else {
             $updateData['status_finance'] = 'disetujui';
             $updateData['catatan_finance'] = $request->catatan_persetujuan;
             $updateData['status'] = 'disetujui';
+            $tipeNotifikasiUntukPemohon = 'disetujui_finance';
         }
 
         $pengajuanDana->update($updateData);
+
+        Notification::send($pemohon, new PengajuanDanaNotification($pengajuanDana, $tipeNotifikasiUntukPemohon));
+        
         return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Pengajuan dana berhasil disetujui!');
     }
 
@@ -139,10 +150,12 @@ class PengajuanDanaController extends Controller
             $updateData['catatan_finance'] = $request->catatan_penolakan;
         }
         $pengajuanDana->update($updateData);
+
+        Notification::send($pengajuanDana->user, new PengajuanDanaNotification($pengajuanDana, 'ditolak'));
+
         return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Pengajuan dana berhasil ditolak!');
     }
 
-    // --- PERUBAHAN NAMA METHOD DI SINI ---
     public function uploadBuktiTransfer(Request $request, PengajuanDana $pengajuanDana)
     {
         $this->authorize('uploadBuktiTransfer', $pengajuanDana); 
@@ -151,10 +164,12 @@ class PengajuanDanaController extends Controller
         ]);
         $path = $request->file('bukti_transfer')->store('bukti_transfer', 'public');
         $pengajuanDana->update(['bukti_transfer' => $path]);
+
+        Notification::send($pengajuanDana->user, new PengajuanDanaNotification($pengajuanDana, 'bukti_transfer'));
+        
         return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Bukti transfer berhasil diunggah!');
     }
 
-    // --- METHOD BARU DITAMBAHKAN DI SINI ---
     public function uploadFinalInvoice(Request $request, PengajuanDana $pengajuanDana)
     {
         $this->authorize('uploadFinalInvoice', $pengajuanDana);

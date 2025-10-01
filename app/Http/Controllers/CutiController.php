@@ -15,14 +15,11 @@ use App\Policies\CutiPolicy;
 
 class CutiController extends Controller
 {
-    /**
-     * Menampilkan form pengajuan cuti.
-     */
     public function create()
     {
         $user = Auth::user();
         $totalCuti = $user->jatah_cuti;
-        $tahunIni = Carbon::now()->year; // Variabel ini sudah ada
+        $tahunIni = Carbon::now()->year;
 
         $title = 'Pengajuan Cuti';
 
@@ -34,20 +31,14 @@ class CutiController extends Controller
         $cutiTerpakai = $this->hitungCutiTerpakai($cutiDisetujui);
         $sisaCuti = $totalCuti - $cutiTerpakai['tahunan']; 
 
-        // --- BARIS YANG DIUBAH ---
-        // Tambahkan filter whereYear() untuk hanya menampilkan riwayat tahun ini
         $cutiRequests = Cuti::where('user_id', $user->id)
-            ->whereYear('created_at', $tahunIni) // Filter berdasarkan tahun pengajuan
+            ->whereYear('created_at', $tahunIni)
             ->latest()
             ->get();
-        // --- AKHIR PERUBAHAN ---
 
         return view('users.cuti', compact('sisaCuti', 'totalCuti', 'cutiRequests', 'title'));
     }
     
-    /**
-     * Menampilkan detail pengajuan cuti.
-     */
     public function show(Cuti $cuti)
     {
         $this->authorize('view', $cuti);
@@ -60,9 +51,6 @@ class CutiController extends Controller
         ]);
     }
 
-    /**
-     * Menyimpan pengajuan cuti baru.
-     */
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -75,7 +63,6 @@ class CutiController extends Controller
 
         $user = Auth::user();
         
-        // Menggunakan jatah_cuti dari user
         $sisaCuti = $user->jatah_cuti - $this->hitungCutiTerpakai(
             Cuti::where('user_id', $user->id)->where('status', 'disetujui')->whereYear('tanggal_mulai', now()->year)->get()
         )['tahunan'];
@@ -118,18 +105,15 @@ class CutiController extends Controller
             'lampiran' => $pathLampiran,
         ]);
         
-        $approver->notify(new CutiNotification($cuti));
+        $approver->notify(new CutiNotification($cuti, 'baru'));
         $hrd = User::where('jabatan', 'HRD')->first();
         if ($hrd && $hrd->id !== $approver->id) {
-            $hrd->notify(new CutiNotification($cuti));
+            $hrd->notify(new CutiNotification($cuti, 'baru'));
         }
 
         return redirect()->route('cuti.create')->with('success', 'Pengajuan cuti Anda telah berhasil dikirim.');
     }
 
-    /**
-     * Memperbarui status pengajuan cuti.
-     */
     public function updateStatus(Request $request, Cuti $cuti)
     {
         $this->authorize('update', $cuti);
@@ -153,30 +137,43 @@ class CutiController extends Controller
                 );
             }
         }
+        
+        Notification::send($cuti->user, new CutiNotification($cuti, $request->status));
 
         return redirect()->route('cuti.show', $cuti)->with('success', 'Status pengajuan cuti berhasil diperbarui.');
     }
 
-    /**
-     * Karyawan membatalkan cuti yang sudah disetujui.
-     */
     public function cancel(Cuti $cuti)
     {
         $this->authorize('cancel', $cuti);
 
-        Absensi::where('user_id', $cuti->user_id)
-            ->where('status', 'cuti')
-            ->whereBetween('tanggal', [$cuti->tanggal_mulai, $cuti->tanggal_selesai])
-            ->delete();
+        // Hapus entri absensi jika cuti sebelumnya sudah disetujui
+        if ($cuti->status === 'disetujui') {
+            Absensi::where('user_id', $cuti->user_id)
+                ->where('status', 'cuti')
+                ->whereBetween('tanggal', [$cuti->tanggal_mulai, $cuti->tanggal_selesai])
+                ->delete();
+        }
 
         $cuti->update(['status' => 'dibatalkan']);
+
+        // --- INILAH BAGIAN YANG DIPERBARUI ---
+        // Cari approver dan kirim notifikasi pembatalan
+        $approver = $this->getApprover($cuti->user);
+        if ($approver) {
+            $approver->notify(new CutiNotification($cuti, 'dibatalkan'));
+        }
+        
+        // Kirim juga ke HRD jika HRD bukan approver utama
+        $hrd = User::where('jabatan', 'HRD')->first();
+        if ($hrd && (!$approver || $hrd->id !== $approver->id)) {
+            $hrd->notify(new CutiNotification($cuti, 'dibatalkan'));
+        }
+        // --- AKHIR DARI PEMBARUAN ---
 
         return redirect()->route('cuti.create')->with('success', 'Pengajuan cuti telah berhasil dibatalkan.');
     }
 
-    /**
-     * Helper untuk menemukan approver yang tepat.
-     */
     private function getApprover(User $user): ?User
     {
         if ($user->jabatan === 'Direktur') {
@@ -200,9 +197,6 @@ class CutiController extends Controller
         return User::where('jabatan', 'Direktur')->first();
     }
 
-    /**
-     * Helper untuk menghitung cuti terpakai.
-     */
     private function hitungCutiTerpakai(object $cutiCollection): array
     {
         $cutiTerpakai = ['tahunan' => 0];
