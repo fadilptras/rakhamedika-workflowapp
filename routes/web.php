@@ -77,12 +77,14 @@ Route::middleware('auth')->group(function () {
     // Route baru untuk upload invoice final oleh pemohon
     Route::post('/pengajuan-dana/{pengajuanDana}/upload-final-invoice', [PengajuanDanaController::class, 'uploadFinalInvoice'])
         ->name('pengajuan_dana.upload_final_invoice');
+        Route::post('/pengajuan-dana/{pengajuanDana}/cancel', [PengajuanDanaController::class, 'cancel'])->name('pengajuan_dana.cancel');
 
     // Di dalam Route::middleware('auth')->group(...)
     Route::get('/pengajuan-dokumen', [PengajuanDokumenController::class, 'index'])->name('pengajuan_dokumen.index');
     Route::post('/pengajuan-dokumen', [PengajuanDokumenController::class, 'store'])->name('pengajuan_dokumen.store');
     Route::get('/pengajuan-dokumen/{dokumen}/download', [PengajuanDokumenController::class, 'download'])->name('pengajuan_dokumen.download');
     
+
     // Rekap Absensi Karyawan
     Route::get('/rekap-absen', [RekapAbsenController::class, 'index'])->name('rekap_absen.index');
 

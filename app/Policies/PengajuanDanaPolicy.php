@@ -51,7 +51,24 @@ class PengajuanDanaPolicy
         return false;
     }
 
-    // --- PERUBAHAN NAMA METHOD DI SINI ---
+    // =================== METHOD BARU DITAMBAHKAN DI SINI ===================
+    /**
+     * Determine whether the user can cancel the pengajuan dana.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\PengajuanDana  $pengajuanDana
+     * @return bool
+     */
+    public function cancel(User $user, PengajuanDana $pengajuanDana): bool
+    {
+        // Aturan:
+        // 1. Pengguna harus menjadi pemilik pengajuan.
+        // 2. Status pengajuan harus 'diajukan' ATAU 'diproses'.
+        return $user->id === $pengajuanDana->user_id &&
+               in_array($pengajuanDana->status, ['diajukan', 'diproses']);
+    }
+    // =======================================================================
+
     public function uploadBuktiTransfer(User $user, PengajuanDana $pengajuanDana): bool
     {
         $kepalaFinance = User::where('jabatan', 'Kepala Finance')->first();
@@ -61,7 +78,6 @@ class PengajuanDanaPolicy
                 && is_null($pengajuanDana->bukti_transfer);
     }
 
-    // --- METHOD BARU DITAMBAHKAN DI SINI ---
     public function uploadFinalInvoice(User $user, PengajuanDana $pengajuanDana): bool
     {
         $isOwner = $user->id === $pengajuanDana->user_id;

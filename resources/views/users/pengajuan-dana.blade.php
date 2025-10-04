@@ -118,19 +118,18 @@
                                 <i class="fas fa-paperclip text-3xl opacity-80"></i>
                                 <div>
                                     <h2 class="text-xl font-bold">4. File Pendukung (Opsional)</h2>
-                                    <p class="text-sm text-slate-300">Lampirkan nota, invoice, atau dokumen relevan lainnya.</p>
+                                    <p class="text-sm text-slate-300">Anda bisa melampirkan lebih dari satu file (nota, invoice, dll).</p>
                                 </div>
                             </div>
                         </div>
                         <div class="p-6 md:p-8">
-                            <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer" onclick="document.getElementById('file-pendukung').click()">
-                                <input type="file" id="file-pendukung" name="file_pendukung" class="hidden">
-                                <div id="file-upload-ui">
-                                    <div class="w-12 h-12 mx-auto bg-slate-200 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-cloud-upload-alt text-2xl text-slate-500"></i></div>
-                                    <p class="text-slate-600 mt-3 font-semibold">Klik untuk <span class="text-indigo-600 font-bold">pilih file</span></p><p class="text-xs text-slate-500 mt-1">PDF, DOC, JPG, PNG (max. 5MB)</p>
-                                </div>
-                                <div id="file-name-display" class="hidden font-semibold text-slate-700"></div>
+                            <div id="file-pendukung-container" class="space-y-3">
+                                {{-- Input file akan ditambahkan secara dinamis oleh script --}}
                             </div>
+                            <button id="tambah-lampiran-btn" type="button" class="mt-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition">
+                                <i class="fas fa-plus"></i> Tambah File Lampiran
+                            </button>
+                            <p class="text-xs text-slate-500 mt-2">Tipe file: PDF, DOC, JPG, PNG (Maks. 5MB per file)</p>
                         </div>
                     </div>
 
@@ -154,13 +153,13 @@
                     {{-- Konten tabel dan kartu status --}}
                     <table class="hidden md:table min-w-full border-t border-slate-200 text-sm"><thead class="bg-slate-50 text-slate-600"><tr><th class="px-6 py-3 text-left font-semibold">Tanggal</th><th class="px-6 py-3 text-left font-semibold">Judul Pengajuan</th><th class="px-6 py-3 text-left font-semibold">Total Dana</th><th class="px-6 py-3 text-left font-semibold">Status</th><th class="px-6 py-3 text-center font-semibold">Aksi</th></tr></thead>
                         <tbody class="divide-y divide-slate-200">
-                            {{-- PERBAIKAN DI SINI --}}
                             @forelse ($pengajuanDanas as $pengajuan)
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 text-slate-600">{{ $pengajuan->created_at->format('d M Y') }}</td>
                                 <td class="px-6 py-4 font-semibold text-slate-800">{{ $pengajuan->judul_pengajuan }}</td>
                                 <td class="px-6 py-4 font-medium">Rp {{ number_format($pengajuan->total_dana, 0, ',', '.') }}</td>
                                 <td class="px-6 py-4">
+                                    {{-- =================== KODE BARU (STATUS DIBATALKAN) DI SINI (DESKTOP) =================== --}}
                                     @if ($pengajuan->status == 'diajukan')
                                         <span class="font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
                                     @elseif ($pengajuan->status == 'diproses')
@@ -169,7 +168,10 @@
                                         <span class="font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>
                                     @elseif ($pengajuan->status == 'ditolak')
                                         <span class="font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>
+                                    @elseif ($pengajuan->status == 'dibatalkan')
+                                        <span class="font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded-full text-xs">Dibatalkan</span>
                                     @endif
+                                    {{-- ========================================================================================= --}}
                                 </td>
                                 <td class="px-6 py-4 text-center"><a href="{{ route('pengajuan_dana.show', $pengajuan->id) }}" class="text-indigo-600 hover:underline font-semibold">Lihat Detail</a></td>
                             </tr>
@@ -179,11 +181,11 @@
                         </tbody>
                     </table>
                     <div class="block md:hidden p-4 space-y-4 border-t border-slate-200">
-                        {{-- DAN PERBAIKAN DI SINI --}}
                         @forelse ($pengajuanDanas as $pengajuan)
                         <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
                             <div class="flex justify-between items-start mb-2">
                                 <div class="font-bold text-slate-800 text-base pr-4">{{ $pengajuan->judul_pengajuan }}</div>
+                                {{-- =================== KODE BARU (STATUS DIBATALKAN) DI SINI (MOBILE) =================== --}}
                                 @if ($pengajuan->status == 'diajukan')
                                     <span class="flex-shrink-0 font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
                                 @elseif ($pengajuan->status == 'diproses')
@@ -192,7 +194,10 @@
                                     <span class="flex-shrink-0 font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>
                                 @elseif ($pengajuan->status == 'ditolak')
                                     <span class="flex-shrink-0 font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>
+                                @elseif ($pengajuan->status == 'dibatalkan')
+                                    <span class="flex-shrink-0 font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded-full text-xs">Dibatalkan</span>
                                 @endif
+                                {{-- ====================================================================================== --}}
                             </div>
                             <div class="text-sm text-slate-500 mb-3">{{ $pengajuan->created_at->format('d M Y') }}</div>
                             <div class="flex justify-between items-center">
@@ -211,20 +216,70 @@
     </div>
 
     @push('scripts')
-    {{-- Script tidak diubah dan tetap berfungsi seperti sebelumnya --}}
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('pilih-bank')?.addEventListener('change', function() {const bankContainer = document.getElementById('bank-lainnya-container'); const otherBankInput = document.getElementById('input-bank-lainnya'); if (this.value === 'other') {bankContainer.classList.remove('hidden'); otherBankInput.setAttribute('required', 'required');} else {bankContainer.classList.add('hidden'); otherBankInput.removeAttribute('required');}});
-        const fileInput = document.getElementById('file-pendukung'); const fileUploadUI = document.getElementById('file-upload-ui'); const fileNameDisplay = document.getElementById('file-name-display');
-        if (fileInput) {fileInput.addEventListener('change', function() {if (this.files && this.files.length > 0) {fileUploadUI.classList.add('hidden'); fileNameDisplay.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-2"></i> ${this.files[0].name}`; fileNameDisplay.classList.remove('hidden');}});}
-        const tambahBarisBtn = document.getElementById('tambah-baris-btn'); const rincianDanaBodyDesktop = document.getElementById('rincian-dana-body'); const rincianDanaContainerMobile = document.getElementById('rincian-dana-container-mobile'); const totalDanaDisplay = document.getElementById('total-dana-display'); const jumlahDanaTotalInput = document.getElementById('jumlah-dana-total');
-        function updateTotal() {let total = 0; document.querySelectorAll('input[name="rincian_jumlah[]"]').forEach(input => {total += parseInt(input.value.replace(/[^0-9]/g, '')) || 0;}); const formattedTotal = total.toLocaleString('id-ID'); if (totalDanaDisplay) totalDanaDisplay.textContent = formattedTotal; if (jumlahDanaTotalInput) jumlahDanaTotalInput.value = total;}
-        function formatCurrency(input) {let value = input.value.replace(/[^0-9]/g, ''); input.value = value ? parseInt(value).toLocaleString('id-ID') : '';}
-        function addRow() {const isMobile = window.innerWidth < 768; const container = isMobile ? rincianDanaContainerMobile : rincianDanaBodyDesktop; const newRow = document.createElement(isMobile ? 'div' : 'tr');
-            if (isMobile) {newRow.className = 'bg-white rounded-lg p-4 border border-slate-200 space-y-2'; newRow.innerHTML = `<div><input type="text" name="rincian_deskripsi[]" class="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Deskripsi pengeluaran" required></div><div><input type="text" name="rincian_jumlah[]" class="w-full p-2 border border-slate-300 rounded-lg text-sm jumlah-input" placeholder="Jumlah (Rp)" required></div><button type="button" class="delete-row-btn text-red-500 hover:text-red-700 text-xs font-semibold w-full text-left">HAPUS ITEM</button>`;
-            } else {newRow.innerHTML = `<td class="px-4 py-2"><input type="text" name="rincian_deskripsi[]" class="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Masukkan deskripsi" required></td><td class="px-4 py-2"><div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rp</span><input type="text" name="rincian_jumlah[]" class="w-full p-2 pl-8 border border-slate-300 rounded-lg text-sm jumlah-input" placeholder="0" required></div></td><td class="px-4 py-2 text-center"><button type="button" class="delete-row-btn text-slate-400 hover:text-red-600 text-lg"><i class="fas fa-trash-alt"></i></button></td>`;}
-            container.appendChild(newRow); const amountInput = newRow.querySelector('.jumlah-input'); amountInput.addEventListener('input', () => { formatCurrency(amountInput); updateTotal(); }); newRow.querySelector('.delete-row-btn').addEventListener('click', () => { newRow.remove(); updateTotal(); });}
-        if (tambahBarisBtn) { addRow(); tambahBarisBtn.addEventListener('click', addRow); }
+        const tambahBarisBtn = document.getElementById('tambah-baris-btn'); 
+        const rincianDanaBodyDesktop = document.getElementById('rincian-dana-body'); 
+        const rincianDanaContainerMobile = document.getElementById('rincian-dana-container-mobile'); 
+        const totalDanaDisplay = document.getElementById('total-dana-display'); 
+        const jumlahDanaTotalInput = document.getElementById('jumlah-dana-total');
+        function updateTotal() {
+            let total = 0; 
+            document.querySelectorAll('input[name="rincian_jumlah[]"]').forEach(input => {
+                total += parseInt(input.value.replace(/[^0-9]/g, '')) || 0;
+            }); 
+            const formattedTotal = total.toLocaleString('id-ID'); 
+            if (totalDanaDisplay) totalDanaDisplay.textContent = formattedTotal; 
+            if (jumlahDanaTotalInput) jumlahDanaTotalInput.value = total;
+        }
+        function formatCurrency(input) {
+            let value = input.value.replace(/[^0-9]/g, ''); 
+            input.value = value ? parseInt(value).toLocaleString('id-ID') : '';
+        }
+        function addRow() {
+            const isMobile = window.innerWidth < 768; 
+            const container = isMobile ? rincianDanaContainerMobile : rincianDanaBodyDesktop; 
+            const newRow = document.createElement(isMobile ? 'div' : 'tr');
+            if (isMobile) {
+                newRow.className = 'bg-white rounded-lg p-4 border border-slate-200 space-y-2'; 
+                newRow.innerHTML = `<div><input type="text" name="rincian_deskripsi[]" class="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Deskripsi pengeluaran" required></div><div><input type="text" name="rincian_jumlah[]" class="w-full p-2 border border-slate-300 rounded-lg text-sm jumlah-input" placeholder="Jumlah (Rp)" required></div><button type="button" class="delete-row-btn text-red-500 hover:text-red-700 text-xs font-semibold w-full text-left">HAPUS ITEM</button>`;
+            } else {
+                newRow.innerHTML = `<td class="px-4 py-2"><input type="text" name="rincian_deskripsi[]" class="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Masukkan deskripsi" required></td><td class="px-4 py-2"><div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rp</span><input type="text" name="rincian_jumlah[]" class="w-full p-2 pl-8 border border-slate-300 rounded-lg text-sm jumlah-input" placeholder="0" required></div></td><td class="px-4 py-2 text-center"><button type="button" class="delete-row-btn text-slate-400 hover:text-red-600 text-lg"><i class="fas fa-trash-alt"></i></button></td>`;
+            }
+            container.appendChild(newRow); 
+            const amountInput = newRow.querySelector('.jumlah-input'); 
+            amountInput.addEventListener('input', () => { formatCurrency(amountInput); updateTotal(); }); 
+            newRow.querySelector('.delete-row-btn').addEventListener('click', () => { newRow.remove(); updateTotal(); });
+        }
+        if (tambahBarisBtn) { 
+            addRow(); 
+            tambahBarisBtn.addEventListener('click', addRow); 
+        }
+        const tambahLampiranBtn = document.getElementById('tambah-lampiran-btn');
+        const lampiranContainer = document.getElementById('file-pendukung-container');
+        function addLampiranInput() {
+            const newInputDiv = document.createElement('div');
+            newInputDiv.className = 'flex items-center gap-2';
+            const newInput = document.createElement('input');
+            newInput.type = 'file';
+            newInput.name = 'file_pendukung[]';
+            newInput.className = 'w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100';
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.innerHTML = '<i class="fas fa-times-circle text-slate-400 hover:text-red-600 text-lg"></i>';
+            deleteBtn.className = 'flex-shrink-0';
+            deleteBtn.onclick = function() {
+                newInputDiv.remove();
+            };
+            newInputDiv.appendChild(newInput);
+            newInputDiv.appendChild(deleteBtn);
+            lampiranContainer.appendChild(newInputDiv);
+        }
+        if (tambahLampiranBtn) {
+            tambahLampiranBtn.addEventListener('click', addLampiranInput);
+            addLampiranInput();
+        }
     });
     </script>
     @endpush

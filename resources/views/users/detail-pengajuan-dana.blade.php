@@ -2,13 +2,12 @@
     <x-slot:title>Detail Pengajuan Dana</x-slot:title>
 
     <div class="container mx-auto p-0 md:p-0">
-        {{-- --- PERUBAHAN DI SINI --- --}}
         @if(Auth::id() == $pengajuanDana->user_id)
             <x-back-button href="{{ route('pengajuan_dana.index') }}">Kembali ke Rekap Pengajuan</x-back-button>
         @endif
 
         <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-4">
-            {{-- ... (bagian atas tidak ada perubahan) ... --}}
+            {{-- Bagian Detail Pengajuan (Tidak Ada Perubahan) --}}
             <h2 class="text-2xl font-bold text-slate-800 mb-6">Detail Pengajuan</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
                 <div class="bg-slate-50 p-4 rounded-lg">
@@ -51,15 +50,18 @@
                     </table>
                 </div>
             </div>
-
-            {{-- --- PERUBAHAN DI SINI --- --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                @if ($pengajuanDana->lampiran)
+                @if ($pengajuanDana->lampiran && count($pengajuanDana->lampiran) > 0)
                 <div>
                     <h3 class="font-bold text-slate-800 mb-2">Lampiran Pengajuan</h3>
-                    <a href="{{ asset('storage/' . $pengajuanDana->lampiran) }}" target="_blank" class="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 p-3 rounded-lg transition text-blue-700 font-semibold">
-                        <i class="fas fa-file-alt text-xl"></i><span>Lihat Lampiran</span>
-                    </a>
+                    <div class="space-y-2">
+                        @foreach ($pengajuanDana->lampiran as $lampiran)
+                        <a href="{{ asset('storage/' . $lampiran) }}" target="_blank" class="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 p-3 rounded-lg transition text-blue-700 font-semibold">
+                            <i class="fas fa-file-alt text-xl"></i>
+                            <span>{{ basename($lampiran) }}</span>
+                        </a>
+                        @endforeach
+                    </div>
                 </div>
                 @endif
                 @if ($pengajuanDana->bukti_transfer)
@@ -70,7 +72,6 @@
                     </a>
                 </div>
                 @endif
-                {{-- --- TAMBAHAN BARU DI SINI --- --}}
                 @if ($pengajuanDana->invoice)
                 <div>
                     <h3 class="font-bold text-slate-800 mb-2">Invoice Final</h3>
@@ -82,27 +83,37 @@
             </div>
         </div>
 
+        {{-- =================== PERUBAHAN DIMULAI DARI SINI =================== --}}
         <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-8">
-             {{-- ... (bagian timeline status tidak ada perubahan) ... --}}
             <h2 class="text-2xl font-bold text-slate-800 mb-8">Alur Persetujuan</h2>
             <div class="space-y-8">
                 @php
-                    if ($pengajuanDana->user->is_kepala_divisi) {
-                        $status = $pengajuanDana->status_direktur; $title = 'Persetujuan Direktur'; $catatan = $pengajuanDana->catatan_direktur;
+                    // --- BLOK PERSETUJUAN ATASAN / DIREKTUR ---
+                    $title = '';
+                    $catatan = '';
+                    
+                    // Cek status utama terlebih dahulu
+                    if ($pengajuanDana->status === 'dibatalkan') {
+                        $statusText = 'Dibatalkan';
+                        $bgColor = 'bg-slate-100 text-slate-400';
+                        $textColor = 'text-slate-500';
+                        $icon = 'fa-ban';
+                        // Tentukan judul berdasarkan role pemohon
+                        $title = $pengajuanDana->user->is_kepala_divisi ? 'Persetujuan Direktur' : 'Persetujuan Atasan';
                     } else {
-                        $status = $pengajuanDana->status_atasan; $title = 'Persetujuan Atasan'; $catatan = $pengajuanDana->catatan_atasan;
-                    }
-                    $bgColor = 'bg-yellow-100 text-yellow-600'; $textColor = 'text-yellow-700'; $icon = 'fa-clock'; $statusText = ucfirst($status);
-                    switch ($status) {
-                        case 'disetujui': $bgColor = 'bg-green-100 text-green-600'; $textColor = 'text-green-700'; $icon = 'fa-check-circle'; break;
-                        case 'ditolak': $bgColor = 'bg-red-100 text-red-600'; $textColor = 'text-red-700'; $icon = 'fa-times-circle'; break;
-                        case 'skipped': $bgColor = 'bg-slate-100 text-slate-400'; $textColor = 'text-slate-500'; $icon = 'fa-minus-circle'; $statusText = 'Dilewati'; break;
-                        default: // MENANGANI KASUS 'menunggu' ATAU NILAI LAINNYA
-                            $bgColor = 'bg-yellow-100 text-yellow-600';
-                            $textColor = 'text-yellow-700';
-                            $icon = 'fa-clock';
-                            $statusText = 'Menunggu';
-                            break;
+                        // Jika tidak dibatalkan, jalankan logika normal
+                        if ($pengajuanDana->user->is_kepala_divisi) {
+                            $status = $pengajuanDana->status_direktur; $title = 'Persetujuan Direktur'; $catatan = $pengajuanDana->catatan_direktur;
+                        } else {
+                            $status = $pengajuanDana->status_atasan; $title = 'Persetujuan Atasan'; $catatan = $pengajuanDana->catatan_atasan;
+                        }
+
+                        switch ($status) {
+                            case 'disetujui': $bgColor = 'bg-green-100 text-green-600'; $textColor = 'text-green-700'; $icon = 'fa-check-circle'; $statusText = 'Disetujui'; break;
+                            case 'ditolak': $bgColor = 'bg-red-100 text-red-600'; $textColor = 'text-red-700'; $icon = 'fa-times-circle'; $statusText = 'Ditolak'; break;
+                            case 'skipped': $bgColor = 'bg-slate-100 text-slate-400'; $textColor = 'text-slate-500'; $icon = 'fa-minus-circle'; $statusText = 'Dilewati'; break;
+                            default: $bgColor = 'bg-yellow-100 text-yellow-600'; $textColor = 'text-yellow-700'; $icon = 'fa-clock'; $statusText = 'Menunggu'; break;
+                        }
                     }
                 @endphp
                 <div class="flex items-start gap-4">
@@ -113,19 +124,27 @@
                         @if($catatan)<div class="mt-2 text-sm text-slate-700 bg-slate-50 border-l-4 border-slate-200 p-3 rounded-r-lg"><p class="italic">"{{ $catatan }}"</p></div>@endif
                     </div>
                 </div>
+
                 @php
-                    $status = $pengajuanDana->status_finance; $title = 'Persetujuan Finance'; $catatan = $pengajuanDana->catatan_finance;
-                    $bgColor = 'bg-yellow-100 text-yellow-600'; $textColor = 'text-yellow-700'; $icon = 'fa-clock'; $statusText = ucfirst($status);
-                    switch ($status) {
-                        case 'disetujui': $bgColor = 'bg-green-100 text-green-600'; $textColor = 'text-green-700'; $icon = 'fa-check-circle'; break;
-                        case 'ditolak': $bgColor = 'bg-red-100 text-red-600'; $textColor = 'text-red-700'; $icon = 'fa-times-circle'; break;
-                        case 'skipped': $bgColor = 'bg-slate-100 text-slate-400'; $textColor = 'text-slate-500'; $icon = 'fa-minus-circle'; $statusText = 'Dilewati'; break;
-                        default: // MENANGANI KASUS 'menunggu' ATAU NILAI LAINNYA
-                            $bgColor = 'bg-yellow-100 text-yellow-600';
-                            $textColor = 'text-yellow-700';
-                            $icon = 'fa-clock';
-                            $statusText = 'Menunggu';
-                            break;
+                    // --- BLOK PERSETUJUAN FINANCE ---
+                    $title = 'Persetujuan Finance';
+                    $catatan = $pengajuanDana->catatan_finance;
+
+                    // Cek status utama terlebih dahulu
+                    if ($pengajuanDana->status === 'dibatalkan') {
+                        $statusText = 'Dibatalkan';
+                        $bgColor = 'bg-slate-100 text-slate-400';
+                        $textColor = 'text-slate-500';
+                        $icon = 'fa-ban';
+                    } else {
+                        // Jika tidak dibatalkan, jalankan logika normal
+                        $status = $pengajuanDana->status_finance;
+                        switch ($status) {
+                            case 'disetujui': $bgColor = 'bg-green-100 text-green-600'; $textColor = 'text-green-700'; $icon = 'fa-check-circle'; $statusText = 'Disetujui'; break;
+                            case 'ditolak': $bgColor = 'bg-red-100 text-red-600'; $textColor = 'text-red-700'; $icon = 'fa-times-circle'; $statusText = 'Ditolak'; break;
+                            case 'skipped': $bgColor = 'bg-slate-100 text-slate-400'; $textColor = 'text-slate-500'; $icon = 'fa-minus-circle'; $statusText = 'Dilewati'; break;
+                            default: $bgColor = 'bg-yellow-100 text-yellow-600'; $textColor = 'text-yellow-700'; $icon = 'fa-clock'; $statusText = 'Menunggu'; break;
+                        }
                     }
                 @endphp
                 <div class="flex items-start gap-4">
@@ -138,9 +157,22 @@
                 </div>
             </div>
         </div>
+        {{-- =================== PERUBAHAN SELESAI DI SINI =================== --}}
+        
+        @can('cancel', $pengajuanDana)
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-8">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Tindakan Lain</h3>
+                <p class="text-sm text-slate-500 mb-4">Anda dapat membatalkan pengajuan ini selama statusnya masih "Diajukan" atau "Diproses".</p>
+                <form action="{{ route('pengajuan_dana.cancel', $pengajuanDana) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pengajuan dana ini? Tindakan ini tidak dapat diurungkan.');">
+                    @csrf
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition ease-in-out duration-150">
+                        <i class="fas fa-times-circle mr-2"></i>Batalkan Pengajuan
+                    </button>
+                </form>
+            </div>
+        @endcan
         
         @can('approve', $pengajuanDana)
-            {{-- ... (bagian form persetujuan tidak ada perubahan) ... --}}
             <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-8">
                 <h3 class="text-xl font-bold text-slate-800 mb-4">Tindakan Persetujuan</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -160,7 +192,6 @@
             </div>
         @endcan
 
-        {{-- --- PERUBAHAN DI SINI (FORM BUKTI TRANSFER) --- --}}
         @can('uploadBuktiTransfer', $pengajuanDana)
             <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-8">
                 <h3 class="text-xl font-bold text-slate-800 mb-4">Unggah Bukti Transfer</h3>
@@ -173,7 +204,6 @@
             </div>
         @endcan
 
-        {{-- --- TAMBAHAN BARU DI SINI (FORM INVOICE) --- --}}
         @can('uploadFinalInvoice', $pengajuanDana)
             <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-8">
                 <h3 class="text-xl font-bold text-slate-800 mb-4">Unggah Invoice / Nota Pembelian</h3>

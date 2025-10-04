@@ -170,8 +170,6 @@ class AbsensiController extends Controller
         }
         
         $users = $queryUsers->where('role', 'user')
-                    ->orderBy('divisi', 'asc')          // 1. Urutkan berdasarkan Divisi
-                    ->orderBy('is_kepala_divisi', 'desc') // 2. Dahulukan Kepala Divisi
                     ->orderBy('name', 'asc')            // 3. Urutkan Anggota berdasarkan Nama
                     ->get();
 

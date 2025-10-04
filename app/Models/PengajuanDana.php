@@ -35,6 +35,7 @@ class PengajuanDana extends Model
 
     protected $casts = [
         'rincian_dana' => 'array',
+        'lampiran' => 'array',
     ];
 
     public function user(): BelongsTo

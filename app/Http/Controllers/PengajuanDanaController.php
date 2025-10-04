@@ -48,7 +48,7 @@ class PengajuanDanaController extends Controller
             'jumlah_dana_total' => 'required|numeric|min:1',
             'rincian_deskripsi.*' => 'required|string|max:1000',
             'rincian_jumlah.*' => 'required|numeric|min:1',
-            'file_pendukung' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
+            'file_pendukung.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
         ]);
         $rincian = [];
         if (!empty($validatedData['rincian_deskripsi'])) {
@@ -56,9 +56,12 @@ class PengajuanDanaController extends Controller
                 $rincian[] = ['deskripsi' => $deskripsi, 'jumlah' => $validatedData['rincian_jumlah'][$key]];
             }
         }
-        $pathFile = null;
+        $pathFiles = []; // Gunakan array untuk menampung path
         if ($request->hasFile('file_pendukung')) {
-            $pathFile = $request->file('file_pendukung')->store('lampiran_dana', 'public');
+            foreach ($request->file('file_pendukung') as $file) {
+                // Simpan setiap file dan tambahkan path-nya ke array
+                $pathFiles[] = $file->store('lampiran_dana', 'public');
+            }
         }
         $isKepalaDivisi = Auth::user()->is_kepala_divisi;
         $pengajuanDana = PengajuanDana::create([
@@ -69,7 +72,7 @@ class PengajuanDanaController extends Controller
             'no_rekening' => $validatedData['no_rekening'],
             'total_dana' => $validatedData['jumlah_dana_total'],
             'rincian_dana' => $rincian,
-            'lampiran' => $pathFile,
+            'lampiran' => $pathFiles,
             'status_atasan' => $isKepalaDivisi ? 'skipped' : 'menunggu',
             'status_direktur' => $isKepalaDivisi ? 'menunggu' : 'skipped',
         ]);
@@ -180,4 +183,45 @@ class PengajuanDanaController extends Controller
         $pengajuanDana->update(['invoice' => $path]);
         return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Invoice berhasil diunggah!');
     }
+
+    public function cancel(PengajuanDana $pengajuanDana)
+{
+    // Otorisasi menggunakan Policy (tidak ada perubahan)
+    $this->authorize('cancel', $pengajuanDana);
+
+    // Update status pengajuan menjadi 'dibatalkan' (tidak ada perubahan)
+    $pengajuanDana->update(['status' => 'dibatalkan']);
+
+    // =================== KODE BARU (LOGIKA NOTIFIKASI) DIMULAI DI SINI ===================
+    $pemohon = $pengajuanDana->user;
+
+    // 1. Cari atasan dari pemohon (logika disesuaikan dari method store)
+    $atasan = null;
+    if ($pemohon->is_kepala_divisi) {
+        $atasan = User::where('jabatan', 'Direktur')->first();
+    } else if ($pemohon->divisi) {
+        $atasan = User::where('divisi', $pemohon->divisi)->where('is_kepala_divisi', true)->first();
+    }
+    // Fallback ke direktur jika atasan divisi tidak ditemukan
+    if (!$atasan && $pemohon->jabatan !== 'Direktur') {
+        $atasan = User::where('jabatan', 'Direktur')->first();
+    }
+
+    // 2. Cari kepala finance (logika disesuaikan dari policy)
+    $kepalaFinance = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
+
+    // 3. Kirim notifikasi ke atasan jika ada
+    if ($atasan) {
+        Notification::send($atasan, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
+    }
+    
+    // 4. Kirim notifikasi ke kepala finance jika ada dan bukan orang yang sama dengan atasan
+    if ($kepalaFinance && (!$atasan || $atasan->id !== $kepalaFinance->id)) {
+        Notification::send($kepalaFinance, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
+    }
+    // ==================== KODE BARU (LOGIKA NOTIFIKASI) SELESAI DI SINI ====================
+
+    // Redirect kembali ke halaman rekap dengan pesan sukses (tidak ada perubahan)
+    return redirect()->route('pengajuan_dana.index')->with('success', 'Pengajuan dana telah berhasil dibatalkan.');
+}
 }

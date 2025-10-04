@@ -12,13 +12,13 @@ class PengajuanDanaNotification extends Notification
     use Queueable;
 
     public $pengajuanDana;
-    public $tipe; // Properti baru untuk menyimpan tipe notifikasi
+    public $tipe;
 
     /**
      * Buat instance notifikasi baru.
      *
      * @param \App\Models\PengajuanDana $pengajuanDana
-     * @param string $tipe Konteks notifikasi: 'baru', 'disetujui_atasan', 'disetujui_finance', 'ditolak', 'bukti_transfer'
+     * @param string $tipe Konteks notifikasi
      * @return void
      */
     public function __construct(PengajuanDana $pengajuanDana, string $tipe = 'baru')
@@ -34,7 +34,6 @@ class PengajuanDanaNotification extends Notification
 
     /**
      * Get the array representation of the notification.
-     * Di sinilah kita memilih pesan berdasarkan tipenya.
      */
     public function toArray(object $notifiable): array
     {
@@ -70,6 +69,16 @@ class PengajuanDanaNotification extends Notification
                 $icon = 'fas fa-receipt';
                 $color = 'text-indigo-600';
                 break;
+
+            // =================== KODE BARU DIMULAI DI SINI ===================
+            case 'dibatalkan':
+                $title = 'Pengajuan Dibatalkan';
+                $message = "Pengajuan dana '$judulPengajuan' oleh $pemohon telah dibatalkan.";
+                $icon = 'fas fa-ban'; // Ikon untuk pembatalan
+                $color = 'text-slate-500'; // Warna netral
+                break;
+            // ==================== KODE BARU SELESAI DI SINI ====================
+
             case 'baru':
             default:
                 $title = 'Pengajuan Dana Baru';
