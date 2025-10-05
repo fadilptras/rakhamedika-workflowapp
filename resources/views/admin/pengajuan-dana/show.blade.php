@@ -60,10 +60,15 @@
                 <div>
                     <h3 class="text-lg font-semibold text-white mb-3 border-b border-zinc-700 pb-2">Dokumen Terkait</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        @if($pengajuanDana->lampiran)
-                        <a href="{{ asset('storage/' . $pengajuanDana->lampiran) }}" target="_blank" class="bg-zinc-700 hover:bg-zinc-600 p-3 rounded-lg text-center text-zinc-300 transition">
-                            <i class="fas fa-paperclip mb-2 text-xl"></i><p class="text-sm font-semibold">Lampiran Awal</p>
-                        </a>
+                        {{-- ================= KODE BARU ================= --}}
+                        @if ($pengajuanDana->lampiran && count($pengajuanDana->lampiran) > 0)
+                            @foreach ($pengajuanDana->lampiran as $lampiran)
+                                <a href="{{ asset('storage/' . $lampiran) }}" target="_blank" class="bg-zinc-700 hover:bg-zinc-600 p-3 rounded-lg text-center text-zinc-300 transition">
+                                    <i class="fas fa-paperclip mb-2 text-xl"></i>
+                                    <p class="text-sm font-semibold">Lampiran {{ $loop->iteration }}</p>
+                                    <p class="text-xs text-zinc-400 truncate">{{ basename($lampiran) }}</p>
+                                </a>
+                            @endforeach
                         @endif
                         @if($pengajuanDana->bukti_transfer)
                         <a href="{{ asset('storage/' . $pengajuanDana->bukti_transfer) }}" target="_blank" class="bg-zinc-700 hover:bg-zinc-600 p-3 rounded-lg text-center text-zinc-300 transition">
@@ -80,64 +85,66 @@
             </div>
 
             {{-- KOLOM KANAN: ALUR PERSETUJUAN --}}
+            {{-- KOLOM KANAN: ALUR PERSETUJUAN (KODE BARU) --}}
             <div class="lg:col-span-1 space-y-6 border-t lg:border-t-0 lg:border-l border-zinc-700 pt-6 lg:pt-0 lg:pl-8">
                 <h3 class="text-lg font-semibold text-white mb-3">Alur Persetujuan</h3>
-
-                {{-- TAHAP 1: ATASAN ATAU DIREKTUR (LOGIKA DINAMIS) --}}
+            
+                {{-- TAHAP 1: ATASAN ATAU DIREKTUR (LOGIKA BARU) --}}
                 @php
-                    $isDiajukanKepalaDivisi = $pengajuanDana->user->is_kepala_divisi;
+                    $title_atasan = ''; $catatan_atasan = ''; $status_atasan_class = ''; $status_atasan_text = ''; $status_atasan_icon = '';
+            
+                    if ($pengajuanDana->status === 'dibatalkan') {
+                        $status_atasan_text = 'Dibatalkan'; $status_atasan_class = 'text-zinc-400'; $status_atasan_icon = 'fa-ban';
+                        $title_atasan = $pengajuanDana->user->is_kepala_divisi ? 'Persetujuan Direktur' : 'Persetujuan Atasan';
+                    } else {
+                        if ($pengajuanDana->user->is_kepala_divisi) {
+                            $status = $pengajuanDana->status_direktur; $title_atasan = 'Persetujuan Direktur'; $catatan_atasan = $pengajuanDana->catatan_direktur;
+                        } else {
+                            $status = $pengajuanDana->status_atasan; $title_atasan = 'Persetujuan Atasan'; $catatan_atasan = $pengajuanDana->catatan_atasan;
+                        }
+            
+                        switch ($status) {
+                            case 'disetujui': $status_atasan_class = 'text-emerald-400'; $status_atasan_icon = 'fa-check-circle'; $status_atasan_text = 'Disetujui'; break;
+                            case 'ditolak': $status_atasan_class = 'text-red-400'; $status_atasan_icon = 'fa-times-circle'; $status_atasan_text = 'Ditolak'; break;
+                            case 'skipped': $status_atasan_class = 'text-zinc-400'; $status_atasan_icon = 'fa-minus-circle'; $status_atasan_text = 'Dilewati'; break;
+                            default: $status_atasan_class = 'text-yellow-400'; $status_atasan_icon = 'fa-clock'; $status_atasan_text = 'Menunggu'; break;
+                        }
+                    }
                 @endphp
-                
-                @if($isDiajukanKepalaDivisi)
-                    {{-- Tampilkan alur Direktur --}}
-                    <div>
-                        <label class="block text-sm font-medium text-zinc-400 mb-1">Persetujuan Direktur</label>
-                        @if ($pengajuanDana->status_direktur == 'disetujui')
-                            <p class="flex items-center text-emerald-400"><i class="fas fa-check-circle mr-2"></i> Disetujui</p>
-                        @elseif ($pengajuanDana->status_direktur == 'ditolak')
-                            <p class="flex items-center text-red-400"><i class="fas fa-times-circle mr-2"></i> Ditolak</p>
-                        @else
-                            <p class="flex items-center text-yellow-400"><i class="fas fa-clock mr-2"></i> Menunggu Persetujuan</p>
-                        @endif
-                        @if($pengajuanDana->catatan_direktur)
-                        <div class="mt-2 text-xs text-zinc-500 border-l-2 border-zinc-600 pl-2 italic">"{{ $pengajuanDana->catatan_direktur }}"</div>
-                        @endif
-                    </div>
-                @else
-                    {{-- Tampilkan alur Atasan/Kepala Divisi --}}
-                    <div>
-                        <label class="block text-sm font-medium text-zinc-400 mb-1">Persetujuan Atasan</label>
-                        @if ($pengajuanDana->status_atasan == 'disetujui')
-                            <p class="flex items-center text-emerald-400"><i class="fas fa-check-circle mr-2"></i> Disetujui</p>
-                        @elseif ($pengajuanDana->status_atasan == 'ditolak')
-                            <p class="flex items-center text-red-400"><i class="fas fa-times-circle mr-2"></i> Ditolak</p>
-                        @else
-                            <p class="flex items-center text-yellow-400"><i class="fas fa-clock mr-2"></i> Menunggu Persetujuan</p>
-                        @endif
-                        @if($pengajuanDana->catatan_atasan)
-                        <div class="mt-2 text-xs text-zinc-500 border-l-2 border-zinc-600 pl-2 italic">"{{ $pengajuanDana->catatan_atasan }}"</div>
-                        @endif
-                    </div>
-                @endif
-                
-
-                {{-- TAHAP 2: FINANCE --}}
                 <div>
-                    <label class="block text-sm font-medium text-zinc-400 mb-1">Persetujuan Finance</label>
-                    @if ($pengajuanDana->status_finance == 'disetujui')
-                        <p class="flex items-center text-emerald-400"><i class="fas fa-check-circle mr-2"></i> Disetujui</p>
-                    @elseif ($pengajuanDana->status_finance == 'ditolak')
-                        <p class="flex items-center text-red-400"><i class="fas fa-times-circle mr-2"></i> Ditolak</p>
-                    @else
-                        <p class="flex items-center text-yellow-400"><i class="fas fa-clock mr-2"></i> Menunggu Persetujuan</p>
-                    @endif
-
-                    @if($pengajuanDana->catatan_finance)
-                    <div class="mt-2 text-xs text-zinc-500 border-l-2 border-zinc-600 pl-2 italic">"{{ $pengajuanDana->catatan_finance }}"</div>
+                    <label class="block text-sm font-medium text-zinc-400 mb-1">{{ $title_atasan }}</label>
+                    <p class="flex items-center {{ $status_atasan_class }}"><i class="fas {{ $status_atasan_icon }} mr-2"></i> {{ $status_atasan_text }}</p>
+                    @if($catatan_atasan)
+                    <div class="mt-2 text-xs text-zinc-500 border-l-2 border-zinc-600 pl-2 italic">"{{ $catatan_atasan }}"</div>
                     @endif
                 </div>
-
-                {{-- STATUS FINAL --}}
+            
+                {{-- TAHAP 2: FINANCE (LOGIKA BARU) --}}
+                @php
+                    $catatan_finance = $pengajuanDana->catatan_finance; $status_finance_class = ''; $status_finance_text = ''; $status_finance_icon = '';
+            
+                    if ($pengajuanDana->status === 'dibatalkan') {
+                        $status_finance_text = 'Dibatalkan'; $status_finance_class = 'text-zinc-400'; $status_finance_icon = 'fa-ban';
+                    } else {
+                        $status = $pengajuanDana->status_finance;
+                        switch ($status) {
+                            case 'disetujui': $status_finance_class = 'text-emerald-400'; $status_finance_icon = 'fa-check-circle'; $status_finance_text = 'Disetujui'; break;
+                            case 'ditolak': $status_finance_class = 'text-red-400'; $status_finance_icon = 'fa-times-circle'; $status_finance_text = 'Ditolak'; break;
+                            case 'skipped': $status_finance_class = 'text-zinc-400'; $status_finance_icon = 'fa-minus-circle'; $status_finance_text = 'Dilewati'; break;
+                            default: $status_finance_class = 'text-yellow-400'; $status_finance_icon = 'fa-clock'; $status_finance_text = 'Menunggu'; break;
+                        }
+                    }
+                @endphp
+                <div>
+                    <label class="block text-sm font-medium text-zinc-400 mb-1">Persetujuan Finance</label>
+                    <p class="flex items-center {{ $status_finance_class }}"><i class="fas {{ $status_finance_icon }} mr-2"></i> {{ $status_finance_text }}</p>
+                    @if($catatan_finance)
+                    <div class="mt-2 text-xs text-zinc-500 border-l-2 border-zinc-600 pl-2 italic">"{{ $catatan_finance }}"</div>
+                    @endif
+                </div>
+            
+            
+                {{-- STATUS FINAL (DITAMBAH STATUS DIBATALKAN)--}}
                 <div class="border-t border-zinc-700 pt-4">
                     <label class="block text-sm font-medium text-zinc-400 mb-1">Status Final Pengajuan</label>
                      @if ($pengajuanDana->status == 'disetujui')
@@ -146,6 +153,8 @@
                         <p class="text-xl font-bold flex items-center text-red-400"><i class="fas fa-times-circle mr-2"></i> DITOLAK</p>
                     @elseif ($pengajuanDana->status == 'diproses')
                         <p class="text-xl font-bold flex items-center text-blue-400"><i class="fas fa-sync-alt fa-spin mr-2"></i> DIPROSES</p>
+                    @elseif ($pengajuanDana->status == 'dibatalkan')
+                        <p class="text-xl font-bold flex items-center text-zinc-400"><i class="fas fa-ban mr-2"></i> DIBATALKAN</p>
                     @else
                         <p class="text-xl font-bold flex items-center text-yellow-400"><i class="fas fa-hourglass-start mr-2"></i> DIAJUKAN</p>
                     @endif
