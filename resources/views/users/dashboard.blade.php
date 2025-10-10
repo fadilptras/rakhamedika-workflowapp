@@ -30,10 +30,16 @@
         .fc .fc-button .fc-icon { font-size: 1.25rem; }
         .fc .fc-col-header-cell { border: none !important; padding: 6px 0; }
         .fc .fc-col-header-cell-cushion { color: #6b7280; font-weight: 600; font-size: 0.9rem; }
-        .fc .fc-daygrid-day-frame { display: flex; justify-content: center; align-items: center; height: 44px; }
+        .fc .fc-daygrid-day-frame {
+            display: flex; /* Aktifkan flexbox untuk kontrol layout lebih baik */
+            flex-direction: column;
+            align-items: center;
+            padding-top: 4px;
+        }
         .fc .fc-daygrid-day-number {
             width: 34px; height: 34px; line-height: 34px; text-align: center; border-radius: 9999px;
             font-weight: 500; transition: all 0.2s; font-size: 0.9rem; color: #374151;
+            flex-shrink: 0; /* Pastikan nomor tidak mengecil */
         }
         .fc .fc-day-other .fc-daygrid-day-number { color: #d1d5db; }
         .fc .fc-daygrid-day:not(.fc-day-other):hover .fc-daygrid-day-number { background-color: #DBEAFE; }
@@ -42,19 +48,127 @@
             box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4);
         }
         .fc .selected-date .fc-daygrid-day-number { background: #111827; color: #fff !important; font-weight: 700; }
-        .fc .fc-day-has-event::after {
-            content: ''; position: absolute; bottom: 5px; left: 50%;
-            transform: translateX(-50%); width: 6px; height: 6px; border-radius: 50%;
-            background-color: #3B82F6;
-        }
-        .fc .selected-date.fc-day-has-event::after { background-color: #fff; }
         
-        .fc-daygrid-event {
-            display: none !important;
+        /* Jarak Scrollbar Kalender dibuat seimbang */
+        .fc .fc-view-harness {
+            padding-left: 10px;
+            padding-right: 10px;
         }
+        
+        /* ===== MODIFIKASI TAMPILAN AGAR LEBIH RAPIH (DESKTOP) ===== */
+
+        /* 1. Atur container agenda agar rapi di bawah tanggal */
+        .fc .fc-daygrid-day-events {
+            margin-top: 4px; /* Beri jarak dari angka tanggal */
+            width: 100%;
+            padding: 0 4px; /* Beri sedikit padding horizontal */
+        }
+        
+        /* 2. Rapikan tampilan setiap item agenda */
+        .fc-daygrid-event {
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-left-width: 3px !important;
+            color: #374151 !important;
+            font-size: 0.7rem !important;
+            font-weight: 600;
+            margin: 2px 0 !important; /* Rapikan margin, hanya atas-bawah */
+            padding: 3px 6px !important; /* Sedikit tambah padding vertikal */
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease-in-out;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: left; /* Teks rata kiri */
+        }
+
+        .fc-daygrid-event:hover {
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+        
+        /* 3. Rapikan tampilan link "+ more" */
+        .fc .fc-daygrid-more-link {
+            color: #4338ca;
+            font-size: 0.7rem; /* Samakan font size dengan agenda */
+            font-weight: 600;
+            text-decoration: none;
+            padding: 3px 6px;
+            border-radius: 6px;
+            margin: 2px auto 0 auto; /* Posisi di tengah */
+            display: inline-block; /* Agar bisa di-style */
+        }
+        .fc .fc-daygrid-more-link:hover {
+            background-color: #e0e7ff;
+            color: #312e81;
+        }
+        
+        
+        /* ===== MODIFIKASI TAMPILAN AGAR LEBIH RAPIH (MOBILE) ===== */
+        @media (max-width: 768px) {
+
+            /* Atur container agenda di mobile */
+            .fc .fc-daygrid-day-events {
+                margin-top: 2px; /* Jarak lebih kecil untuk mobile */
+                padding: 0 2px;
+            }
+
+            /* Style dasar untuk Chip/Tag di mobile */
+            .fc-daygrid-event {
+                display: flex !important;
+                align-items: center !important;
+                background-color: #eef2ff !important;
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 9999px !important;
+                padding: 3px 8px 3px 4px !important;
+                margin: 2px auto !important; /* Posisikan di tengah */
+                width: 95%; /* Lebar konsisten */
+                max-width: 120px; /* Batasi lebar maksimal */
+                justify-content: flex-start;
+            }
+
+            /* Dot berwarna di dalam Chip */
+            .fc-daygrid-event::before {
+                content: '';
+                display: inline-block;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                margin-right: 6px;
+                background-color: var(--fc-event-bg-color);
+                flex-shrink: 0;
+            }
+
+            /* Teks di dalam Chip */
+            .fc-daygrid-event .fc-event-title {
+                font-size: 0.7rem !important;
+                font-weight: 600;
+                color: #4338ca !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .fc-daygrid-event:hover {
+                background-color: #e0e7ff !important;
+                transform: none !important;
+                box-shadow: none !important;
+            }
+
+            /* Penyesuaian UI lainnya untuk mobile */
+            .fc .fc-toolbar-title { font-size: 1.1rem; }
+            .fc .fc-button { width: 32px; height: 32px; }
+            .fc .fc-col-header-cell-cushion { font-size: 0.8rem; }
+            .fc .fc-daygrid-day-number { width: 28px; height: 28px; line-height: 28px; font-size: 0.8rem; }
+            .fc-event-time { display: none !important; }
+        }
+
     </style>
     @endpush
 
+    {{-- KONTEN HTML (TIDAK ADA PERUBAHAN) --}}
     <div class="flex flex-col h-full bg-gradient-to-br from-sky-50 to-blue-100">
         <main class="flex-1 overflow-y-auto min-h-screen p-0 lg:p-6">
 
@@ -133,13 +247,13 @@
                         </div>
                     </div>
                     
-                    <div class="bg-white/60 backdrop-blur-lg border border-white/30 shadow-xl shadow-blue-500/20 p-6 rounded-2xl">
-                        <div class="flex flex-col md:flex-row gap-8">
+                    <div class="bg-white/60 backdrop-blur-lg border border-white/30 shadow-xl shadow-blue-500/20 md:p-6 rounded-2xl">
+                        <div class="flex flex-col md:flex-row gap-4 md:gap-8">
                             <div class="w-full lg:w-3/5">
                                 <div id="mini-calendar"></div>
                             </div>
                             <div class="hidden lg:block w-1 bg-blue-200"></div>
-                            <div class="w-full lg:w-2/5 flex flex-col">
+                            <div class="w-full lg:w-2/5 flex flex-col px-4 pb-4 md:px-0 md:pb-0">
                                 <div class="flex justify-between items-center mb-4 flex-shrink-0">
                                     <h3 id="agenda-list-title" class="font-bold text-gray-900 text-lg">Agenda Minggu Ini</h3>
                                     <button id="add-agenda-btn" class="bg-gray-900 hover:bg-gray-800 text-white font-bold w-10 h-10 rounded-full transition-all duration-200 flex items-center justify-center shadow-md hover:scale-105">
@@ -155,6 +269,7 @@
         </main>
     </div>
 
+    {{-- KONTEN MODAL (Tidak ada perubahan) --}}
     <div id="agenda-modal" class="fixed inset-0 bg-black bg-opacity-60 z-40 hidden flex items-center justify-center p-4">
         <div class="bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl shadow-blue-900/20 w-full max-w-3xl mx-4 p-6 flex flex-col max-h-[90vh] transform transition-all" id="agenda-modal-content">
             
@@ -219,7 +334,6 @@
                         </div>
                     </div>
 
-                    {{-- Tombol dipindahkan ke dalam form --}}
                     <div class="flex-shrink-0 flex justify-end mt-6 pt-4 border-t border-black/10">
                         <button type="button" id="cancel-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg mr-2">Batal</button>
                         <button type="submit" id="save-agenda-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Simpan Agenda</button>
@@ -240,17 +354,14 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
     
-    {{-- =================================================================================== --}}
-    {{-- =================== KODE SCRIPT LENGKAP YANG SUDAH DIPERBAIKI =================== --}}
-    {{-- =================================================================================== --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // === INISIALISASI ELEMEN DOM ===
             const calendarEl = document.getElementById('mini-calendar');
             const agendaListContainer = document.getElementById('agenda-list-container');
             const agendaListTitle = document.getElementById('agenda-list-title');
             let selectedDateEl = null;
 
+            // Sisa variabel JavaScript tetap sama
             const detailModal = document.getElementById('agenda-detail-modal');
             const detailContent = document.getElementById('agenda-detail-content');
             const agendaModal = document.getElementById('agenda-modal');
@@ -261,26 +372,26 @@
             const modalTitle = agendaModal.querySelector('h4');
             const saveButton = document.getElementById('save-agenda-btn');
 
-            // === INISIALISASI FLATPCIKR ===
             const agendaDate = flatpickr("#agenda_date", { dateFormat: "Y-m-d", altInput: true, altFormat: "d F Y", locale: "id" });
             const startHour = flatpickr("#start_hour", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
             const endHour = flatpickr("#end_hour", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
             
-            // === FUNGSI BANTUAN ===
             function formatFullDate(date) { return date.toLocaleString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
             function formatTime(date) { return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }); }
 
-            // === LOGIKA KALENDER & LIST AGENDA (TIDAK BERUBAH) ===
             function updateAgendaList(selectedDate) {
                 const allEvents = calendar.getEvents();
                 const startOfWeek = new Date(selectedDate);
-                startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
+                startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay() + (selectedDate.getDay() === 0 ? -6 : 1));
                 startOfWeek.setHours(0, 0, 0, 0);
+
                 const endOfWeek = new Date(startOfWeek);
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
                 endOfWeek.setHours(23, 59, 59, 999);
                 
-                agendaListTitle.textContent = 'Agenda Minggu Ini';
+                const startFormatted = startOfWeek.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                const endFormatted = endOfWeek.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                agendaListTitle.textContent = `Agenda (${startFormatted} - ${endFormatted})`;
 
                 const eventsThisWeek = allEvents.filter(event => {
                     const eventDate = new Date(event.start);
@@ -307,7 +418,7 @@
                         agendaListContainer.innerHTML += agendaHTML;
                     });
                 } else {
-                     agendaListContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-blue-700 p-4 bg-blue-100/70 rounded-xl border border-blue-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 opacity-50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><p class="font-semibold">Tidak ada agenda</p><p class="text-sm opacity-80">Pilih tanggal lain atau tambah agenda baru.</p></div>`;
+                     agendaListContainer.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-blue-700 p-4 bg-blue-100/70 rounded-xl border border-blue-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 opacity-50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><p class="font-semibold">Tidak ada agenda</p><p class="text-sm opacity-80">Pilih tanggal di kalender untuk melihat.</p></div>`;
                 }
                 
                 document.querySelectorAll('.agenda-item-clickable').forEach(item => {
@@ -318,31 +429,37 @@
                     });
                 });
             }
-
+            
+            // Konfigurasi FullCalendar tetap sama
             const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth', headerToolbar: { left: 'prev', center: 'title', right: 'next' },
-                aspectRatio: 1.2, height: 'auto', locale: 'id',
+                initialView: 'dayGridMonth', 
+                headerToolbar: { left: 'prev', center: 'title', right: 'next' },
+                locale: 'id',
                 buttonText: { today: 'hari ini' },
                 events: "{{ route('agendas.index') }}",
+                height: 450, 
+                dayMaxEvents: true,
                 dateClick: function(info) {
-                    if (selectedDateEl) { selectedDateEl.classList.remove('selected-date'); }
+                    if (selectedDateEl) {
+                        selectedDateEl.classList.remove('selected-date');
+                    }
                     info.dayEl.classList.add('selected-date');
                     selectedDateEl = info.dayEl;
+                    
                     updateAgendaList(info.date);
                 },
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault();
+                    showAgendaDetails(info.event);
+                },
                 eventsSet: function() {
-                    document.querySelectorAll('.fc-day-has-event').forEach(el => el.classList.remove('fc-day-has-event'));
-                    calendar.getEvents().forEach(event => {
-                        const dateString = event.start.toISOString().split('T')[0];
-                        const dayEl = document.querySelector(`.fc-day[data-date="${dateString}"]`);
-                        if (dayEl) dayEl.classList.add('fc-day-has-event');
-                    });
                     updateAgendaList(calendar.getDate());
                 }
             });
             calendar.render();
 
-            // === FUNGSI UNTUK MENAMPILKAN MODAL DETAIL ===
+            // Semua fungsi lain (showAgendaDetails, openModal, fetch, dll) tetap sama
+            // ...
             function showAgendaDetails(event) {
                 const props = event.extendedProps;
                 const startTime = formatTime(event.start);
@@ -353,15 +470,10 @@
                     guestsHTML = `<div class="flex flex-wrap gap-2">${props.guests.map(guest => `<span class="bg-gray-200 text-gray-800 text-xs font-semibold px-2.5 py-1 rounded-full">${guest}</span>`).join('')}</div>`;
                 }
 
-                // --- PERBAIKAN UTAMA DI SINI ---
                 let actionButtonsHTML = '';
                 if (props.is_creator) {
                     const editButton = `<button type="button" id="edit-agenda-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg">Edit</button>`;
-                    
-                    // 1. Dapatkan token CSRF dari form utama
                     const csrfToken = document.querySelector('form#agenda-form input[name="_token"]').value;
-
-                    // 2. Buat form hapus dengan input yang benar
                     const deleteUrl = "{{ route('agendas.destroy', ['agenda' => ':id']) }}".replace(':id', event.id);
                     const deleteForm = `
                         <form action="${deleteUrl}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus agenda ini?')" class="ml-2">
@@ -415,14 +527,12 @@
             function closeDetailModal() { detailModal.classList.add('hidden'); }
             detailModal.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
             
-            // --- FUNGSI UNTUK MEMBUKA MODAL (CREATE) ---
             function openModalForCreate() {
-                // Hapus input _method jika ada dari mode edit sebelumnya
                 const existingMethodInput = agendaForm.querySelector('input[name="_method"]');
                 if (existingMethodInput) existingMethodInput.remove();
 
                 agendaForm.reset();
-                agendaForm.setAttribute('action', "{{ route('agendas.store') }}"); // Set action untuk create
+                agendaForm.setAttribute('action', "{{ route('agendas.store') }}"); 
                 
                 modalTitle.textContent = 'Buat Agenda Baru';
                 saveButton.textContent = 'Simpan Agenda';
@@ -434,7 +544,6 @@
                 agendaModal.classList.remove('hidden');
             }
 
-            // --- FUNGSI UNTUK MEMBUKA MODAL (EDIT) ---
             function openModalForEdit(event) {
                 closeDetailModal();
                 const existingMethodInput = agendaForm.querySelector('input[name="_method"]');
@@ -442,9 +551,8 @@
 
                 agendaForm.reset();
                 const updateUrl = "{{ route('agendas.update', ['agenda' => ':id']) }}".replace(':id', event.id);
-                agendaForm.setAttribute('action', updateUrl); // Set action untuk update
+                agendaForm.setAttribute('action', updateUrl); 
 
-                // Tambahkan input tersembunyi untuk method spoofing (PUT)
                 const methodInput = document.createElement('input');
                 methodInput.type = 'hidden';
                 methodInput.name = '_method';
@@ -459,7 +567,6 @@
                 document.getElementById('location').value = event.extendedProps.location || '';
                 document.getElementById('color').value = event.backgroundColor || '#3B82F6';
                 
-                // Set tanggal dan jam
                 agendaDate.setDate(event.start, true, "Y-m-d");
                 startHour.setDate(event.start, true, "H:i");
                 if (event.end) endHour.setDate(event.end, true, "H:i");
@@ -472,19 +579,15 @@
 
             function closeModal() { agendaModal.classList.add('hidden'); }
 
-            // --- EVENT LISTENERS ---
             addAgendaBtn.addEventListener('click', openModalForCreate);
             closeModalBtn.addEventListener('click', closeModal);
             cancelBtn.addEventListener('click', closeModal);
             agendaModal.addEventListener('click', (e) => { if (e.target === agendaModal) closeModal(); });
 
-            // Event listener untuk form submit, sekarang menggabungkan tanggal dan jam
             agendaForm.addEventListener('submit', function(e) {
-                // Hapus input lama jika ada
                 this.querySelector('input[name="start_time"]')?.remove();
                 this.querySelector('input[name="end_time"]')?.remove();
 
-                // Buat input baru untuk start_time dan end_time
                 const dateValue = document.getElementById('agenda_date')._flatpickr.input.value;
                 const startHourValue = document.getElementById('start_hour')._flatpickr.input.value;
                 const endHourValue = document.getElementById('end_hour')._flatpickr.input.value;
@@ -506,7 +609,6 @@
                 }
             });
             
-            // --- MENGAMBIL DAFTAR KARYAWAN UNTUK DIUNDANG (TIDAK BERUBAH) ---
             const guestContainer = document.getElementById('guest-list-container');
             fetch("{{ route('agendas.getUsers') }}")
                 .then(response => response.json())
@@ -529,3 +631,4 @@
     </script>
     @endpush
 </x-layout-users>
+}

@@ -6,7 +6,10 @@ use App\Models\Agenda;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+// ===== TAMBAHKAN USE STATEMENT INI =====
+use App\Notifications\AgendaNotification;
+use Illuminate\Support\Facades\Notification;
+// =======================================
 
 class AgendaController extends Controller
 {
@@ -43,9 +46,8 @@ class AgendaController extends Controller
                         'location' => $agenda->location,
                         'organizer' => $agenda->creator->name,
                         'guests' => $agenda->guests->pluck('name')->toArray(),
-                        'guest_ids' => $agenda->guests->pluck('id')->toArray(), // PENTING untuk edit form
-                        // PENAMBAHAN: Flag untuk mengecek apakah user saat ini adalah pembuat agenda
-                        'is_creator' => $agenda->user_id === $user->id 
+                        'guest_ids' => $agenda->guests->pluck('id')->toArray(),
+                        'is_creator' => $agenda->user_id === $user->id
                     ]
                 ];
             }
@@ -82,13 +84,24 @@ class AgendaController extends Controller
 
         if (!empty($validated['guests'])) {
             $agenda->guests()->sync($validated['guests']);
+
+            // =================== LOGIKA NOTIFIKASI (BARU) ===================
+            // Ambil model User dari ID tamu yang diundang
+            $guestsToNotify = User::whereIn('id', $validated['guests'])->get();
+            $creatorName = Auth::user()->name;
+            
+            // Kirim notifikasi ke semua tamu
+            if ($guestsToNotify->isNotEmpty()) {
+                Notification::send($guestsToNotify, new AgendaNotification($agenda, 'undangan_baru', $creatorName));
+            }
+            // ================================================================
         }
 
         return redirect()->route('dashboard')->with('success', 'Agenda berhasil dibuat!');
     }
     
     /**
-     * FUNGSI BARU: Update agenda yang sudah ada.
+     * Update agenda yang sudah ada.
      */
     public function update(Request $request, Agenda $agenda)
     {
@@ -111,11 +124,21 @@ class AgendaController extends Controller
         $agenda->update($validated);
         $agenda->guests()->sync($validated['guests'] ?? []);
 
+        // =================== LOGIKA NOTIFIKASI (BARU) ===================
+        // Ambil daftar tamu yang terbaru setelah di-sync
+        $guestsToNotify = $agenda->fresh()->guests; 
+        $creatorName = $agenda->creator->name;
+
+        if ($guestsToNotify->isNotEmpty()) {
+            Notification::send($guestsToNotify, new AgendaNotification($agenda, 'agenda_diperbarui', $creatorName));
+        }
+        // ================================================================
+
         return redirect()->route('dashboard')->with('success', 'Agenda berhasil diperbarui!');
     }
 
     /**
-     * FUNGSI BARU: Hapus agenda.
+     * Hapus agenda.
      */
     public function destroy(Agenda $agenda)
     {
@@ -123,9 +146,20 @@ class AgendaController extends Controller
         if ($agenda->user_id !== Auth::id()) {
             return response()->json(['error' => 'Anda tidak memiliki izin untuk menghapus agenda ini.'], 403);
         }
+        
+        // =================== LOGIKA NOTIFIKASI (BARU) ===================
+        // Ambil daftar tamu SEBELUM relasinya dihapus
+        $guestsToNotify = $agenda->guests; 
+        $creatorName = $agenda->creator->name;
+        // ================================================================
 
         $agenda->guests()->sync([]); // Lepaskan semua relasi tamu
         $agenda->delete();
+
+        // Kirim notifikasi setelah agenda benar-benar dihapus
+        if ($guestsToNotify->isNotEmpty()) {
+            Notification::send($guestsToNotify, new AgendaNotification($agenda, 'agenda_dibatalkan', $creatorName));
+        }
 
         return redirect()->route('dashboard')->with('success', 'Agenda berhasil dihapus!');
     }

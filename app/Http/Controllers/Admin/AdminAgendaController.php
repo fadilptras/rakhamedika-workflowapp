@@ -8,6 +8,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Notifications\AgendaNotification;
+use Illuminate\Support\Facades\Notification;
+
 
 class AdminAgendaController extends Controller
 {
@@ -94,6 +97,15 @@ class AdminAgendaController extends Controller
 
         if (!empty($validated['guests'])) {
             $agenda->guests()->sync($validated['guests']);
+
+            // ===== TAMBAHKAN LOGIKA NOTIFIKASI DI SINI =====
+            $guestsToNotify = User::whereIn('id', $validated['guests'])->get();
+            $creatorName = Auth::user()->name;
+            
+            if ($guestsToNotify->isNotEmpty()) {
+                Notification::send($guestsToNotify, new AgendaNotification($agenda, 'undangan_baru', $creatorName));
+            }
+            // ===============================================
         }
 
         return redirect()->route('admin.agenda.index')->with('success', 'Agenda berhasil dibuat!');
@@ -115,12 +127,21 @@ class AdminAgendaController extends Controller
         ]);
 
         $startTime = Carbon::parse($validated['start_time']);
-        $endTime = $startTime->copy()->addHour(); // Tetap set durasi 1 jam
+        $endTime = $startTime->copy()->addHour();
 
         $agendaData = array_merge($validated, ['end_time' => $endTime]);
 
         $agenda->update($agendaData);
         $agenda->guests()->sync($validated['guests'] ?? []);
+
+        // ===== TAMBAHKAN LOGIKA NOTIFIKASI DI SINI =====
+        $guestsToNotify = $agenda->fresh()->guests; 
+        $creatorName = $agenda->creator->name;
+
+        if ($guestsToNotify->isNotEmpty()) {
+            Notification::send($guestsToNotify, new AgendaNotification($agenda, 'agenda_diperbarui', $creatorName));
+        }
+        // ===============================================
 
         return redirect()->route('admin.agenda.index')->with('success', 'Agenda berhasil diperbarui!');
     }
@@ -130,8 +151,19 @@ class AdminAgendaController extends Controller
      */
     public function destroy(Agenda $agenda)
     {
+        // ===== TAMBAHKAN LOGIKA NOTIFIKASI DI SINI =====
+        // Ambil daftar tamu SEBELUM relasinya dihapus
+        $guestsToNotify = $agenda->guests; 
+        $creatorName = $agenda->creator->name;
+        // ===============================================
+
         $agenda->guests()->sync([]); // Lepaskan relasi tamu
         $agenda->delete();
+
+        // Kirim notifikasi setelah proses hapus
+        if ($guestsToNotify->isNotEmpty()) {
+            Notification::send($guestsToNotify, new AgendaNotification($agenda, 'agenda_dibatalkan', $creatorName));
+        }
 
         return redirect()->route('admin.agenda.index')->with('success', 'Agenda berhasil dihapus!');
     }
