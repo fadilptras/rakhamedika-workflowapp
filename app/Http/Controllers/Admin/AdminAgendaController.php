@@ -26,7 +26,7 @@ class AdminAgendaController extends Controller
                   ->whereDate('start_time', '<=', $request->end_date);
         }
 
-        $allAgendas = $query->orderBy('start_time', 'desc')->get();
+        $allAgendas = $query->orderBy('start_time', 'desc')->paginate(10);
         
         return view('admin.agenda.index', [
             'title' => 'Kelola Agenda',

@@ -107,11 +107,19 @@
                         </div>
                     </li>
 
+                    <li>
+                        <a href="{{ route('admin.agenda.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200 
+                            {{ request()->routeIs('admin.agenda.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            <i class="fas fa-calendar-week text-xl w-8 text-center"></i>
+                            <span class="ml-3 font-semibold">Kelola Agenda</span>
+                        </a>
+                    </li>
+
                     {{-- DROPDOWN BARU UNTUK SEMUA JENIS PENGAJUAN --}}
                     <li x-data="{ open: {{ request()->routeIs('admin.pengajuan_dana.*') || request()->routeIs('admin.pengajuan-dokumen.*') || request()->routeIs('admin.agenda.*') ? 'true' : 'false' }} }">
                         <a @click.prevent="open = !open" href="#" 
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
-                            {{ request()->routeIs('admin.pengajuan_dana.*') || request()->routeIs('admin.pengajuan-dokumen.*') || request()->routeIs('admin.agenda.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            {{ request()->routeIs('admin.pengajuan_dana.*') || request()->routeIs('admin.pengajuan-dokumen.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
                             <i class="fas fa-folder-open text-xl w-8 text-center"></i> 
                             <span class="ml-3 font-semibold flex-1">Kelola Pengajuan</span>
                             <i class="fas fa-chevron-down text-sm transition-transform" :class="open ? 'rotate-180' : ''"></i>
@@ -128,12 +136,6 @@
                                     <a href="{{ route('admin.pengajuan-dokumen.index') }}" 
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm {{ request()->routeIs('admin.pengajuan-dokumen.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
                                         Pengajuan Dokumen
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('admin.agenda.index') }}" 
-                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm {{ request()->routeIs('admin.agenda.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
-                                        Kelola Agenda
                                     </a>
                                 </li>
                             </ul>
