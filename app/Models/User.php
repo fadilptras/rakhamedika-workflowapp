@@ -22,7 +22,16 @@ class User extends Authenticatable
         'tanggal_bergabung',
         'divisi',
         'is_kepala_divisi',
-    ];
+        'nomor_telepon',
+        'alamat',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'jenis_kelamin',
+        'nik',
+        'pendidikan_terakhir',
+        'kontak_darurat_nama',
+        'kontak_darurat_nomor',
+        ];
 
     protected $hidden = [
         'password',
@@ -35,6 +44,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'tanggal_bergabung' => 'date:Y-m-d',
+            'tanggal_lahir'     => 'date:Y-m-d',
         ];
     }
     

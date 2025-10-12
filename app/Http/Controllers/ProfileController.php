@@ -35,6 +35,17 @@ class ProfileController extends Controller
             'email'             => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'tanggal_bergabung' => 'nullable|date',
             'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+
+            'nomor_telepon'         => 'nullable|string|max:20',
+            'alamat'                => 'nullable|string',
+            'tempat_lahir'          => 'nullable|string|max:255',
+            'tanggal_lahir'         => 'nullable|date',
+            'jenis_kelamin'         => 'nullable|string|in:Laki-laki,Perempuan',
+            'nik'                   => 'nullable|string|max:20',
+            'pendidikan_terakhir'   => 'nullable|string|max:255',
+            'kontak_darurat_nama'   => 'nullable|string|max:255',
+            'kontak_darurat_nomor'  => 'nullable|string|max:20',
+
             'current_password'  => ['nullable', 'required_with:password', 'string'],
             'password'          => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);

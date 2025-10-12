@@ -62,6 +62,11 @@
                             <i class="fas fa-envelope-open-text text-xl"></i>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('crm.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
+                            <i class="fas fa-envelope-open-text text-xl"></i>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>

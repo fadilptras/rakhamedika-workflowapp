@@ -17,6 +17,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\Admin\AdminPengajuanDokumenController;
 use App\Http\Controllers\Admin\AdminAgendaController;
+use App\Http\Controllers\CrmController;
 
 // Route utama, langsung arahkan ke halaman login
 Route::get('/', fn() => redirect()->route('login'));
@@ -95,6 +96,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/agendas/{agenda}', [AgendaController::class, 'update'])->name('agendas.update');
     Route::delete('/agendas/{agenda}', [AgendaController::class, 'destroy'])->name('agendas.destroy');
 
+    Route::get('/crm', [CrmController::class, 'index'])->name('crm.index');
+    Route::get('/crm/create', [CrmController::class, 'create'])->name('crm.create');
+    Route::get('/crm/detail', [CrmController::class, 'show'])->name('crm.show'); // Menggunakan /detail sementara
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
