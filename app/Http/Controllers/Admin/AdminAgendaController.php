@@ -19,6 +19,7 @@ class AdminAgendaController extends Controller
      */
     public function index(Request $request)
     {
+        // Tidak ada perubahan di sini, sudah benar
         $query = Agenda::with('creator');
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -42,31 +43,33 @@ class AdminAgendaController extends Controller
         $agendas = Agenda::with(['creator', 'guests'])->get();
 
         $events = $agendas->map(function($agenda) {
-            if ($agenda->creator) {
-                return [
-                    'id' => $agenda->id, 
-                    'title' => \Illuminate\Support\Str::limit($agenda->title, 15), 
-                    'start' => $agenda->start_time,
-                    'end' => $agenda->end_time,
-                    'backgroundColor' => $agenda->color,
-                    'borderColor' => $agenda->color,
-                    'extendedProps' => [
-                        'fullTitle' => $agenda->title, 
-                        'description' => $agenda->description,
-                        'location' => $agenda->location,
-                        'organizer' => $agenda->creator->name,
-                        // Kirim nama tamu untuk ditampilkan & ID untuk mencocokkan di form edit
-                        'guests' => $agenda->guests->pluck('name')->toArray(),
-                        'guest_ids' => $agenda->guests->pluck('id')->toArray(),
-                    ]
-                ];
-            }
-            return null;
-        })->filter();
+            // HAPUS KONDISI IF DI SEKITAR RETURN
+            // GANTI DENGAN PENGECEKAN NULL MENGGUNAKAN NULL COALESCING OPERATOR (??)
+            return [
+                'id' => $agenda->id, 
+                'title' => \Illuminate\Support\Str::limit($agenda->title, 15), 
+                'start' => $agenda->start_time,
+                'end' => $agenda->end_time,
+                'backgroundColor' => $agenda->color,
+                'borderColor' => $agenda->color,
+                'extendedProps' => [
+                    'fullTitle' => $agenda->title, 
+                    'description' => $agenda->description,
+                    'location' => $agenda->location,
+                    // INI PERUBAHANNYA
+                    'organizer' => $agenda->creator->name ?? 'Pengguna Dihapus', 
+                    'guests' => $agenda->guests->pluck('name')->toArray(),
+                    'guest_ids' => $agenda->guests->pluck('id')->toArray(),
+                ]
+            ];
+        }); // Hapus ->filter() karena tidak ada lagi nilai null
 
         return response()->json($events);
     }
 
+    // ... (Fungsi store, update, destroy, getAllUsers tidak perlu diubah) ...
+    // ... (Salin sisa fungsi dari file asli Anda ke sini) ...
+    
     /**
      * Menyimpan agenda baru yang dibuat oleh admin.
      */
@@ -135,8 +138,9 @@ class AdminAgendaController extends Controller
         $agenda->guests()->sync($validated['guests'] ?? []);
 
         // ===== TAMBAHKAN LOGIKA NOTIFIKASI DI SINI =====
+        // PERBAIKAN KECIL: Tambahkan pengecekan jika creator null
+        $creatorName = $agenda->creator->name ?? 'Sistem'; 
         $guestsToNotify = $agenda->fresh()->guests; 
-        $creatorName = $agenda->creator->name;
 
         if ($guestsToNotify->isNotEmpty()) {
             Notification::send($guestsToNotify, new AgendaNotification($agenda, 'agenda_diperbarui', $creatorName));
@@ -154,7 +158,8 @@ class AdminAgendaController extends Controller
         // ===== TAMBAHKAN LOGIKA NOTIFIKASI DI SINI =====
         // Ambil daftar tamu SEBELUM relasinya dihapus
         $guestsToNotify = $agenda->guests; 
-        $creatorName = $agenda->creator->name;
+        // PERBAIKAN KECIL: Tambahkan pengecekan jika creator null
+        $creatorName = $agenda->creator->name ?? 'Sistem';
         // ===============================================
 
         $agenda->guests()->sync([]); // Lepaskan relasi tamu

@@ -93,11 +93,11 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-zinc-400 mb-1">Dari Tanggal</label>
-                        <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white text-sm">
+                        <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white text-sm px-3 py-2">
                     </div>
                     <div>
                         <label for="end_date" class="block text-sm font-medium text-zinc-400 mb-1">Sampai Tanggal</label>
-                        <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white text-sm">
+                        <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white text-sm px-3 py-2">
                     </div>
                     <div class="flex gap-2">
                         <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">Filter</button>

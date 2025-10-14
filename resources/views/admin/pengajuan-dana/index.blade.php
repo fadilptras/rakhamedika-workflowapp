@@ -14,7 +14,7 @@
                     {{-- Filter Karyawan --}}
                     <div class="md:col-span-2">
                         <label for="karyawan_id" class="block text-sm font-medium text-zinc-400 mb-1">Nama Karyawan</label>
-                        <select name="karyawan_id" id="karyawan_id" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
+                        <select name="karyawan_id" id="karyawan_id" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white px-3 py-2">
                             <option value="">Semua Karyawan</option>
                             @foreach ($karyawanList as $karyawan)
                                 <option value="{{ $karyawan->id }}" {{ request('karyawan_id') == $karyawan->id ? 'selected' : '' }}>
@@ -27,7 +27,7 @@
                     {{-- Filter Divisi --}}
                     <div class="md:col-span-1">
                         <label for="divisi" class="block text-sm font-medium text-zinc-400 mb-1">Divisi</label>
-                        <select name="divisi" id="divisi" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
+                        <select name="divisi" id="divisi" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white px-3 py-2">
                             <option value="">Semua Divisi</option>
                             @foreach ($divisiList as $item)
                                 <option value="{{ $item->divisi }}" {{ request('divisi') == $item->divisi ? 'selected' : '' }}>
@@ -40,17 +40,17 @@
                     {{-- Filter Tanggal --}}
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-zinc-400 mb-1">Dari Tanggal</label>
-                        <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
+                        <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white px-3 py-2">
                     </div>
                     <div>
                         <label for="end_date" class="block text-sm font-medium text-zinc-400 mb-1">Sampai</label>
-                        <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white">
+                        <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white px-3 py-2">
                     </div>
 
                     {{-- Tombol --}}
                     <div class="flex gap-2">
                         <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">Filter</button>
-                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="w-full bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg text-center">Reset</a>
+                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="w-full bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg text-center px-3 py-2">Reset</a>
                     </div>
                 </div>
             </form>
