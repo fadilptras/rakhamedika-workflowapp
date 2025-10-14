@@ -6,11 +6,10 @@
     <title>{{ $title ?? 'Dashboard' }}</title>
     
     <meta name="theme-color" content="#2563eb"> {{-- Warna biru sesuai tema --}}
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('asset/images/apple-touch-icon.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('asset/images/favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('asset/images/favicon-16x16.png') }}">
-    <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <link rel="shortcut icon" href="{{ asset('asset/images/favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96x96.png') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -59,11 +58,6 @@
                     </li>
                     <li>
                         <a href="{{ route('notifikasi.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
-                            <i class="fas fa-envelope-open-text text-xl"></i>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('crm.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
                             <i class="fas fa-envelope-open-text text-xl"></i>
                         </a>
                     </li>
