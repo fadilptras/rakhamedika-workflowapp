@@ -2,85 +2,83 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue; // <-- TAMBAHKAN INI
-use Illuminate\Notifications\Notification;
 use App\Models\Agenda;
-use Illuminate\Support\Str;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
-class AgendaNotification extends Notification  
+class AgendaNotification extends Notification
 {
     use Queueable;
 
-    public $agenda;
-    public $tipe;
-    public $pengundang;
+    protected $agenda;
+    protected $type;
+    protected $creatorName;
 
     /**
-     * Buat instance notifikasi baru.
+     * Create a new notification instance.
      *
-     * @param \App\Models\Agenda $agenda
-     * @param string $tipe Konteks: 'undangan_baru', 'agenda_diperbarui', 'agenda_dibatalkan', 'pengingat'
-     * @param string|null $pengundang Nama pembuat agenda
      * @return void
      */
-    public function __construct(Agenda $agenda, string $tipe, ?string $pengundang = null)
+    public function __construct(Agenda $agenda, $type, $creatorName)
     {
         $this->agenda = $agenda;
-        $this->tipe = $tipe;
-        $this->pengundang = $pengundang ?? $agenda->creator->name; // Fallback jika pengundang null
+        $this->type = $type;
+        $this->creatorName = $creatorName;
     }
 
-    public function via(object $notifiable): array
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @param  mixed  $notifiable
+     * @return array
+     */
+    public function via($notifiable)
     {
         return ['database'];
     }
 
-    public function toArray(object $notifiable): array
+    /**
+     * Get the array representation of the notification.
+     *
+     * @param  mixed  $notifiable
+     * @return array
+     */
+    public function toArray($notifiable)
     {
         $title = '';
         $message = '';
         $icon = 'fas fa-calendar-alt';
-        $color = 'text-purple-600';
-        $judulAgenda = Str::limit($this->agenda->title, 30);
+        $color = 'text-blue-500';
 
-        switch ($this->tipe) {
+        switch ($this->type) {
             case 'undangan_baru':
                 $title = 'Undangan Agenda Baru';
-                $message = "{$this->pengundang} mengundang Anda ke agenda '{$judulAgenda}'.";
+                $message = $this->creatorName . ' mengundang Anda ke agenda "' . $this->agenda->title . '".';
                 break;
             case 'agenda_diperbarui':
                 $title = 'Agenda Diperbarui';
-                $message = "Agenda '{$judulAgenda}' yang Anda ikuti telah diperbarui oleh {$this->pengundang}.";
+                $message = $this->creatorName . ' memperbarui detail agenda "' . $this->agenda->title . '".';
                 $icon = 'fas fa-calendar-check';
                 $color = 'text-yellow-500';
                 break;
             case 'agenda_dibatalkan':
                 $title = 'Agenda Dibatalkan';
-                $message = "Agenda '{$judulAgenda}' yang dibuat oleh {$this->pengundang} telah dibatalkan.";
+                $message = $this->creatorName . ' telah membatalkan agenda "' . $this->agenda->title . '".';
                 $icon = 'fas fa-calendar-times';
-                $color = 'text-slate-500';
+                $color = 'text-red-500';
                 break;
-            
-            // ===== LOGIKA NOTIFIKASI PENGINGAT (BARU) =====
-            case 'pengingat':
-                $title = 'Pengingat Agenda';
-                $message = "Agenda '{$judulAgenda}' akan dimulai dalam 30 menit.";
-                $icon = 'fas fa-bell';
-                $color = 'text-blue-500';
-                break;
-            // ===============================================
         }
 
         return [
-            'id' => $this->agenda->id,
             'title' => $title,
             'message' => $message,
-            // ===== URL DIPERBARUI UNTUK SEMUA TIPE NOTIFIKASI =====
-            'url' => route('dashboard', ['agenda_id' => $this->agenda->id]),
-            // ========================================================
             'icon' => $icon,
             'color' => $color,
+            // --- PERUBAHAN DI SINI ---
+            // Menggunakan route helper untuk membuat URL dengan parameter
+            'url' => route('dashboard', ['agenda_id' => $this->agenda->id]),
         ];
     }
 }

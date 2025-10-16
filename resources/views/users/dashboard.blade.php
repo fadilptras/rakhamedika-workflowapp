@@ -430,7 +430,7 @@
                 });
             }
             
-            // Konfigurasi FullCalendar tetap sama
+            // Konfigurasi FullCalendar
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth', 
                 headerToolbar: { left: 'prev', center: 'title', right: 'next' },
@@ -452,9 +452,36 @@
                     info.jsEvent.preventDefault();
                     showAgendaDetails(info.event);
                 },
+                // =================================================================================
+                // ===                      KODE BARU DITAMBAHKAN DI SINI                      ===
+                // =================================================================================
                 eventsSet: function() {
+                    // 1. Update daftar agenda seperti biasa setiap kali event dimuat
                     updateAgendaList(calendar.getDate());
+
+                    // 2. Buat objek untuk membaca parameter dari URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    
+                    // 3. Ambil nilai dari parameter 'agenda_id'
+                    const agendaId = urlParams.get('agenda_id');
+
+                    // 4. Jika ada agenda_id di URL, lanjutkan
+                    if (agendaId) {
+                        // 5. Cari event di kalender berdasarkan ID tersebut
+                        const event = calendar.getEventById(agendaId);
+                        
+                        // 6. Jika event ditemukan, tampilkan detail modalnya
+                        if (event) {
+                            showAgendaDetails(event);
+                            
+                            // 7. (Opsional) Hapus parameter dari URL agar modal tidak muncul lagi saat refresh
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }
+                    }
                 }
+                // =================================================================================
+                // ===                             AKHIR KODE BARU                             ===
+                // =================================================================================
             });
             calendar.render();
 
@@ -631,4 +658,3 @@
     </script>
     @endpush
 </x-layout-users>
-}
