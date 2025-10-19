@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\PengajuanDanaNotification;
 use Illuminate\Support\Facades\Notification;
+use PDF;
+use Carbon\Carbon; // Pastikan Carbon di-import
 
 class PengajuanDanaController extends Controller
 {
@@ -21,6 +23,10 @@ class PengajuanDanaController extends Controller
     public function show(PengajuanDana $pengajuanDana)
     {
         $this->authorize('view', $pengajuanDana);
+
+        // Lakukan Eager Loading untuk memuat relasi approver
+        $pengajuanDana->load(['user', 'atasanApprover', 'direkturApprover', 'financeApprover']);
+
         return view('users.detail-pengajuan-dana', [
             'title' => 'Detail Pengajuan Dana',
             'pengajuanDana' => $pengajuanDana,
@@ -29,6 +35,7 @@ class PengajuanDanaController extends Controller
     
     public function store(Request $request)
     {
+        // ... (Tidak ada perubahan di method ini)
         if ($request->has('jumlah_dana_total')) {
             $request->merge(['jumlah_dana_total' => preg_replace('/[^0-9]/', '', $request->jumlah_dana_total)]);
         }
@@ -81,7 +88,9 @@ class PengajuanDanaController extends Controller
         if ($user->is_kepala_divisi) {
             $atasan = User::where('jabatan', 'Direktur')->first();
         } else if ($user->divisi) {
-            $atasan = User::where('divisi', $user->divisi)->where('is_kepala_divisi', true)->first();
+        $atasan = User::where('divisi', $user->divisi)
+                    ->where('is_kepala_divisi', true)
+                    ->first();
         }
         if (!$atasan && $user->jabatan !== 'Direktur') {
             $atasan = User::where('jabatan', 'Direktur')->first();
@@ -110,9 +119,13 @@ class PengajuanDanaController extends Controller
             if ($pemohon->is_kepala_divisi) {
                 $updateData['status_direktur'] = 'disetujui';
                 $updateData['catatan_direktur'] = $request->catatan_persetujuan;
+                $updateData['direktur_id'] = Auth::id();
+                $updateData['direktur_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal approve
             } else {
                 $updateData['status_atasan'] = 'disetujui';
                 $updateData['catatan_atasan'] = $request->catatan_persetujuan;
+                $updateData['atasan_id'] = Auth::id();
+                $updateData['atasan_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal approve
             }
             $updateData['status'] = 'diproses'; 
             $tipeNotifikasiUntukPemohon = 'disetujui_atasan';
@@ -125,6 +138,8 @@ class PengajuanDanaController extends Controller
         else {
             $updateData['status_finance'] = 'disetujui';
             $updateData['catatan_finance'] = $request->catatan_persetujuan;
+            $updateData['finance_id'] = Auth::id();
+            $updateData['finance_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal approve
             $updateData['status'] = 'disetujui';
             $tipeNotifikasiUntukPemohon = 'disetujui_finance';
         }
@@ -144,13 +159,19 @@ class PengajuanDanaController extends Controller
              if ($pengajuanDana->user->is_kepala_divisi) {
                 $updateData['status_direktur'] = 'ditolak';
                 $updateData['catatan_direktur'] = $request->catatan_penolakan;
+                $updateData['direktur_id'] = Auth::id();
+                $updateData['direktur_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal reject
             } else {
                 $updateData['status_atasan'] = 'ditolak';
                 $updateData['catatan_atasan'] = $request->catatan_penolakan;
+                $updateData['atasan_id'] = Auth::id();
+                $updateData['atasan_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal reject
             }
         } else {
             $updateData['status_finance'] = 'ditolak';
             $updateData['catatan_finance'] = $request->catatan_penolakan;
+            $updateData['finance_id'] = Auth::id();
+            $updateData['finance_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal reject
         }
         $pengajuanDana->update($updateData);
 
@@ -159,6 +180,7 @@ class PengajuanDanaController extends Controller
         return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Pengajuan dana berhasil ditolak!');
     }
 
+    // ... (Tidak ada perubahan di method uploadBuktiTransfer, uploadFinalInvoice, dan cancel)
     public function uploadBuktiTransfer(Request $request, PengajuanDana $pengajuanDana)
     {
         $this->authorize('uploadBuktiTransfer', $pengajuanDana); 
@@ -185,43 +207,45 @@ class PengajuanDanaController extends Controller
     }
 
     public function cancel(PengajuanDana $pengajuanDana)
-{
-    // Otorisasi menggunakan Policy (tidak ada perubahan)
-    $this->authorize('cancel', $pengajuanDana);
-
-    // Update status pengajuan menjadi 'dibatalkan' (tidak ada perubahan)
-    $pengajuanDana->update(['status' => 'dibatalkan']);
-
-    // =================== KODE BARU (LOGIKA NOTIFIKASI) DIMULAI DI SINI ===================
-    $pemohon = $pengajuanDana->user;
-
-    // 1. Cari atasan dari pemohon (logika disesuaikan dari method store)
-    $atasan = null;
-    if ($pemohon->is_kepala_divisi) {
-        $atasan = User::where('jabatan', 'Direktur')->first();
-    } else if ($pemohon->divisi) {
-        $atasan = User::where('divisi', $pemohon->divisi)->where('is_kepala_divisi', true)->first();
+    {
+        $this->authorize('cancel', $pengajuanDana);
+        $pengajuanDana->update(['status' => 'dibatalkan']);
+        $pemohon = $pengajuanDana->user;
+        $atasan = null;
+        if ($pemohon->is_kepala_divisi) {
+            $atasan = User::where('jabatan', 'Direktur')->first();
+        } else if ($pemohon->divisi) {
+            $atasan = User::where('divisi', $pemohon->divisi)->where('is_kepala_divisi', true)->first();
+        }
+        if (!$atasan && $pemohon->jabatan !== 'Direktur') {
+            $atasan = User::where('jabatan', 'Direktur')->first();
+        }
+        $kepalaFinance = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
+        if ($atasan) {
+            Notification::send($atasan, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
+        }
+        if ($kepalaFinance && (!$atasan || $atasan->id !== $kepalaFinance->id)) {
+            Notification::send($kepalaFinance, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
+        }
+        return redirect()->route('pengajuan_dana.index')->with('success', 'Pengajuan dana telah berhasil dibatalkan.');
     }
-    // Fallback ke direktur jika atasan divisi tidak ditemukan
-    if (!$atasan && $pemohon->jabatan !== 'Direktur') {
-        $atasan = User::where('jabatan', 'Direktur')->first();
-    }
 
-    // 2. Cari kepala finance (logika disesuaikan dari policy)
-    $kepalaFinance = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
+    public function downloadPDF(PengajuanDana $pengajuanDana)
+    {
+        // Pastikan user yang mengakses berhak melihat data ini
+        $this->authorize('view', $pengajuanDana);
 
-    // 3. Kirim notifikasi ke atasan jika ada
-    if ($atasan) {
-        Notification::send($atasan, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
-    }
-    
-    // 4. Kirim notifikasi ke kepala finance jika ada dan bukan orang yang sama dengan atasan
-    if ($kepalaFinance && (!$atasan || $atasan->id !== $kepalaFinance->id)) {
-        Notification::send($kepalaFinance, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
-    }
-    // ==================== KODE BARU (LOGIKA NOTIFIKASI) SELESAI DI SINI ====================
+        // Load semua relasi yang dibutuhkan agar datanya muncul di PDF
+        $pengajuanDana->load(['user', 'atasanApprover', 'direkturApprover', 'financeApprover']);
 
-    // Redirect kembali ke halaman rekap dengan pesan sukses (tidak ada perubahan)
-    return redirect()->route('pengajuan_dana.index')->with('success', 'Pengajuan dana telah berhasil dibatalkan.');
-}
+        // Data dikirim ke view PDF
+        $pdf = PDF::loadView('users.pdf_pengajuan_dana', compact('pengajuanDana'));
+
+        // Buat nama file yang dinamis
+        $namaJudul = \Illuminate\Support\Str::slug($pengajuanDana->judul_pengajuan, '-');
+        $filename = "pengajuan-dana-{$pengajuanDana->id}-{$namaJudul}.pdf";
+
+        // Tawarkan file untuk diunduh oleh browser
+        return $pdf->download($filename);
+    }
 }

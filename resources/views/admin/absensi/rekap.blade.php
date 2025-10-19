@@ -2,22 +2,21 @@
     <x-slot:title>Rekap Absensi Bulanan</x-slot:title>
 
     <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-white">Rekap Absensi Bulanan</h1>
+        <h1 class="text-2xl font-bold text-white">Rekap Absensi Bulanan</h1>
     
-    {{-- Grup Tombol Download --}}
+        {{-- Grup Tombol Download --}}
         <div class="flex gap-2">
             {{-- Tombol Download PDF --}}
             <a href="{{ route('admin.absensi.rekap.downloadPdf', request()->query()) }}"
-            class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
+               class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
                 <i class="fas fa-file-pdf mr-2"></i> PDF
             </a>
             
-            {{-- AWAL PERUBAHAN: Tombol Download Excel --}}
+            {{-- Tombol Download Excel --}}
             <a href="{{ route('admin.absensi.rekap.downloadExcel', request()->query()) }}"
-            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
+               class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
                 <i class="fas fa-file-excel mr-2"></i> Excel
             </a>
-            {{-- AKHIR PERUBAHAN --}}
         </div>
     </div>
 
@@ -66,8 +65,9 @@
                     <th class="px-4 py-3 bg-zinc-200 border-r border-zinc-300"></th>
                     @foreach($allDates as $date)
                         @php
-                            $isWeekend = $date->isWeekend();
-                            $textColor = $isWeekend ? 'text-gray-500' : '';
+                            // --- PERUBAHAN 1 ---
+                            $isSunday = $date->isSunday();
+                            $textColor = $isSunday ? 'text-red-500' : ''; // Ubah warna untuk hari Minggu
                         @endphp
                         <th class="px-2 py-2 text-center border-r border-zinc-300 {{ $textColor }}">{{ $date->day }}</th>
                     @endforeach
@@ -89,16 +89,17 @@
                     </td>
                     @foreach($allDates as $date)
                         @php
-                            $isWeekend = $date->isWeekend();
+                            // --- PERUBAHAN 2 ---
+                            $isSunday = $date->isSunday();
                             $statusString = $data['daily'][$date->toDateString()] ?? '-';
                             $hasLembur = str_contains($statusString, 'L');
                             $mainStatus = trim(str_replace('L', '', $statusString));
                             
                             // Tentukan warna badge berdasarkan status
                             $colorClass = 'text-gray-600';
-                            if ($isWeekend) {
-                                $colorClass = 'text-gray-400';
-                                $mainStatus = '-'; // Pastikan status di hari weekend adalah '-'
+                            if ($isSunday) {
+                                $colorClass = 'text-red-400'; // Warna untuk hari Minggu
+                                $mainStatus = '-'; // Pastikan status di hari Minggu adalah '-'
                             } else {
                                 switch ($mainStatus) {
                                     case 'H': $colorClass = 'text-green-600'; break;
@@ -110,7 +111,8 @@
                                 }
                             }
                         @endphp
-                        <td class="px-2 py-2 text-center font-bold border-r border-zinc-300 {{ $isWeekend ? 'bg-gray-100' : '' }}">
+                        {{-- --- PERUBAHAN 3 --- --}}
+                        <td class="px-2 py-2 text-center font-bold border-r border-zinc-300 {{ $isSunday ? 'bg-red-50' : '' }}">
                             <span class="{{ $colorClass }}">{{ $mainStatus }}</span>
                             @if ($hasLembur)
                                 <span class="text-purple-600">L</span>
@@ -127,7 +129,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="{{ $allDates->count() + 7 }}" class="px-4 py-6 text-center text-zinc-500">
+                    <td colspan="{{ $allDates->count() + 8 }}" class="px-4 py-6 text-center text-zinc-500">
                         Tidak ada data absensi yang cocok dengan filter.
                     </td>
                 </tr>

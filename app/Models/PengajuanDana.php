@@ -31,15 +31,45 @@ class PengajuanDana extends Model
         'updated_at',
         'invoice',
         'bukti_transfer',
+        'atasan_id',
+        'direktur_id',
+        'finance_id',
+        
+        // =================== TAMBAHAN UNTUK TANGGAL PERSETUJUAN ===================
+        'atasan_approved_at',
+        'direktur_approved_at',
+        'finance_approved_at',
+        // ========================================================================
     ];
 
     protected $casts = [
         'rincian_dana' => 'array',
         'lampiran' => 'array',
+
+        // =================== TAMBAHAN UNTUK CASTING TANGGAL ===================
+        'atasan_approved_at' => 'datetime',
+        'direktur_approved_at' => 'datetime',
+        'finance_approved_at' => 'datetime',
+        // ====================================================================
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function atasanApprover()
+    {
+        return $this->belongsTo(User::class, 'atasan_id');
+    }
+
+    public function direkturApprover()
+    {
+        return $this->belongsTo(User::class, 'direktur_id');
+    }
+
+    public function financeApprover()
+    {
+        return $this->belongsTo(User::class, 'finance_id');
     }
 }

@@ -20,7 +20,6 @@ class AbsensiController extends Controller
      */
     public function index(Request $request)
     {
-        // ... (Tidak ada perubahan di method ini) ...
         $month = intval($request->input('month', now()->month));
         $year = intval($request->input('year', now()->year));
         $day = intval($request->input('day', now()->day));
@@ -34,7 +33,7 @@ class AbsensiController extends Controller
         
         $date_for_page = now()->year($year)->month($month)->day($day);
         
-        $isWeekend = $date_for_page->isWeekend();
+        $isWeekend = $date_for_page->isSunday();
 
         $query = Absensi::with('user')
                          ->whereBetween('tanggal', [$start_date_month, $end_date_month]);
@@ -71,7 +70,6 @@ class AbsensiController extends Controller
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
         $divisi = $request->input('divisi');
         
-        // --- PERUBAHAN 1: Panggil method private untuk mendapatkan data ---
         $rekapData = $this->getRekapData($startDate, $endDate, $divisi);
 
         $divisions = User::select('divisi')->whereNotNull('divisi')->distinct()->pluck('divisi');
@@ -92,7 +90,6 @@ class AbsensiController extends Controller
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
         $divisi = $request->input('divisi');
 
-        // --- PERUBAHAN 2: Panggil method private untuk mendapatkan data ---
         $rekapData = $this->getRekapData($startDate, $endDate, $divisi);
         
         $allDates = collect();
@@ -111,7 +108,6 @@ class AbsensiController extends Controller
      */
     public function downloadPdfHarian(Request $request)
     {
-        // ... (Tidak ada perubahan di method ini) ...
         $month = intval($request->input('month', now()->month));
         $year = intval($request->input('year', now()->year));
         $day = intval($request->input('day', now()->day));
@@ -144,7 +140,6 @@ class AbsensiController extends Controller
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
         $divisi = $request->input('divisi');
 
-        // --- PERUBAHAN 3: Panggil method private yang sudah kita buat ---
         $rekapData = $this->getRekapData($startDate, $endDate, $divisi);
 
         $allDates = CarbonPeriod::create($startDate, $endDate);
@@ -153,7 +148,6 @@ class AbsensiController extends Controller
         return Excel::download(new RekapAbsensiExport($rekapData, $allDates, $startDate, $endDate), $fileName);
     }
 
-    // --- PERUBAHAN 4: METHOD PRIVATE BARU UNTUK MENGAMBIL DATA REKAP ---
     /**
      * Method private untuk mengambil dan memproses data rekapitulasi absensi.
      *
@@ -170,7 +164,7 @@ class AbsensiController extends Controller
         }
         
         $users = $queryUsers->where('role', 'user')
-                    ->orderBy('name', 'asc')            // 3. Urutkan Anggota berdasarkan Nama
+                    ->orderBy('name', 'asc')
                     ->get();
 
         $allDates = collect(CarbonPeriod::create($startDate, $endDate));
@@ -193,11 +187,11 @@ class AbsensiController extends Controller
             foreach ($allDates as $date) {
                 $record = $absensiRecords->get($date->toDateString());
                 $lembur = $lemburRecords->get($date->toDateString());
-                $status = '-';
-                
-                if ($date->isWeekend()) {
-                    $status = '-';
-                } elseif ($record) {
+                $status = '-'; // Default status untuk tanggal di masa depan atau hari opsional
+
+                // --- AWAL PERUBAHAN LOGIKA ---
+                if ($record) {
+                    // 1. Jika ada catatan absensi, gunakan status dari catatan tersebut.
                     $status = strtoupper(substr($record->status, 0, 1));
                     if ($record->status === 'hadir') {
                         $jamMasuk = Carbon::parse($record->jam_masuk, 'Asia/Jakarta');
@@ -207,12 +201,18 @@ class AbsensiController extends Controller
                     }
                     if($record->status == 'cuti') $status = 'C';
                     $summary[$status]++;
-                } else {
-                    if ($date->lt(now()->startOfDay())) {
-                        $status = 'A';
-                        $summary['A']++;
-                    }
+                } elseif ($date->isSunday()) {
+                    // 2. Jika tidak ada catatan dan hari Minggu, statusnya strip.
+                    $status = '-';
+                } elseif ($date->isSaturday()) {
+                    // 3. Jika tidak ada catatan dan hari Sabtu, statusnya strip (opsional).
+                    $status = '-';
+                } elseif ($date->lt(now()->startOfDay())) {
+                    // 4. Jika tidak ada catatan, bukan Minggu/Sabtu, dan tanggal sudah lewat, maka dianggap Alpa.
+                    $status = 'A';
+                    $summary['A']++;
                 }
+                // --- AKHIR PERUBAHAN LOGIKA ---
 
                 if ($lembur) $status .= ' L';
                 $dailyRecords[$date->toDateString()] = $status;

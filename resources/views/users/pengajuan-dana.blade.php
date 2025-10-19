@@ -135,7 +135,8 @@
 
                     {{-- TOMBOL AKSI FINAL --}}
                     <div class="flex justify-end space-x-4 pt-4">
-                        <button type="reset" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold py-3 px-8 rounded-lg border border-slate-300 transition">Reset</button>
+                        {{-- Tombol Reset diubah menjadi type="button" dengan ID --}}
+                        <button type="button" id="reset-form-btn" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold py-3 px-8 rounded-lg border border-slate-300 transition">Reset</button>
                         <button type="submit" class="bg-gradient-to-r from-blue-700 to-blue-600 hover:from-indigo-600 hover:to-blue-600 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5">Ajukan Dana</button>
                     </div>
 
@@ -159,7 +160,6 @@
                                 <td class="px-6 py-4 font-semibold text-slate-800">{{ $pengajuan->judul_pengajuan }}</td>
                                 <td class="px-6 py-4 font-medium">Rp {{ number_format($pengajuan->total_dana, 0, ',', '.') }}</td>
                                 <td class="px-6 py-4">
-                                    {{-- =================== KODE BARU (STATUS DIBATALKAN) DI SINI (DESKTOP) =================== --}}
                                     @if ($pengajuan->status == 'diajukan')
                                         <span class="font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
                                     @elseif ($pengajuan->status == 'diproses')
@@ -171,7 +171,6 @@
                                     @elseif ($pengajuan->status == 'dibatalkan')
                                         <span class="font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded-full text-xs">Dibatalkan</span>
                                     @endif
-                                    {{-- ========================================================================================= --}}
                                 </td>
                                 <td class="px-6 py-4 text-center"><a href="{{ route('pengajuan_dana.show', $pengajuan->id) }}" class="text-indigo-600 hover:underline font-semibold">Lihat Detail</a></td>
                             </tr>
@@ -185,7 +184,6 @@
                         <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
                             <div class="flex justify-between items-start mb-2">
                                 <div class="font-bold text-slate-800 text-base pr-4">{{ $pengajuan->judul_pengajuan }}</div>
-                                {{-- =================== KODE BARU (STATUS DIBATALKAN) DI SINI (MOBILE) =================== --}}
                                 @if ($pengajuan->status == 'diajukan')
                                     <span class="flex-shrink-0 font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
                                 @elseif ($pengajuan->status == 'diproses')
@@ -197,7 +195,6 @@
                                 @elseif ($pengajuan->status == 'dibatalkan')
                                     <span class="flex-shrink-0 font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded-full text-xs">Dibatalkan</span>
                                 @endif
-                                {{-- ====================================================================================== --}}
                             </div>
                             <div class="text-sm text-slate-500 mb-3">{{ $pengajuan->created_at->format('d M Y') }}</div>
                             <div class="flex justify-between items-center">
@@ -218,7 +215,10 @@
     @push('scripts')
     <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Script untuk show/hide input bank lainnya
         document.getElementById('pilih-bank')?.addEventListener('change', function() {const bankContainer = document.getElementById('bank-lainnya-container'); const otherBankInput = document.getElementById('input-bank-lainnya'); if (this.value === 'other') {bankContainer.classList.remove('hidden'); otherBankInput.setAttribute('required', 'required');} else {bankContainer.classList.add('hidden'); otherBankInput.removeAttribute('required');}});
+        
+        // Script untuk menambah baris rincian dana
         const tambahBarisBtn = document.getElementById('tambah-baris-btn'); 
         const rincianDanaBodyDesktop = document.getElementById('rincian-dana-body'); 
         const rincianDanaContainerMobile = document.getElementById('rincian-dana-container-mobile'); 
@@ -256,29 +256,130 @@
             addRow(); 
             tambahBarisBtn.addEventListener('click', addRow); 
         }
+
+        // Script untuk upload lampiran dengan progress
         const tambahLampiranBtn = document.getElementById('tambah-lampiran-btn');
         const lampiranContainer = document.getElementById('file-pendukung-container');
+        const mainForm = document.querySelector('form[action="{{ route('pengajuan_dana.store') }}"]');
+        const submitButton = mainForm.querySelector('button[type="submit"]');
+
         function addLampiranInput() {
-            const newInputDiv = document.createElement('div');
-            newInputDiv.className = 'flex items-center gap-2';
-            const newInput = document.createElement('input');
-            newInput.type = 'file';
-            newInput.name = 'file_pendukung[]';
-            newInput.className = 'w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100';
-            const deleteBtn = document.createElement('button');
-            deleteBtn.type = 'button';
-            deleteBtn.innerHTML = '<i class="fas fa-times-circle text-slate-400 hover:text-red-600 text-lg"></i>';
-            deleteBtn.className = 'flex-shrink-0';
-            deleteBtn.onclick = function() {
-                newInputDiv.remove();
-            };
-            newInputDiv.appendChild(newInput);
-            newInputDiv.appendChild(deleteBtn);
-            lampiranContainer.appendChild(newInputDiv);
+            const uniqueId = 'file_' + Date.now() + Math.random().toString(36).substr(2, 9);
+            const newFileWrapper = document.createElement('div');
+            newFileWrapper.className = 'bg-slate-50 p-3 rounded-lg border border-slate-200';
+
+            const fileInputHtml = `
+                <div class="flex items-center gap-3">
+                    <div class="flex-grow">
+                        <input type="file" name="file_pendukung[]" id="${uniqueId}" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+                    </div>
+                    <button type="button" class="delete-lampiran-btn flex-shrink-0 text-slate-400 hover:text-red-600 text-lg">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+                <div id="progress-wrapper-${uniqueId}" class="mt-2 hidden">
+                    <div class="flex justify-between items-center mb-1">
+                        <span id="file-name-${uniqueId}" class="text-xs font-medium text-slate-700 truncate pr-2 w-4/5"></span>
+                        <span id="status-text-${uniqueId}" class="text-xs font-medium text-green-700 w-1/5 text-right"></span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-1.5">
+                        <div id="progress-bar-${uniqueId}" class="h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            `;
+
+            newFileWrapper.innerHTML = fileInputHtml;
+            lampiranContainer.appendChild(newFileWrapper);
+
+            const fileInput = newFileWrapper.querySelector(`#${uniqueId}`);
+            const progressWrapper = newFileWrapper.querySelector(`#progress-wrapper-${uniqueId}`);
+            const progressBar = newFileWrapper.querySelector(`#progress-bar-${uniqueId}`);
+            const fileNameSpan = newFileWrapper.querySelector(`#file-name-${uniqueId}`);
+            const statusTextSpan = newFileWrapper.querySelector(`#status-text-${uniqueId}`);
+
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    fileNameSpan.textContent = file.name;
+                    statusTextSpan.textContent = 'Ready';
+                    statusTextSpan.classList.remove('text-blue-700');
+                    statusTextSpan.classList.add('text-green-700');
+                    progressBar.style.width = '100%';
+                    progressBar.classList.remove('bg-blue-600');
+                    progressBar.classList.add('bg-green-500');
+                    progressWrapper.classList.remove('hidden');
+                } else {
+                    progressWrapper.classList.add('hidden');
+                }
+            });
+
+            newFileWrapper.querySelector('.delete-lampiran-btn').addEventListener('click', function() {
+                newFileWrapper.remove();
+            });
         }
+        
         if (tambahLampiranBtn) {
             tambahLampiranBtn.addEventListener('click', addLampiranInput);
-            addLampiranInput();
+            addLampiranInput(); // Tambah satu input file saat halaman dimuat
+        }
+
+        // Script untuk mengubah status saat submit
+        mainForm.addEventListener('submit', function() {
+            document.querySelectorAll('input[type="file"][name="file_pendukung[]"]').forEach(input => {
+                if (input.files && input.files.length > 0) {
+                    const uniqueId = input.id;
+                    const statusText = document.getElementById(`status-text-${uniqueId}`);
+                    const progressBar = document.getElementById(`progress-bar-${uniqueId}`);
+                    if (statusText) {
+                        statusText.textContent = 'Uploading...';
+                        statusText.classList.remove('text-green-700');
+                        statusText.classList.add('text-blue-700');
+                    }
+                    if (progressBar) {
+                        progressBar.classList.remove('bg-green-500');
+                        progressBar.classList.add('bg-blue-600');
+                    }
+                }
+            });
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Mengirim...
+            `;
+            submitButton.classList.add('inline-flex', 'items-center');
+        });
+
+        // ======================== KODE BARU UNTUK FUNGSI FULL RESET ========================
+        const resetBtn = document.getElementById('reset-form-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                // 1. Reset semua input field standar ke nilai default
+                mainForm.reset();
+
+                // 2. Hapus semua baris rincian dana yang ada
+                if (rincianDanaBodyDesktop) rincianDanaBodyDesktop.innerHTML = '';
+                if (rincianDanaContainerMobile) rincianDanaContainerMobile.innerHTML = '';
+                
+                // 3. Buat kembali satu baris rincian dana yang kosong
+                addRow();
+
+                // 4. Hapus semua input file lampiran yang ada
+                if (lampiranContainer) lampiranContainer.innerHTML = '';
+                
+                // 5. Buat kembali satu input file lampiran yang kosong
+                addLampiranInput();
+
+                // 6. Update tampilan total dana menjadi 0
+                updateTotal();
+
+                // 7. Trigger event change pada pilihan bank untuk memastikan
+                //    input 'bank lainnya' tersembunyi jika perlu.
+                document.getElementById('pilih-bank').dispatchEvent(new Event('change'));
+            });
         }
     });
     </script>

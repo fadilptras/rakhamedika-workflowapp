@@ -50,7 +50,7 @@
                     {{-- Tombol --}}
                     <div class="flex gap-2">
                         <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">Filter</button>
-                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="w-full bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg text-center px-3 py-2">Reset</a>
+                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="w-full bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg text-center">Reset</a>
                     </div>
                 </div>
             </form>
@@ -76,7 +76,6 @@
                         <td class="px-6 py-4">{{ $pengajuan->judul_pengajuan }}</td>
                         <td class="px-6 py-4 font-mono">Rp {{ number_format($pengajuan->total_dana, 0, ',', '.') }}</td>
                         <td class="px-6 py-4">
-                            {{-- --- LOGIKA STATUS BARU --- --}}
                             @if ($pengajuan->status == 'disetujui')
                                 <span class="font-bold bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full text-xs">Disetujui</span>
                             @elseif ($pengajuan->status == 'dibatalkan')
@@ -90,7 +89,20 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <a href="{{ route('admin.pengajuan_dana.show', $pengajuan) }}" class="font-medium text-amber-400 hover:underline">Lihat Detail</a>
+                            <div class="flex items-center justify-center gap-4">
+                                {{-- Tombol Lihat Detail (Ikon diganti) --}}
+                                <a href="{{ route('admin.pengajuan_dana.show', $pengajuan) }}" class="text-zinc-400 hover:text-amber-400" title="Lihat Detail">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2-2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                                {{-- Tombol Download PDF --}}
+                                <a href="{{ route('admin.pengajuan_dana.downloadPdf', $pengajuan) }}" class="text-zinc-400 hover:text-blue-400" title="Download PDF">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     @empty

@@ -78,7 +78,8 @@ Route::middleware('auth')->group(function () {
     // Route baru untuk upload invoice final oleh pemohon
     Route::post('/pengajuan-dana/{pengajuanDana}/upload-final-invoice', [PengajuanDanaController::class, 'uploadFinalInvoice'])
         ->name('pengajuan_dana.upload_final_invoice');
-        Route::post('/pengajuan-dana/{pengajuanDana}/cancel', [PengajuanDanaController::class, 'cancel'])->name('pengajuan_dana.cancel');
+    Route::get('/pengajuan-dana/{pengajuanDana}/download', [PengajuanDanaController::class, 'downloadPDF'])->name('pengajuan_dana.download');
+    Route::post('/pengajuan-dana/{pengajuanDana}/cancel', [PengajuanDanaController::class, 'cancel'])->name('pengajuan_dana.cancel');
 
     // Di dalam Route::middleware('auth')->group(...)
     Route::get('/pengajuan-dokumen', [PengajuanDokumenController::class, 'index'])->name('pengajuan_dokumen.index');
@@ -156,6 +157,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::prefix('pengajuan-dana')->name('pengajuan_dana.')->group(function() {
         Route::get('/', [AdminPengajuanDanaController::class, 'index'])->name('index');
         Route::get('/{pengajuanDana}', [AdminPengajuanDanaController::class, 'show'])->name('show');
+        Route::get('/{pengajuanDana}/download', [AdminPengajuanDanaController::class, 'downloadPDF'])->name('downloadPdf');
     });
 
     Route::prefix('pengajuan-dokumen')->name('pengajuan-dokumen.')->group(function() {
