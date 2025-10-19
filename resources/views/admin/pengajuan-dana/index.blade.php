@@ -8,11 +8,13 @@
         </div>
         
         {{-- FORM FILTER --}}
+        {{-- FORM FILTER --}}
         <div class="p-6">
             <form method="GET" action="{{ route('admin.pengajuan_dana.index') }}">
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 lg:grid-cols-6 gap-4 items-end">
-                    {{-- Filter Karyawan --}}
-                    <div class="md:col-span-2">
+                {{-- Baris Pertama: Semua Form Input --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    
+                    <div class="lg:col-span-2">
                         <label for="karyawan_id" class="block text-sm font-medium text-zinc-400 mb-1">Nama Karyawan</label>
                         <select name="karyawan_id" id="karyawan_id" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white px-3 py-2">
                             <option value="">Semua Karyawan</option>
@@ -24,8 +26,7 @@
                         </select>
                     </div>
 
-                    {{-- Filter Divisi --}}
-                    <div class="md:col-span-1">
+                    <div>
                         <label for="divisi" class="block text-sm font-medium text-zinc-400 mb-1">Divisi</label>
                         <select name="divisi" id="divisi" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white px-3 py-2">
                             <option value="">Semua Divisi</option>
@@ -37,20 +38,29 @@
                         </select>
                     </div>
                     
-                    {{-- Filter Tanggal --}}
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-zinc-400 mb-1">Dari Tanggal</label>
                         <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white px-3 py-2">
                     </div>
+
                     <div>
-                        <label for="end_date" class="block text-sm font-medium text-zinc-400 mb-1">Sampai</label>
+                        <label for="end_date" class="block text-sm font-medium text-zinc-400 mb-1">Sampai Tanggal</label>
                         <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white px-3 py-2">
                     </div>
+                </div>
 
-                    {{-- Tombol --}}
-                    <div class="flex gap-2">
-                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg">Filter</button>
-                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="w-full bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg text-center">Reset</a>
+                {{-- Baris Kedua: Tombol --}}
+                <div class="mt-4">
+                    <div class="flex items-center gap-2">
+                        {{-- Class disamakan agar tinggi tombol konsisten --}}
+                        <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold py-2 px-4 rounded-lg">Filter</button>
+                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white text-sm font-semibold py-2 px-4 rounded-lg text-center">Reset</a>
+                        <button type="submit" formaction="{{ route('admin.pengajuan_dana.downloadRekapPdf') }}" formmethod="GET" class="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2" title="Download Rekap PDF">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Cetak Rekap Pengajuan</span>
+                        </button>
                     </div>
                 </div>
             </form>

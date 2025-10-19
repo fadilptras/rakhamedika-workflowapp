@@ -156,6 +156,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Hapus 'admin/' dari URL dan 'admin.' dari nama rute
     Route::prefix('pengajuan-dana')->name('pengajuan_dana.')->group(function() {
         Route::get('/', [AdminPengajuanDanaController::class, 'index'])->name('index');
+        Route::get('/rekap-pdf', [AdminPengajuanDanaController::class, 'downloadRekapPDF'])->name('downloadRekapPdf');
         Route::get('/{pengajuanDana}', [AdminPengajuanDanaController::class, 'show'])->name('show');
         Route::get('/{pengajuanDana}/download', [AdminPengajuanDanaController::class, 'downloadPDF'])->name('downloadPdf');
     });

@@ -6,16 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\PengajuanDana;
 use App\Models\User;
 use Illuminate\Http\Request;
-use PDF; // 1. Tambahkan use PDF di sini
+use PDF; // Pastikan use PDF sudah ada
 
 class AdminPengajuanDanaController extends Controller
 {
-    /**
-     * Menampilkan daftar semua pengajuan dana dari user.
-     */
-    public function index(Request $request)
+    // ... (method index() dan show() tidak berubah)
+    public function index(Request $request) 
     {
-        // ... (kode yang sudah ada tidak perlu diubah)
         $query = PengajuanDana::with('user');
 
         if ($request->filled('karyawan_id')) {
@@ -23,9 +20,7 @@ class AdminPengajuanDanaController extends Controller
         }
 
         if ($request->filled('divisi')) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('divisi', $request->divisi);
-            });
+            $query->where('divisi', $request->divisi);
         }
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -36,37 +31,62 @@ class AdminPengajuanDanaController extends Controller
         
         $pengajuanDana = $query->latest()->get();
 
-        $karyawanList = User::orderBy('name')->get();
-        $divisiList = User::select('divisi')->distinct()->whereNotNull('divisi')->orderBy('divisi')->get();
+        $karyawanList = User::orderBy('name')->get(); 
+        $divisiList = PengajuanDana::select('divisi')->distinct()->whereNotNull('divisi')->orderBy('divisi')->get();
 
         return view('admin.pengajuan-dana.index', compact('pengajuanDana', 'karyawanList', 'divisiList'));
     }
 
-    /**
-     * Menampilkan detail pengajuan dana.
-     */
     public function show(PengajuanDana $pengajuanDana)
     {
-        $pengajuanDana->load(['user', 'atasanApprover', 'direkturApprover', 'financeApprover']);
         return view('admin.pengajuan-dana.show', compact('pengajuanDana'));
     }
 
-    /**
-     * 2. Tambahkan method baru untuk download PDF di bawah ini
-     */
     public function downloadPDF(PengajuanDana $pengajuanDana)
     {
-        // Load semua relasi yang dibutuhkan agar datanya muncul di PDF
         $pengajuanDana->load(['user', 'atasanApprover', 'direkturApprover', 'financeApprover']);
-
-        // Data dikirim ke view PDF yang sama dengan milik user
         $pdf = PDF::loadView('users.pdf_pengajuan_dana', compact('pengajuanDana'));
-
-        // Buat nama file yang dinamis
         $namaJudul = \Illuminate\Support\Str::slug($pengajuanDana->judul_pengajuan, '-');
         $filename = "pengajuan-dana-{$pengajuanDana->id}-{$namaJudul}.pdf";
+        return $pdf->download($filename);
+    }
 
-        // Tawarkan file untuk diunduh oleh browser
+    /**
+     * TAMBAHKAN METHOD BARU DI BAWAH INI
+     * Untuk men-download rekap PDF berdasarkan filter.
+     */
+    public function downloadRekapPDF(Request $request)
+    {
+        // Logika filter disamakan dengan method index()
+        $query = PengajuanDana::with('user');
+
+        if ($request->filled('karyawan_id')) {
+            $query->where('user_id', $request->karyawan_id);
+        }
+
+        if ($request->filled('divisi')) {
+            $query->where('divisi', $request->divisi);
+        }
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = $request->start_date . ' 00:00:00';
+            $endDate = $request->end_date . ' 23:59:59';
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        $pengajuanDana = $query->latest()->get();
+
+        // Siapkan data filter untuk ditampilkan di header PDF
+        $karyawanName = $request->filled('karyawan_id') ? User::find($request->karyawan_id)->name : 'Semua Karyawan';
+        $divisiName = $request->filled('divisi') ? $request->divisi : 'Semua Divisi';
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+        
+        // Load view PDF dengan data yang sudah difilter
+        $pdf = PDF::loadView('admin.pengajuan-dana.pdf_rekap', compact('pengajuanDana', 'karyawanName', 'divisiName', 'startDate', 'endDate'));
+
+        // Buat nama file dan download
+        $filename = 'rekap-pengajuan-dana-' . now()->format('Y-m-d') . '.pdf';
         return $pdf->download($filename);
     }
 }
