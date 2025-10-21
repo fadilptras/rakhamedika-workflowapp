@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\PengajuanDanaNotification;
 use Illuminate\Support\Facades\Notification;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon; // Pastikan Carbon di-import
 
 class PengajuanDanaController extends Controller

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Prosedur Reset Password</title>
 
-    <meta name="theme-color" content="#2563eb"> {{-- Warna biru sesuai tema --}}
+    <meta name="theme-color" content="#2563eb"> 
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96x96.png') }}">
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
@@ -13,10 +13,10 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <style>
     body { 
       font-family: 'Poppins', sans-serif; 
-      /* Background gambar dihapus dari sini */
     }
     .animated-image {
       animation: float 6s ease-in-out infinite;
@@ -26,11 +26,12 @@
       50% { transform: translateY(-20px); }
     }
   </style>
+
 </head>
-{{-- --- PERUBAHAN BACKGROUND KEMBALI KE ABU-ABU --- --}}
+
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
- <div class="flex w-full max-w-4xl rounded-lg shadow-lg bg-white overflow-hidden">
+  <div class="flex w-full max-w-4xl rounded-lg shadow-lg bg-white overflow-hidden">
     {{-- --- PERUBAHAN WARNA GRADIEN PANEL --- --}}
     <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-700 to-indigo-900 items-center justify-center p-8">
         <div class="text-center">

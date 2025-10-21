@@ -8,7 +8,6 @@
             <input type="hidden" name="role" value="user">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                {{-- Kolom Kiri --}}
                 <div class="space-y-6">
                     <div>
                         <label for="add-name" class="block text-sm font-medium text-zinc-300">Nama Lengkap</label>
@@ -37,6 +36,7 @@
                         <p id="add-password-error" class="hidden text-red-400 text-sm mt-1"></p>
                     </div>
                 </div>
+                {{-- Kolom Kanan --}}
                 <div class="space-y-6">
                     <div>
                         <label for="add-jabatan" class="block text-sm font-medium text-zinc-300">Jabatan</label>
@@ -47,13 +47,12 @@
                         <label for="add-divisi-select" class="block text-sm font-medium text-zinc-300">Divisi</label>
                         <select id="add-divisi-select" name="divisi"
                             class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white">
-                            <option value="">Pilih Divisi</option>
-                            <option value="Teknologi Informasi">Teknologi Informasi</option>
-                            <option value="Sumber Daya Manusia">Sumber Daya Manusia</option>
-                            <option value="Keuangan">Keuangan</option>
-                            <option value="Pemasaran">Pemasaran</option>
-                            <option value="Operasional">Operasional</option>
-                            <option value="lainnya">Lainnya (Isi Sendiri)...</option>
+                            <option value="Top Management">Top Management (Direktur / CEO)</option>
+                            <option value="Finance dan Gudang">Finance dan Gudang</option>
+                            <option value="Marketing dan Operasional">Marketing dan Operasional</option>
+                            <option value="Human Resource Development">Human Resource Development</option>
+                            <option value="IT dan Administrasi">IT dan Administrasi</option>
+                            <option value="lainnya">Lainnya ...</option>
                         </select>
                         <div id="add-divisi-input-container" class="hidden mt-1">
                             <div class="flex items-center gap-2">
@@ -69,11 +68,6 @@
                         <label for="add-tanggal_bergabung" class="block text-sm font-medium text-zinc-300">Tanggal Bergabung</label>
                         <input type="date" id="add-tanggal_bergabung" name="tanggal_bergabung"
                             class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white">
-                    </div>
-                    <div>
-                        <label for="add-profile_picture" class="block text-sm font-medium text-zinc-300">Foto Profil (Opsional)</label>
-                        <input type="file" id="add-profile_picture" name="profile_picture"
-                            class="mt-1 w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-300 hover:file:bg-indigo-500/20">
                     </div>
                 </div>
             </div>
@@ -91,7 +85,7 @@
 <div id="edit-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4">
     <div class="bg-zinc-800 rounded-lg w-full max-w-4xl p-8 shadow-lg border border-zinc-700">
         <h2 class="text-xl font-bold mb-6 text-white">Edit Data Karyawan</h2>
-        <form id="edit-form" method="POST" enctype="multipart/form-data">
+        <form id="edit-form" action="{{ route('admin.employees.update') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="user_id" id="edit-user-id">
             <input type="hidden" name="role" value="user">
@@ -125,6 +119,7 @@
                         <p id="edit-password-error" class="hidden text-red-400 text-sm mt-1"></p>
                     </div>
                 </div>
+                {{-- Kolom Kanan --}}
                 <div class="space-y-6">
                     <div>
                         <label for="edit-jabatan" class="block text-sm font-medium text-zinc-300">Jabatan</label>
@@ -135,13 +130,12 @@
                         <label for="edit-divisi-select" class="block text-sm font-medium text-zinc-300">Divisi</label>
                         <select id="edit-divisi-select" name="divisi"
                             class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white">
-                            <option value="">Pilih Divisi</option>
-                            <option value="Teknologi Informasi">Teknologi Informasi</option>
-                            <option value="Sumber Daya Manusia">Sumber Daya Manusia</option>
-                            <option value="Keuangan">Keuangan</option>
-                            <option value="Pemasaran">Pemasaran</option>
-                            <option value="Operasional">Operasional</option>
-                            <option value="lainnya">Lainnya (Isi Sendiri)...</option>
+                            <option value="Top Management">Top Management (Direktur / CEO)</option>
+                            <option value="Finance dan Gudang">Finance dan Gudang</option>
+                            <option value="Marketing dan Operasional">Marketing dan Operasional</option>
+                            <option value="Human Resource Development">Human Resource Development</option>
+                            <option value="IT dan Administrasi">IT dan Administrasi</option>
+                            <option value="lainnya">Lainnya ...</option>
                         </select>
                         <div id="edit-divisi-input-container" class="hidden mt-1">
                             <div class="flex items-center gap-2">
@@ -157,11 +151,6 @@
                         <label for="edit-tanggal_bergabung" class="block text-sm font-medium text-zinc-300">Tanggal Bergabung</label>
                         <input type="date" id="edit-tanggal_bergabung" name="tanggal_bergabung"
                             class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white">
-                    </div>
-                    <div>
-                        <label for="edit-profile_picture" class="block text-sm font-medium text-zinc-300">Ganti Foto Profil (Opsional)</label>
-                        <input type="file" id="edit-profile_picture" name="profile_picture"
-                            class="mt-1 w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-300 hover:file:bg-indigo-500/20">
                     </div>
                 </div>
             </div>

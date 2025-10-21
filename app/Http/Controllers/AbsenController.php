@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Carbon\CarbonPeriod;
+use Jenssegers\Agent\Agent; // <-- TAMBAHKAN INI
 
 class AbsenController extends Controller
 {
@@ -27,19 +28,12 @@ class AbsenController extends Controller
 
         $isWeekend = $today->isWeekend();
 
-        // Cek apakah ada absensi yang belum selesai dari hari sebelumnya (tanpa jam keluar)
         $unfinishedAbsensi = Absensi::where('user_id', $user->id)
             ->where('tanggal', $yesterday->toDateString())
             ->whereNotNull('jam_masuk')
             ->whereNull('jam_keluar')
             ->first();
 
-        // Siapkan variabel default
-        $absensiHariIni = null;
-        $lemburHariIni = null;
-
-        // Ambil data absensi hari ini, terlepas dari apakah itu akhir pekan atau tidak.
-        // Dengan ini, pengguna tetap bisa absen di hari libur.
         $absensiHariIni = Absensi::where('user_id', $user->id)
             ->where('tanggal', $today->toDateString())
             ->first();
@@ -51,21 +45,29 @@ class AbsenController extends Controller
         $rekapAbsen = $this->rekapAbsensiBulanan($user, $today);
         $daftarRekan = $this->getDaftarRekan($user, $today);
 
-        // Karena kita tidak memblokir absen, logika ini perlu diubah untuk mengakomodasi absen di hari libur.
-        $absensiKemarin = Absensi::where('user_id', $user->id)
-            ->where('tanggal', $today->subDay()->toDateString())
-            ->where('status', 'hadir')
-            ->first();
-        
-        // Perbaikan: Hapus pengecekan absensiKemarin jika ingin absen di hari libur tetap bisa dilakukan.
-        // Cukup cek unfinishedAbsensi saja.
-        $unfinishedAbsensi = Absensi::where('user_id', $user->id)
-            ->where('tanggal', $yesterday->toDateString())
-            ->whereNotNull('jam_masuk')
-            ->whereNull('jam_keluar')
-            ->first();
+        // Kumpulkan semua data untuk dikirim ke view
+        $data = compact(
+            'title',
+            'absensiHariIni',
+            'lemburHariIni',
+            'rekapAbsen',
+            'daftarRekan',
+            'unfinishedAbsensi',
+            'isWeekend'
+        );
 
-        return view('users.absen', compact('title', 'absensiHariIni', 'lemburHariIni', 'rekapAbsen', 'daftarRekan', 'unfinishedAbsensi', 'isWeekend'));
+        // =======================================================
+        // LOGIKA BARU: DETEKSI PERANGKAT DAN PILIH VIEW
+        // =======================================================
+        $agent = new Agent();
+
+        if ($agent->isMobile() || $agent->isTablet()) {
+            // Jika perangkat adalah mobile atau tablet, tampilkan view baru
+            return view('users.mobile-absen', $data);
+        } else {
+            // Jika bukan (desktop), tampilkan view yang lama
+            return view('users.absen', $data);
+        }
     }
 
     /**
@@ -202,7 +204,6 @@ class AbsenController extends Controller
             return redirect()->route('absen')->with('error', 'Anda sudah melakukan absensi hari ini.');
         }
 
-        // Logika baru: Cek absensi hari sebelumnya
         $absensiKemarin = Absensi::where('user_id', Auth::id())
             ->where('tanggal', today()->subDay()->toDateString())
             ->where('status', 'hadir')
@@ -212,7 +213,6 @@ class AbsenController extends Controller
             return redirect()->route('absen')->with('error', 'Anda belum melakukan absen keluar pada hari kerja sebelumnya.');
         }
 
-        // Cek validasi untuk sakit/izin dan hadir 
         if (in_array($request->status, ['sakit', 'izin'])) {
             if (!$request->filled('keterangan') && !$request->hasFile('lampiran')) {
                 return redirect()->back()->withInput()
@@ -235,14 +235,11 @@ class AbsenController extends Controller
         $standardWorkHour = Carbon::parse('08:00:00', 'Asia/Jakarta');
         $keterangan = $request->keterangan;
 
-        // Logika untuk menentukan status akhir
         if ($inputStatus === 'hadir') {
-            
             if ($jamMasuk->gt($notPresentThreshold)) {
                 $inputStatus = 'tidak hadir';
-                $keterangan = null; // Hapus keterangan jika statusnya 'tidak_hadir'
+                $keterangan = null;
             }
-            
             else if ($jamMasuk->gt($standardWorkHour)) {
                 $diffInMinutes = abs($jamMasuk->diffInMinutes($standardWorkHour));
                 $jamTerlambat = floor($diffInMinutes / 60);
@@ -256,14 +253,13 @@ class AbsenController extends Controller
             'user_id'   => Auth::id(),
             'tanggal'   => today()->toDateString(),
             'jam_masuk' => $jamMasuk->toTimeString(),
-            'status'    => $inputStatus, // Gunakan status yang sudah diperbarui
+            'status'    => $inputStatus,
             'keterangan'=> $keterangan,
             'lampiran'  => $pathLampiran,
             'latitude'  => $request->latitude,
             'longitude' => $request->longitude,
         ]);
 
-        // Tambahkan pesan yang lebih spesifik jika statusnya diubah
         if ($inputStatus === 'tidak hadir') {
             return redirect()->route('absen')->with('error', 'Absensi masuk Anda melewati batas waktu (11:00). Status Anda otomatis menjadi Tidak Hadir.');
         }
@@ -286,7 +282,6 @@ class AbsenController extends Controller
             return back()->with('error', 'Aksi tidak diizinkan.');
         }
 
-        // Simpan lampiran
         $pathLampiranKeluar = null;
         if ($request->hasFile('lampiran_keluar')) {
             $pathLampiranKeluar = $request->file('lampiran_keluar')->store('lampiran_absensi_keluar', 'public');
@@ -351,19 +346,16 @@ class AbsenController extends Controller
      */
     public function updateLemburKeluar(Request $request, Lembur $lembur)
     {
-        // Validasi data yang diterima dari form
         $request->validate([
             'lampiran_keluar'    => 'required|file|mimes:jpg,jpeg,png|max:2048',
             'latitude_keluar'    => 'required|string',
             'longitude_keluar'   => 'required|string',
         ]);
     
-        // Cek otorisasi pengguna
         if ($lembur->user_id !== Auth::id()) {
             return redirect()->route('absen')->with('error', 'Aksi tidak diizinkan.');
         }
         
-        // Cek apakah sudah absen keluar lembur
         if ($lembur->jam_keluar_lembur) {
             return redirect()->route('absen')->with('error', 'Anda sudah melakukan absensi keluar lembur.');
         }
@@ -373,7 +365,6 @@ class AbsenController extends Controller
             $pathLampiranKeluar = $request->file('lampiran_keluar')->store('lampiran_lembur_keluar', 'public');
         }
     
-        // Update data lembur
         $lembur->update([
             'jam_keluar_lembur' => now()->toTimeString(),
             'lampiran_keluar'    => $pathLampiranKeluar,

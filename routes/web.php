@@ -62,7 +62,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'editProfile'])->name('profil.index');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profil.update');
     Route::post('/profile/check-password', [ProfileController::class, 'checkCurrentPassword'])->name('profile.checkPassword');
-    
+    Route::get('/profile/download-pdf', [ProfileController::class, 'downloadPdf'])->name('profile.downloadPdf');
+
     // Pengajuan Dana
     Route::get('/pengajuan-dana', [PengajuanDanaController::class, 'index'])->name('pengajuan_dana.index');
     Route::post('/pengajuan-dana', [PengajuanDanaController::class, 'store'])->name('pengajuan_dana.store');
@@ -115,6 +116,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
         // --- RUTE BARU UNTUK SET KEPALA DIVISI ---
         Route::post('/{user}/set-as-head', [UserController::class, 'setAsDivisionHead'])->name('setAsHead');
+        Route::get('/{user}/download-pdf', [UserController::class, 'downloadProfilePdf'])->name('downloadProfilePdf');
     });
 
     // Rute untuk mengelola ADMIN (role='admin')

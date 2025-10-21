@@ -7,11 +7,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\PengajuanDana;
+use App\Models\RiwayatPendidikan;
+use App\Models\RiwayatPekerjaan;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
@@ -23,15 +30,34 @@ class User extends Authenticatable
         'divisi',
         'is_kepala_divisi',
         'nomor_telepon',
-        'alamat',
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',
         'nik',
-        'pendidikan_terakhir',
         'kontak_darurat_nama',
         'kontak_darurat_nomor',
-        ];
+
+        'nip',
+        'status_karyawan',
+        'atasan_id',
+        'lokasi_kerja',
+        'tanggal_mulai_kontrak',
+        'tanggal_akhir_kontrak',
+        'tanggal_berhenti',
+        'agama',
+        'golongan_darah',
+        'status_pernikahan',
+        'alamat_ktp', // Ini pengganti 'alamat'
+        'alamat_domisili',
+        'kontak_darurat_hubungan',
+        'npwp',
+        'ptkp',
+        'bpjs_kesehatan',
+        'bpjs_ketenagakerjaan',
+        'nama_bank',
+        'nomor_rekening',
+        'pemilik_rekening',
+    ];
 
     protected $hidden = [
         'password',
@@ -42,15 +68,17 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
             'tanggal_bergabung' => 'date:Y-m-d',
             'tanggal_lahir'     => 'date:Y-m-d',
+            // --- TAMBAHKAN INI ---
+            'tanggal_mulai_kontrak' => 'date:Y-m-d',
+            'tanggal_akhir_kontrak' => 'date:Y-m-d',
+            'tanggal_berhenti'      => 'date:Y-m-d',
         ];
     }
     
-    /**
-     * Get the fund requests for the user.
-     */
+    // --- (Relasi lama Anda tetap di sini) ---
     public function pengajuanDanas(): HasMany
     {
         return $this->hasMany(PengajuanDana::class, 'user_id');
@@ -80,5 +108,22 @@ class User extends Authenticatable
     public function pengajuanDokumens(): HasMany
     {
         return $this->hasMany(PengajuanDokumen::class);
+    }
+
+
+    /**
+     * Relasi ke Riwayat Pendidikan.
+     */
+    public function riwayatPendidikan(): HasMany
+    {
+        return $this->hasMany(RiwayatPendidikan::class, 'user_id');
+    }
+
+    /**
+     * Relasi ke Riwayat Pekerjaan.
+     */
+    public function riwayatPekerjaan(): HasMany
+    {
+        return $this->hasMany(RiwayatPekerjaan::class, 'user_id');
     }
 }
