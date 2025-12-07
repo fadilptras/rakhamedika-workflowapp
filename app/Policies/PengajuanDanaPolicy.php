@@ -8,96 +8,83 @@ use Illuminate\Auth\Access\Response;
 
 class PengajuanDanaPolicy
 {
+    /**
+     * Tentukan apakah user bisa melihat pengajuan dana.
+     */
     public function view(User $user, PengajuanDana $pengajuanDana): bool
     {
-        if ($user->id === $pengajuanDana->user_id || $user->jabatan === 'HRD') {
-            return true;
-        }
-        $directApprover = $this->getApprover($pengajuanDana->user);
-        if ($directApprover && $user->id === $directApprover->id) {
-            return true;
-        }
-        $financeHead = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
-        if ($financeHead && $user->id === $financeHead->id) {
-            return true;
-        }
-        return false;
+        if ($user->id === $pengajuanDana->user_id) return true; // Pemohon
+        if ($user->id === $pengajuanDana->approver_1_id) return true; // Approver 1
+        if ($user->id === $pengajuanDana->approver_2_id) return true; // Approver 2
+        if ($user->id === $pengajuanDana->user->manager_keuangan_id) return true; // Manager Keuangan yang ditugaskan
+
+        if ($user->id === $pengajuanDana->finance_id) return true; // Finance yg memproses
+        return $user->role === 'admin'; // Admin
     }
 
+    /**
+     * Tentukan apakah user bisa menyetujui/menolak pengajuan.
+     */
     public function approve(User $user, PengajuanDana $pengajuanDana): bool
     {
-        $pemohon = $pengajuanDana->user;
-        if ($pemohon->is_kepala_divisi) {
-            $direktur = User::where('jabatan', 'Direktur')->first();
-            if ($direktur && $user->id === $direktur->id && $pengajuanDana->status_direktur === 'menunggu') {
-                return true;
-            }
-        } 
-        else {
-            $atasanPemohon = $this->getApprover($pemohon);
-            if ($atasanPemohon && $user->id === $atasanPemohon->id && $pengajuanDana->status_atasan === 'menunggu') {
-                return true;
-            }
+        // Approver 1 saat status 'diajukan'
+        if ($user->id === $pengajuanDana->approver_1_id && $pengajuanDana->status === 'diajukan') {
+            return true;
         }
-        $kepalaFinance = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
-        if ($kepalaFinance && $user->id === $kepalaFinance->id) {
-            $atasanApproved = $pengajuanDana->status_atasan === 'disetujui';
-            $direkturApproved = $pengajuanDana->status_direktur === 'disetujui';
-            $financeWaiting = $pengajuanDana->status_finance === 'menunggu' || $pengajuanDana->status_finance === null;
-            if (($atasanApproved || $direkturApproved) && $financeWaiting) {
-                return true;
-            }
+        // Approver 2 saat status 'diproses_appr_2'
+        if ($user->id === $pengajuanDana->approver_2_id && $pengajuanDana->status === 'diproses_appr_2') {
+            return true;
         }
+
+        // Blok untuk Manager Keuangan REJECT sudah dihapus
+        
         return false;
     }
 
-    // =================== METHOD BARU DITAMBAHKAN DI SINI ===================
     /**
-     * Determine whether the user can cancel the pengajuan dana.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\PengajuanDana  $pengajuanDana
-     * @return bool
+     * Tentukan apakah user (Manager Keuangan yg ditugaskan) bisa menekan tombol "Proses Pembayaran".
+     */
+    public function prosesPembayaran(User $user, PengajuanDana $pengajuanDana): bool
+    {
+        // Hanya Manager Keuangan yg ditugaskan, saat status 'proses_pembayaran' DAN payment_status 'menunggu'
+        return $user->id === $pengajuanDana->user->manager_keuangan_id
+               && $pengajuanDana->status == 'proses_pembayaran'
+               && $pengajuanDana->payment_status == 'menunggu';
+    }
+
+    /**
+     * Tentukan apakah user (Manager Keuangan yg ditugaskan) bisa upload bukti transfer.
+     */
+    public function uploadBuktiTransfer(User $user, PengajuanDana $pengajuanDana): bool
+    {
+        // Hanya Manager Keuangan yg ditugaskan, saat status 'proses_pembayaran' DAN payment_status 'diproses'
+        return $user->id === $pengajuanDana->user->manager_keuangan_id
+               && $pengajuanDana->status == 'proses_pembayaran'
+               && $pengajuanDana->payment_status == 'diproses';
+    }
+
+    /**
+     * Tentukan apakah user (Pemohon) bisa membatalkan pengajuan.
      */
     public function cancel(User $user, PengajuanDana $pengajuanDana): bool
     {
-        // Aturan:
-        // 1. Pengguna harus menjadi pemilik pengajuan.
-        // 2. Status pengajuan harus 'diajukan' ATAU 'diproses'.
-        return $user->id === $pengajuanDana->user_id &&
-               in_array($pengajuanDana->status, ['diajukan', 'diproses']);
-    }
-    // =======================================================================
-
-    public function uploadBuktiTransfer(User $user, PengajuanDana $pengajuanDana): bool
-    {
-        $kepalaFinance = User::where('jabatan', 'Kepala Finance')->first();
-        return $kepalaFinance 
-                && $user->id === $kepalaFinance->id 
-                && $pengajuanDana->status === 'disetujui'
-                && is_null($pengajuanDana->bukti_transfer);
+        return $user->id === $pengajuanDana->user_id && in_array($pengajuanDana->status, ['diajukan', 'diproses_appr_2']);
     }
 
-    public function uploadFinalInvoice(User $user, PengajuanDana $pengajuanDana): bool
+    /**
+     * Tentukan apakah user bisa membuat pengajuan dana.
+     */
+    public function create(User $user): bool
     {
-        $isOwner = $user->id === $pengajuanDana->user_id;
-        $isApproved = $pengajuanDana->status === 'disetujui';
-        $transferUploaded = !is_null($pengajuanDana->bukti_transfer);
-        $invoiceNotYetUploaded = is_null($pengajuanDana->invoice);
-        return $isOwner && $isApproved && $transferUploaded && $invoiceNotYetUploaded;
+        return $user->role === 'user';
     }
 
-    private function getApprover(User $user): ?User
+     public function update(User $user, PengajuanDana $pengajuanDana): bool
     {
-        if ($user->jabatan === 'Direktur') return null;
-        if ($user->is_kepala_divisi) return User::where('jabatan', 'Direktur')->first();
-        if ($user->divisi) {
-            $approver = User::where('divisi', $user->divisi)
-                            ->where('is_kepala_divisi', true)
-                            ->where('id', '!=', $user->id)
-                            ->first();
-            if ($approver) return $approver;
-        }
-        return User::where('jabatan', 'Direktur')->first();
+        return $user->role === 'admin';
+    }
+    public function delete(User $user, PengajuanDana $pengajuanDana): bool
+    {
+        return $user->role === 'admin';
     }
 }

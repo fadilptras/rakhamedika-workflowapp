@@ -103,9 +103,15 @@ class RekapAbsensiExport implements FromCollection, WithHeadings, WithMapping, W
 
         $dailyData = [];
         foreach ($this->allDates as $date) {
+            // --- INI PERBAIKANNYA ---
+            // 1. Ambil data status murni apa adanya dari controller
             $statusString = $row['daily'][$date->toDateString()] ?? '-';
-            $mainStatus = trim(str_replace('L', '', $statusString));
-            $dailyData[] = $date->isWeekend() ? '' : $mainStatus;
+            
+            // 2. Hapus logika isWeekend() yang menimpa data
+            //    $dailyData[] = $date->isWeekend() ? '' : $mainStatus; <-- INI SALAH
+
+            // 3. Langsung masukkan data murni dari controller
+            $dailyData[] = $statusString;
         }
 
         return array_merge(

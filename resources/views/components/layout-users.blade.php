@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Dashboard' }}</title>
     
-    <meta name="theme-color" content="#2563eb"> {{-- Warna biru sesuai tema --}}
+    <meta name="theme-color" content="#2563eb"> 
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96x96.png') }}">
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
@@ -14,24 +14,36 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    {{-- TAMBAHKAN BARIS INI --}}
     @stack('styles')
 
     <style>
-        /* Menambahkan transisi yang lebih halus untuk transform */
         #sidebar {
             transition: transform 0.3s ease-in-out;
+        }
+        /* Kustomisasi Scrollbar Browser Bawaan */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
         }
     </style>
 </head>
 
-<body class="bg-gray-100 font-sans bg-gradient-to-br from-sky-50 to-blue-100">
+<body class="bg-gray-100 font-sans bg-gradient-to-br from-sky-50 to-blue-100 flex flex-col min-h-screen overflow-x-hidden">
 
-    {{-- Overlay untuk latar belakang saat sidebar terbuka --}}
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden"></div>
+    {{-- Overlay Sidebar --}}
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
-    {{-- Sidebar --}}
-    <div id="sidebar" class="bg-blue-600 text-white h-full flex flex-col w-20 fixed top-0 left-0 z-30 transform -translate-x-full">
+    {{-- Sidebar (Z-Index 50) --}}
+    <div id="sidebar" class="bg-blue-600 text-white h-full flex flex-col w-20 fixed top-0 left-0 z-50 transform -translate-x-full">
         
         <div class="p-4 border-b border-blue-500 flex items-center justify-center h-[68px]">
             <i class="fas fa-clinic-medical text-3xl"></i>
@@ -61,6 +73,11 @@
                             <i class="fas fa-envelope-open-text text-xl"></i>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('crm.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
+                            <i class="fas fa-users text-xl"></i>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -78,10 +95,10 @@
         </div>
     </div>
 
-    <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col min-h-screen relative">
         
-        {{-- Navbar & Header --}}
-        <header class="bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg sticky top-0 z-10 text-white">
+        {{-- Navbar Header (Z-Index 20) --}}
+        <header class="bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg sticky top-0 z-20 text-white shrink-0">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="py-4 flex items-center justify-between">
                     <div class="flex items-center">
@@ -100,14 +117,12 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center">
-                        {{-- Contoh: Tombol Notifikasi atau Profil bisa ditambahkan di sini --}}
-                    </div>
                 </div>
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-6">
+        {{-- Main Content (Z-Index 0) --}}
+        <main class="flex-1 p-6 relative z-0">
             {{ $slot }}
         </main>
 
@@ -134,6 +149,9 @@
             });
         });
     </script>
+    
+    {{-- PENTING: TEMPAT MODAL AKAN DI-RENDER DI SINI (LAYER PALING ATAS) --}}
+    @stack('modals')
     
     @stack('scripts')
 

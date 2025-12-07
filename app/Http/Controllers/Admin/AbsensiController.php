@@ -28,15 +28,12 @@ class AbsensiController extends Controller
 
         $divisions = User::select('divisi')->whereNotNull('divisi')->distinct()->pluck('divisi');
 
-        $start_date_month = now()->year($year)->month($month)->startOfMonth()->format('Y-m-d');
-        $end_date_month = now()->year($year)->month($month)->endOfMonth()->format('Y-m-d');
-        
         $date_for_page = now()->year($year)->month($month)->day($day);
         
         $isWeekend = $date_for_page->isSunday();
 
         $query = Absensi::with('user')
-                         ->whereBetween('tanggal', [$start_date_month, $end_date_month]);
+                         ->whereDate('tanggal', $date_for_page->format('Y-m-d'));
 
         if ($divisi) {
             $query->whereHas('user', function ($q) use ($divisi) {
@@ -48,7 +45,46 @@ class AbsensiController extends Controller
             $query->where('status', $status);
         }
 
-        $absensi_harian = $query->whereDate('tanggal', $date_for_page->format('Y-m-d'))->get();
+        $absensi_harian = $query->get();
+
+        // Ambil data lembur untuk menandai status lembur di tabel
+        $userIds = $absensi_harian->pluck('user_id')->unique();
+        $lemburRecords = Lembur::whereIn('user_id', $userIds)
+                              ->where('tanggal', $date_for_page->format('Y-m-d'))
+                              ->get()
+                              ->keyBy('user_id');
+
+        foreach ($absensi_harian as $absensi) {
+            $absensi->lembur = $lemburRecords->has($absensi->user_id);
+
+            // --- PERBAIKAN LOGIKA DURASI (FIX BUG 0 JAM) ---
+            if ($absensi->jam_masuk && $absensi->jam_keluar) {
+                // 1. Tentukan Tanggal Keluar (Pakai kolom baru, fallback ke tanggal masuk untuk data lama)
+                $tglKeluar = $absensi->tanggal_keluar ?? $absensi->tanggal;
+
+                // 2. Gabungkan Tanggal + Jam agar menjadi Timestamp lengkap
+                $waktuMasuk = Carbon::parse($absensi->tanggal . ' ' . $absensi->jam_masuk);
+                $waktuKeluar = Carbon::parse($tglKeluar . ' ' . $absensi->jam_keluar);
+
+                // 3. Fallback Khusus Data Lama (Sebelum ada kolom tanggal_keluar)
+                // Jika data lama belum punya tanggal_keluar TAPI jam keluar lebih kecil dari jam masuk (lintas hari)
+                if (is_null($absensi->tanggal_keluar) && $waktuKeluar->lt($waktuMasuk)) {
+                    $waktuKeluar->addDay();
+                }
+
+                // 4. Hitung Durasi Manual
+                // Jangan pakai ->format('%H') karena akan reset jadi 0 setelah 24 jam
+                $totalMenit = $waktuMasuk->diffInMinutes($waktuKeluar);
+                
+                $jamKerja = floor($totalMenit / 60); // 1454 menit / 60 = 24 Jam
+                $menitKerja = $totalMenit % 60;      // Sisa bagi = 14 Menit
+                
+                $absensi->durasi_teks = "{$jamKerja} Jam {$menitKerja} Menit";
+
+            } else {
+                $absensi->durasi_teks = '-';
+            }
+        }
 
         $months = collect(range(1, 12))->mapWithKeys(function ($bulan) {
             return [$bulan => Carbon::create()->month($bulan)->translatedFormat('F')];
@@ -125,6 +161,8 @@ class AbsensiController extends Controller
         }
         $absensi_harian = $query->get();
         
+        // (Opsional) Jika di PDF harian juga ingin durasi, Anda bisa copy logika foreach index() ke sini sebelum dikirim ke view PDF
+        
         $pdf = PDF::loadView('admin.absensi.pdf_harian', compact('absensi_harian', 'date_for_page'));
         
         $filename = 'absensi_harian_' . $date_for_page->format('Y-m-d') . '.pdf';
@@ -150,11 +188,6 @@ class AbsensiController extends Controller
 
     /**
      * Method private untuk mengambil dan memproses data rekapitulasi absensi.
-     *
-     * @param string $startDate
-     * @param string $endDate
-     * @param string|null $divisi
-     * @return array
      */
     private function getRekapData($startDate, $endDate, $divisi)
     {
@@ -178,52 +211,79 @@ class AbsensiController extends Controller
 
             $lemburRecords = Lembur::where('user_id', $user->id)
                 ->whereBetween('tanggal', [$startDate, $endDate])
-                ->whereNotNull('jam_keluar_lembur')
                 ->get()->keyBy('tanggal');
             
-            $summary = ['H' => 0, 'S' => 0, 'I' => 0, 'C' => 0, 'A' => 0, 'L' => 0, 'terlambat' => 0];
+            $summary = ['H' => 0, 'S' => 0, 'I' => 0, 'C' => 0, 'A' => 0, 'L' => 0, 'terlambat' => 0, 'total_menit_kerja' => 0];
             $dailyRecords = [];
 
             foreach ($allDates as $date) {
+                /** @var \Carbon\Carbon $date */
                 $record = $absensiRecords->get($date->toDateString());
                 $lembur = $lemburRecords->get($date->toDateString());
-                $status = '-'; // Default status untuk tanggal di masa depan atau hari opsional
+                $isWeekend = $date->isWeekend();
+                $status = '-'; 
 
-                // --- AWAL PERUBAHAN LOGIKA ---
-                if ($record) {
-                    // 1. Jika ada catatan absensi, gunakan status dari catatan tersebut.
-                    $status = strtoupper(substr($record->status, 0, 1));
-                    if ($record->status === 'hadir') {
-                        $jamMasuk = Carbon::parse($record->jam_masuk, 'Asia/Jakarta');
-                        if ($jamMasuk->gt($standardWorkHour)) {
-                            $summary['terlambat'] += abs($jamMasuk->diffInMinutes($standardWorkHour));
+                if ($isWeekend) {
+                    if (($record && $record->status == 'hadir') || $lembur) {
+                        $status = 'L';
+                        $summary['L']++;
+                    } 
+                    elseif ($record) {
+                        $status = strtoupper(substr($record->status, 0, 1));
+                        if($record->status == 'cuti') $status = 'C';
+                    }
+                } else {
+                    if ($record) {
+                        $statusAbsen = strtoupper(substr($record->status, 0, 1));
+                        if($record->status == 'cuti') $statusAbsen = 'C';
+                        
+                        $status = $statusAbsen;
+                        $summary[$statusAbsen]++;
+
+                        if ($record->status === 'hadir') {
+                            $jamMasuk = Carbon::parse($record->jam_masuk, 'Asia/Jakarta');
+                            if ($jamMasuk->gt($standardWorkHour)) {
+                                $summary['terlambat'] += abs($jamMasuk->diffInMinutes($standardWorkHour));
+                            }
+
+                            // HITUNG TOTAL DURASI UNTUK REKAP
+                            if ($record->jam_keluar) {
+                                // Logika sama: Cek kolom tanggal_keluar
+                                $tglKeluar = $record->tanggal_keluar ?? $record->tanggal;
+
+                                $waktuMasuk = Carbon::parse($record->tanggal . ' ' . $record->jam_masuk);
+                                $waktuKeluar = Carbon::parse($tglKeluar . ' ' . $record->jam_keluar);
+
+                                if (is_null($record->tanggal_keluar) && $waktuKeluar->lt($waktuMasuk)) {
+                                    $waktuKeluar->addDay();
+                                }
+
+                                $summary['total_menit_kerja'] += $waktuMasuk->diffInMinutes($waktuKeluar);
+                            }
+                        }
+                    } else {
+                        if ($date->lt(now()->startOfDay())) {
+                            $status = 'A';
+                            $summary['A']++;
                         }
                     }
-                    if($record->status == 'cuti') $status = 'C';
-                    $summary[$status]++;
-                } elseif ($date->isSunday()) {
-                    // 2. Jika tidak ada catatan dan hari Minggu, statusnya strip.
-                    $status = '-';
-                } elseif ($date->isSaturday()) {
-                    // 3. Jika tidak ada catatan dan hari Sabtu, statusnya strip (opsional).
-                    $status = '-';
-                } elseif ($date->lt(now()->startOfDay())) {
-                    // 4. Jika tidak ada catatan, bukan Minggu/Sabtu, dan tanggal sudah lewat, maka dianggap Alpa.
-                    $status = 'A';
-                    $summary['A']++;
+                    
+                    if ($lembur) {
+                        $status = $status . ' L';
+                        $summary['L']++;
+                    }
                 }
-                // --- AKHIR PERUBAHAN LOGIKA ---
-
-                if ($lembur) $status .= ' L';
+                
                 $dailyRecords[$date->toDateString()] = $status;
             }
             
-            $summary['L'] = Lembur::where('user_id', $user->id)
-                ->whereBetween('tanggal', [$startDate, $endDate])
-                ->whereNotNull('jam_keluar_lembur')->count();
-
+            // Format Output Terlambat
             $totalMinutes = $summary['terlambat'];
             $summary['terlambat_formatted'] = floor($totalMinutes / 60) . ' Jam ' . ($totalMinutes % 60) . ' Menit';
+            
+            // Format Output Total Kerja
+            $totalMinutesKerja = $summary['total_menit_kerja'];
+            $summary['total_kerja_formatted'] = floor($totalMinutesKerja / 60) . ' Jam ' . ($totalMinutesKerja % 60) . ' Menit';
             
             $rekapData[] = ['user' => $user, 'daily' => $dailyRecords, 'summary' => $summary];
         }

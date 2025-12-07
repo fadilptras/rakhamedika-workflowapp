@@ -1,8 +1,44 @@
 <x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
 
-    <div class="bg-gradient-to-br from-sky-50 to-blue-100 min-h-screen">
+    <div class="bg-gradient-to-br from-sky-50 to-blue-100 p-0 md:p-0 min-h-screen">
         <div class="container mx-auto p-0 md:p-0">
+
+            @if (session('success'))
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-md mb-6" role="alert">
+                    <p class="font-bold">Sukses!</p>
+                    <p>{{ session('success') }}</p>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md mb-6" role="alert">
+                    <p class="font-bold">Error!</p>
+                    <p>{{ session('error') }}</p>
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md mb-6" role="alert">
+                    <div class="flex">
+                        <div class="py-1"><i class="fas fa-exclamation-triangle text-red-500 mr-3"></i></div>
+                        <div>
+                            <p class="font-bold">Oops! Ada yang salah dengan input Anda:</p>
+                            <ul class="mt-2 list-disc list-inside text-sm">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <div class="mb-4">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+                </a>
+            </div>
             
             <form action="{{ route('pengajuan_dana.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
@@ -135,7 +171,6 @@
 
                     {{-- TOMBOL AKSI FINAL --}}
                     <div class="flex justify-end space-x-4 pt-4">
-                        {{-- Tombol Reset diubah menjadi type="button" dengan ID --}}
                         <button type="button" id="reset-form-btn" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold py-3 px-8 rounded-lg border border-slate-300 transition">Reset</button>
                         <button type="submit" class="bg-gradient-to-r from-blue-700 to-blue-600 hover:from-indigo-600 hover:to-blue-600 text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5">Ajukan Dana</button>
                     </div>
@@ -159,17 +194,25 @@
                                 <td class="px-6 py-4 text-slate-600">{{ $pengajuan->created_at->format('d M Y') }}</td>
                                 <td class="px-6 py-4 font-semibold text-slate-800">{{ $pengajuan->judul_pengajuan }}</td>
                                 <td class="px-6 py-4 font-medium">Rp {{ number_format($pengajuan->total_dana, 0, ',', '.') }}</td>
+                                
+                                {{-- =================================================================== --}}
+                                {{-- =================== [FIX] LOGIKA STATUS DESKTOP =================== --}}
+                                {{-- =================================================================== --}}
                                 <td class="px-6 py-4">
                                     @if ($pengajuan->status == 'diajukan')
-                                        <span class="font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
-                                    @elseif ($pengajuan->status == 'diproses')
-                                        <span class="font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Diproses</span>
-                                    @elseif ($pengajuan->status == 'disetujui')
-                                        <span class="font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>
+                                        <span class="font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Menunggu Appr 1</span>
+                                    @elseif ($pengajuan->status == 'diproses_appr_2')
+                                        <span class="font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Menunggu Appr 2</span>
+                                    @elseif ($pengajuan->status == 'proses_pembayaran')
+                                        <span class="font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Proses Pembayaran</span>
+                                    @elseif ($pengajuan->status == 'selesai')
+                                        <span class="font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Selesai</span>
                                     @elseif ($pengajuan->status == 'ditolak')
                                         <span class="font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>
                                     @elseif ($pengajuan->status == 'dibatalkan')
                                         <span class="font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded-full text-xs">Dibatalkan</span>
+                                    @else
+                                        <span class="font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded-full text-xs">{{ $pengajuan->status }}</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center"><a href="{{ route('pengajuan_dana.show', $pengajuan->id) }}" class="text-indigo-600 hover:underline font-semibold">Lihat Detail</a></td>
@@ -179,21 +222,29 @@
                             @endforelse
                         </tbody>
                     </table>
+
+                    {{-- =================================================================== --}}
+                    {{-- ==================== [FIX] LOGIKA STATUS MOBILE =================== --}}
+                    {{-- =================================================================== --}}
                     <div class="block md:hidden p-4 space-y-4 border-t border-slate-200">
                         @forelse ($pengajuanDanas as $pengajuan)
                         <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
                             <div class="flex justify-between items-start mb-2">
                                 <div class="font-bold text-slate-800 text-base pr-4">{{ $pengajuan->judul_pengajuan }}</div>
                                 @if ($pengajuan->status == 'diajukan')
-                                    <span class="flex-shrink-0 font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Diajukan</span>
-                                @elseif ($pengajuan->status == 'diproses')
-                                    <span class="flex-shrink-0 font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Diproses</span>
-                                @elseif ($pengajuan->status == 'disetujui')
-                                    <span class="flex-shrink-0 font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Disetujui</span>
+                                    <span class="flex-shrink-0 font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">Menunggu Appr 1</span>
+                                @elseif ($pengajuan->status == 'diproses_appr_2')
+                                    <span class="flex-shrink-0 font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Menunggu Appr 2</span>
+                                @elseif ($pengajuan->status == 'proses_pembayaran')
+                                    <span class="flex-shrink-0 font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Proses Pembayaran</span>
+                                @elseif ($pengajuan->status == 'selesai')
+                                    <span class="flex-shrink-0 font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Selesai</span>
                                 @elseif ($pengajuan->status == 'ditolak')
                                     <span class="flex-shrink-0 font-bold bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Ditolak</span>
                                 @elseif ($pengajuan->status == 'dibatalkan')
                                     <span class="flex-shrink-0 font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded-full text-xs">Dibatalkan</span>
+                                @else
+                                    <span class="flex-shrink-0 font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded-full text-xs">{{ $pengajuan->status }}</span>
                                 @endif
                             </div>
                             <div class="text-sm text-slate-500 mb-3">{{ $pengajuan->created_at->format('d M Y') }}</div>
@@ -213,12 +264,10 @@
     </div>
 
     @push('scripts')
+    {{-- Script tidak diubah, hanya menempelkan kode asli --}}
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Script untuk show/hide input bank lainnya
         document.getElementById('pilih-bank')?.addEventListener('change', function() {const bankContainer = document.getElementById('bank-lainnya-container'); const otherBankInput = document.getElementById('input-bank-lainnya'); if (this.value === 'other') {bankContainer.classList.remove('hidden'); otherBankInput.setAttribute('required', 'required');} else {bankContainer.classList.add('hidden'); otherBankInput.removeAttribute('required');}});
-        
-        // Script untuk menambah baris rincian dana
         const tambahBarisBtn = document.getElementById('tambah-baris-btn'); 
         const rincianDanaBodyDesktop = document.getElementById('rincian-dana-body'); 
         const rincianDanaContainerMobile = document.getElementById('rincian-dana-container-mobile'); 
@@ -256,18 +305,14 @@
             addRow(); 
             tambahBarisBtn.addEventListener('click', addRow); 
         }
-
-        // Script untuk upload lampiran dengan progress
         const tambahLampiranBtn = document.getElementById('tambah-lampiran-btn');
         const lampiranContainer = document.getElementById('file-pendukung-container');
         const mainForm = document.querySelector('form[action="{{ route('pengajuan_dana.store') }}"]');
         const submitButton = mainForm.querySelector('button[type="submit"]');
-
         function addLampiranInput() {
             const uniqueId = 'file_' + Date.now() + Math.random().toString(36).substr(2, 9);
             const newFileWrapper = document.createElement('div');
             newFileWrapper.className = 'bg-slate-50 p-3 rounded-lg border border-slate-200';
-
             const fileInputHtml = `
                 <div class="flex items-center gap-3">
                     <div class="flex-grow">
@@ -285,18 +330,14 @@
                     <div class="w-full bg-slate-200 rounded-full h-1.5">
                         <div id="progress-bar-${uniqueId}" class="h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
-                </div>
-            `;
-
+                </div>`;
             newFileWrapper.innerHTML = fileInputHtml;
             lampiranContainer.appendChild(newFileWrapper);
-
             const fileInput = newFileWrapper.querySelector(`#${uniqueId}`);
             const progressWrapper = newFileWrapper.querySelector(`#progress-wrapper-${uniqueId}`);
             const progressBar = newFileWrapper.querySelector(`#progress-bar-${uniqueId}`);
             const fileNameSpan = newFileWrapper.querySelector(`#file-name-${uniqueId}`);
             const statusTextSpan = newFileWrapper.querySelector(`#status-text-${uniqueId}`);
-
             fileInput.addEventListener('change', function() {
                 if (this.files && this.files[0]) {
                     const file = this.files[0];
@@ -312,18 +353,14 @@
                     progressWrapper.classList.add('hidden');
                 }
             });
-
             newFileWrapper.querySelector('.delete-lampiran-btn').addEventListener('click', function() {
                 newFileWrapper.remove();
             });
         }
-        
         if (tambahLampiranBtn) {
             tambahLampiranBtn.addEventListener('click', addLampiranInput);
-            addLampiranInput(); // Tambah satu input file saat halaman dimuat
+            addLampiranInput();
         }
-
-        // Script untuk mengubah status saat submit
         mainForm.addEventListener('submit', function() {
             document.querySelectorAll('input[type="file"][name="file_pendukung[]"]').forEach(input => {
                 if (input.files && input.files.length > 0) {
@@ -341,43 +378,25 @@
                     }
                 }
             });
-
             submitButton.disabled = true;
             submitButton.innerHTML = `
                 <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Mengirim...
-            `;
+                Mengirim...`;
             submitButton.classList.add('inline-flex', 'items-center');
         });
-
-        // ======================== KODE BARU UNTUK FUNGSI FULL RESET ========================
         const resetBtn = document.getElementById('reset-form-btn');
         if (resetBtn) {
             resetBtn.addEventListener('click', function() {
-                // 1. Reset semua input field standar ke nilai default
                 mainForm.reset();
-
-                // 2. Hapus semua baris rincian dana yang ada
                 if (rincianDanaBodyDesktop) rincianDanaBodyDesktop.innerHTML = '';
                 if (rincianDanaContainerMobile) rincianDanaContainerMobile.innerHTML = '';
-                
-                // 3. Buat kembali satu baris rincian dana yang kosong
                 addRow();
-
-                // 4. Hapus semua input file lampiran yang ada
                 if (lampiranContainer) lampiranContainer.innerHTML = '';
-                
-                // 5. Buat kembali satu input file lampiran yang kosong
                 addLampiranInput();
-
-                // 6. Update tampilan total dana menjadi 0
                 updateTotal();
-
-                // 7. Trigger event change pada pilihan bank untuk memastikan
-                //    input 'bank lainnya' tersembunyi jika perlu.
                 document.getElementById('pilih-bank').dispatchEvent(new Event('change'));
             });
         }

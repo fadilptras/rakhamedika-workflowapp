@@ -9,33 +9,53 @@ use Illuminate\Support\Facades\Auth;
 use App\Notifications\PengajuanDanaNotification;
 use Illuminate\Support\Facades\Notification;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon; // Pastikan Carbon di-import
+use Carbon\Carbon;
 
 class PengajuanDanaController extends Controller
 {
-    public function index()
+    /**
+     * Menampilkan daftar pengajuan dana milik user yang login.
+     */
+    public function index(Request $request)
     {
-        $title = 'Pengajuan Dana';
-        $pengajuanDanas = Auth::user()->pengajuanDanas()->orderBy('created_at', 'desc')->get();
-        return view('users.pengajuan-dana', compact('title', 'pengajuanDanas'));
+        // Ambil HANYA pengajuan milik user yang sedang login
+        $query = Auth::user()->pengajuanDanas()->latest();
+
+        // Tambahkan filter status sederhana untuk user
+        if ($request->filled('status') && $request->status != 'semua') {
+            $query->where('status', $request->status);
+        }
+
+        $pengajuanDanas = $query->paginate(10)->appends($request->query());
+
+        // Mengarah ke view 'resources/views/users/pengajuan-dana.blade.php'
+        return view('users.pengajuan-dana', [
+            'title' => 'Riwayat Pengajuan Dana Saya',
+            'pengajuanDanas' => $pengajuanDanas,
+        ]);
     }
 
+    /**
+     * Menampilkan detail pengajuan dana.
+     */
     public function show(PengajuanDana $pengajuanDana)
     {
         $this->authorize('view', $pengajuanDana);
-
-        // Lakukan Eager Loading untuk memuat relasi approver
-        $pengajuanDana->load(['user', 'atasanApprover', 'direkturApprover', 'financeApprover']);
-
+        
+        $pengajuanDana->load(['user', 'approver1', 'approver2', 'financeProcessor', 'user.managerKeuangan']); 
+        
         return view('users.detail-pengajuan-dana', [
             'title' => 'Detail Pengajuan Dana',
             'pengajuanDana' => $pengajuanDana,
         ]);
     }
-    
+
+    /**
+     * Menyimpan pengajuan dana baru.
+     */
     public function store(Request $request)
     {
-        // ... (Tidak ada perubahan di method ini)
+        // 1. Membersihkan input numerik
         if ($request->has('jumlah_dana_total')) {
             $request->merge(['jumlah_dana_total' => preg_replace('/[^0-9]/', '', $request->jumlah_dana_total)]);
         }
@@ -46,6 +66,8 @@ class PengajuanDanaController extends Controller
             }
             $request->merge(['rincian_jumlah' => $cleanedRincian]);
         }
+
+        // 2. Validasi data
         $validatedData = $request->validate([
             'judul_pengajuan' => 'required|string|max:255',
             'divisi' => 'required|string|max:255',
@@ -57,22 +79,55 @@ class PengajuanDanaController extends Controller
             'rincian_jumlah.*' => 'required|numeric|min:1',
             'file_pendukung.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
         ]);
+
+        // 3. Proses Rincian
         $rincian = [];
         if (!empty($validatedData['rincian_deskripsi'])) {
             foreach ($validatedData['rincian_deskripsi'] as $key => $deskripsi) {
                 $rincian[] = ['deskripsi' => $deskripsi, 'jumlah' => $validatedData['rincian_jumlah'][$key]];
             }
         }
-        $pathFiles = []; // Gunakan array untuk menampung path
+
+        // 4. Proses Upload File
+        $pathFiles = [];
         if ($request->hasFile('file_pendukung')) {
             foreach ($request->file('file_pendukung') as $file) {
-                // Simpan setiap file dan tambahkan path-nya ke array
                 $pathFiles[] = $file->store('lampiran_dana', 'public');
             }
         }
-        $isKepalaDivisi = Auth::user()->is_kepala_divisi;
+
+        // 5. Tentukan Alur Persetujuan
+        $user = Auth::user();
+        $approver1_id = $user->approver_1_id;
+        $approver2_id = $user->approver_2_id;
+        $manager_keuangan_id = $user->manager_keuangan_id;
+
+        // Validasi jika semua alur kosong
+        if (!$approver1_id && !$approver2_id && !$manager_keuangan_id) {
+            return redirect()->route('pengajuan_dana.index')->with('error', 'Alur persetujuan (Approver 1, Approver 2, atau Manager Keuangan) untuk akun Anda belum lengkap diatur. Harap hubungi Admin.');
+        }
+
+        // Tentukan status awal berdasarkan alur yang ada (logika skip)
+        $approver1_status = $approver1_id ? 'menunggu' : 'skipped';
+        $approver2_status = $approver2_id ? 'menunggu' : 'skipped';
+        $payment_status = $manager_keuangan_id ? 'menunggu' : 'skipped';
+
+        $status_awal = 'diajukan'; // Default (Menunggu Appr 1)
+        $penerimaNotif = User::find($approver1_id);
+
+        if ($approver1_status === 'skipped' && $approver2_status !== 'skipped') {
+            $status_awal = 'diproses_appr_2'; // Langsung ke Appr 2
+            $penerimaNotif = User::find($approver2_id);
+        } elseif ($approver1_status === 'skipped' && $approver2_status === 'skipped' && $payment_status !== 'skipped') {
+            $status_awal = 'proses_pembayaran'; // Langsung ke Finance
+            $penerimaNotif = User::find($manager_keuangan_id);
+        } elseif ($approver1_status === 'skipped' && $approver2_status === 'skipped' && $payment_status === 'skipped') {
+            return redirect()->route('pengajuan_dana.index')->with('error', 'Alur persetujuan tidak valid (kosong). Hubungi Admin.');
+        }
+
+        // 6. Buat Pengajuan Dana
         $pengajuanDana = PengajuanDana::create([
-            'user_id' => Auth::id(),
+            'user_id' => $user->id,
             'judul_pengajuan' => $validatedData['judul_pengajuan'],
             'divisi' => $validatedData['divisi'],
             'nama_bank' => $validatedData['nama_bank'] === 'other' ? $validatedData['nama_bank_lainnya'] : $validatedData['nama_bank'],
@@ -80,172 +135,208 @@ class PengajuanDanaController extends Controller
             'total_dana' => $validatedData['jumlah_dana_total'],
             'rincian_dana' => $rincian,
             'lampiran' => $pathFiles,
-            'status_atasan' => $isKepalaDivisi ? 'skipped' : 'menunggu',
-            'status_direktur' => $isKepalaDivisi ? 'menunggu' : 'skipped',
+            
+            'status' => $status_awal,
+            
+            'approver_1_id' => $approver1_id,
+            'approver_1_status' => $approver1_status,
+            
+            'approver_2_id' => $approver2_id,
+            'approver_2_status' => $approver2_status,
+            
+            'payment_status' => $payment_status,
         ]);
-        $user = Auth::user();
-        $atasan = null;
-        if ($user->is_kepala_divisi) {
-            $atasan = User::where('jabatan', 'Direktur')->first();
-        } else if ($user->divisi) {
-        $atasan = User::where('divisi', $user->divisi)
-                    ->where('is_kepala_divisi', true)
-                    ->first();
-        }
-        if (!$atasan && $user->jabatan !== 'Direktur') {
-            $atasan = User::where('jabatan', 'Direktur')->first();
+
+        // 7. Kirim Notifikasi
+        if ($penerimaNotif) {
+            Notification::send($penerimaNotif, new PengajuanDanaNotification($pengajuanDana, 'baru'));
         }
 
-        if ($atasan) {
-            Notification::send($atasan, new PengajuanDanaNotification($pengajuanDana, 'baru'));
-        }
         $hrd = User::where('jabatan', 'HRD')->first();
-        if ($hrd && (!$atasan || $atasan->id !== $hrd->id)) {
-            Notification::send($hrd, new PengajuanDanaNotification($pengajuanDana, 'baru'));
+        if ($hrd && $penerimaNotif && $hrd->id != $penerimaNotif->id) {
+             Notification::send($hrd, new PengajuanDanaNotification($pengajuanDana, 'baru'));
         }
-        
+
         return redirect()->route('pengajuan_dana.index')->with('success', 'Pengajuan dana berhasil dikirim!');
     }
 
+    /**
+     * Menyetujui pengajuan dana (oleh Approver 1 atau 2).
+     */
     public function approve(Request $request, PengajuanDana $pengajuanDana)
     {
         $this->authorize('approve', $pengajuanDana);
-        
+        $user = Auth::user();
         $pemohon = $pengajuanDana->user;
         $updateData = [];
         $tipeNotifikasiUntukPemohon = '';
+        $penerimaNotifBerikutnya = null;
 
-        if ($pengajuanDana->status_atasan === 'menunggu' || $pengajuanDana->status_direktur === 'menunggu') {
-            if ($pemohon->is_kepala_divisi) {
-                $updateData['status_direktur'] = 'disetujui';
-                $updateData['catatan_direktur'] = $request->catatan_persetujuan;
-                $updateData['direktur_id'] = Auth::id();
-                $updateData['direktur_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal approve
+        // KASUS 1: Disetujui oleh Approver 1
+        if ($user->id == $pengajuanDana->approver_1_id && $pengajuanDana->status == 'diajukan') {
+            $updateData['approver_1_status'] = 'disetujui';
+            $updateData['approver_1_catatan'] = $request->catatan_persetujuan;
+            $updateData['approver_1_approved_at'] = Carbon::now();
+            
+            if ($pengajuanDana->approver_2_status === 'menunggu') {
+                $updateData['status'] = 'diproses_appr_2';
+                $penerimaNotifBerikutnya = User::find($pengajuanDana->approver_2_id);
+            } elseif ($pengajuanDana->payment_status === 'menunggu') {
+                $updateData['status'] = 'proses_pembayaran';
+                $penerimaNotifBerikutnya = User::find($pemohon->manager_keuangan_id); 
             } else {
-                $updateData['status_atasan'] = 'disetujui';
-                $updateData['catatan_atasan'] = $request->catatan_persetujuan;
-                $updateData['atasan_id'] = Auth::id();
-                $updateData['atasan_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal approve
+                $updateData['status'] = 'selesai'; 
             }
-            $updateData['status'] = 'diproses'; 
             $tipeNotifikasiUntukPemohon = 'disetujui_atasan';
-
-            $kepalaFinance = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
-            if ($kepalaFinance) {
-                Notification::send($kepalaFinance, new PengajuanDanaNotification($pengajuanDana, 'baru'));
+        }
+        
+        // KASUS 2: Disetujui oleh Approver 2
+        elseif ($user->id == $pengajuanDana->approver_2_id && $pengajuanDana->status == 'diproses_appr_2') {
+            if ($pengajuanDana->approver_1_status === 'menunggu') {
+                 return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('error', 'Pengajuan ini harus disetujui oleh Approver 1 terlebih dahulu.');
             }
+            $updateData['approver_2_status'] = 'disetujui';
+            $updateData['approver_2_catatan'] = $request->catatan_persetujuan;
+            $updateData['approver_2_approved_at'] = Carbon::now();
+
+            if ($pengajuanDana->payment_status === 'menunggu') {
+                $updateData['status'] = 'proses_pembayaran';
+                $penerimaNotifBerikutnya = User::find($pemohon->manager_keuangan_id); 
+            } else {
+                $updateData['status'] = 'selesai'; 
+            }
+            $tipeNotifikasiUntukPemohon = 'disetujui_finance';
         }
         else {
-            $updateData['status_finance'] = 'disetujui';
-            $updateData['catatan_finance'] = $request->catatan_persetujuan;
-            $updateData['finance_id'] = Auth::id();
-            $updateData['finance_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal approve
-            $updateData['status'] = 'disetujui';
-            $tipeNotifikasiUntukPemohon = 'disetujui_finance';
+            return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('error', 'Anda tidak memiliki wewenang untuk menyetujui pengajuan ini pada tahap ini.');
         }
 
         $pengajuanDana->update($updateData);
-
         Notification::send($pemohon, new PengajuanDanaNotification($pengajuanDana, $tipeNotifikasiUntukPemohon));
+        
+        if ($penerimaNotifBerikutnya) {
+            Notification::send($penerimaNotifBerikutnya, new PengajuanDanaNotification($pengajuanDana, 'baru'));
+        }
         
         return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Pengajuan dana berhasil disetujui!');
     }
 
+    /**
+     * Menolak pengajuan dana (oleh Approver 1 atau 2).
+     */
     public function reject(Request $request, PengajuanDana $pengajuanDana)
     {
         $this->authorize('approve', $pengajuanDana);
+        $user = Auth::user();
+        $pemohon = $pengajuanDana->user; 
         $updateData = ['status' => 'ditolak'];
-        if ($pengajuanDana->status_atasan === 'menunggu' || $pengajuanDana->status_direktur === 'menunggu') {
-             if ($pengajuanDana->user->is_kepala_divisi) {
-                $updateData['status_direktur'] = 'ditolak';
-                $updateData['catatan_direktur'] = $request->catatan_penolakan;
-                $updateData['direktur_id'] = Auth::id();
-                $updateData['direktur_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal reject
-            } else {
-                $updateData['status_atasan'] = 'ditolak';
-                $updateData['catatan_atasan'] = $request->catatan_penolakan;
-                $updateData['atasan_id'] = Auth::id();
-                $updateData['atasan_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal reject
-            }
-        } else {
-            $updateData['status_finance'] = 'ditolak';
-            $updateData['catatan_finance'] = $request->catatan_penolakan;
-            $updateData['finance_id'] = Auth::id();
-            $updateData['finance_approved_at'] = Carbon::now(); // TAMBAHAN: Simpan tanggal reject
+
+        if ($user->id == $pengajuanDana->approver_1_id && $pengajuanDana->status == 'diajukan') {
+            $updateData['approver_1_status'] = 'ditolak';
+            $updateData['approver_1_catatan'] = $request->catatan_penolakan;
+            $updateData['approver_1_approved_at'] = Carbon::now();
         }
+        elseif ($user->id == $pengajuanDana->approver_2_id && $pengajuanDana->status == 'diproses_appr_2') {
+            $updateData['approver_2_status'] = 'ditolak';
+            $updateData['approver_2_catatan'] = $request->catatan_penolakan;
+            $updateData['approver_2_approved_at'] = Carbon::now();
+        }
+        // Blok reject untuk Manager Keuangan sudah dihapus
+        else {
+            return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('error', 'Anda tidak memiliki wewenang untuk menolak pengajuan ini pada tahap ini.');
+        }
+
         $pengajuanDana->update($updateData);
-
-        Notification::send($pengajuanDana->user, new PengajuanDanaNotification($pengajuanDana, 'ditolak'));
-
+        Notification::send($pemohon, new PengajuanDanaNotification($pengajuanDana, 'ditolak'));
         return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Pengajuan dana berhasil ditolak!');
     }
 
-    // ... (Tidak ada perubahan di method uploadBuktiTransfer, uploadFinalInvoice, dan cancel)
+    /**
+     * Menandai pengajuan sebagai "Sedang Diproses" oleh Finance.
+     */
+    public function prosesPembayaran(Request $request, PengajuanDana $pengajuanDana)
+    {
+        $this->authorize('prosesPembayaran', $pengajuanDana);
+
+        if ($pengajuanDana->status !== 'proses_pembayaran' || $pengajuanDana->payment_status !== 'menunggu') {
+            return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('error', 'Pengajuan ini tidak dalam status menunggu proses pembayaran.');
+        }
+
+        $pengajuanDana->update([
+            'payment_status' => 'diproses',
+            'finance_id' => Auth::id(), 
+            'finance_processed_at' => Carbon::now(),
+            'catatan_finance' => $request->catatan_proses ?? 'Pembayaran sedang diproses.'
+        ]);
+        
+        Notification::send($pengajuanDana->user, new PengajuanDanaNotification($pengajuanDana, 'bukti_transfer'));
+        return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Status pembayaran diubah ke "Diproses".');
+    }
+
+    /**
+     * Mengunggah bukti transfer oleh Finance dan menyelesaikan pengajuan.
+     */
     public function uploadBuktiTransfer(Request $request, PengajuanDana $pengajuanDana)
     {
-        $this->authorize('uploadBuktiTransfer', $pengajuanDana); 
+        $this->authorize('uploadBuktiTransfer', $pengajuanDana);
         $request->validate([
             'bukti_transfer' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
+
+        if ($pengajuanDana->status !== 'proses_pembayaran' || $pengajuanDana->payment_status !== 'diproses') {
+             return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('error', 'Pengajuan belum ditandai sedang diproses atau sudah selesai.');
+        }
+
         $path = $request->file('bukti_transfer')->store('bukti_transfer', 'public');
-        $pengajuanDana->update(['bukti_transfer' => $path]);
 
-        Notification::send($pengajuanDana->user, new PengajuanDanaNotification($pengajuanDana, 'bukti_transfer'));
-        
-        return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Bukti transfer berhasil diunggah!');
-    }
-
-    public function uploadFinalInvoice(Request $request, PengajuanDana $pengajuanDana)
-    {
-        $this->authorize('uploadFinalInvoice', $pengajuanDana);
-        $request->validate([
-            'invoice' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        $pengajuanDana->update([
+            'bukti_transfer' => $path,
+            'status' => 'selesai',
+            'payment_status' => 'selesai',
+            'finance_id' => Auth::id(), 
         ]);
-        $path = $request->file('invoice')->store('invoices', 'public');
-        $pengajuanDana->update(['invoice' => $path]);
-        return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Invoice berhasil diunggah!');
+        
+        Notification::send($pengajuanDana->user, new PengajuanDanaNotification($pengajuanDana, 'bukti_transfer'));
+        return redirect()->route('pengajuan_dana.show', $pengajuanDana)->with('success', 'Bukti transfer berhasil diunggah! Pengajuan selesai.');
     }
 
+    /**
+     * Membatalkan pengajuan oleh pemohon.
+     */
     public function cancel(PengajuanDana $pengajuanDana)
     {
         $this->authorize('cancel', $pengajuanDana);
         $pengajuanDana->update(['status' => 'dibatalkan']);
-        $pemohon = $pengajuanDana->user;
-        $atasan = null;
-        if ($pemohon->is_kepala_divisi) {
-            $atasan = User::where('jabatan', 'Direktur')->first();
-        } else if ($pemohon->divisi) {
-            $atasan = User::where('divisi', $pemohon->divisi)->where('is_kepala_divisi', true)->first();
+
+        $approver1 = $pengajuanDana->approver1;
+        $approver2 = $pengajuanDana->approver2;
+        $managerKeuanganDitugaskan = $pengajuanDana->user->managerKeuangan; 
+
+        if ($approver1) {
+            Notification::send($approver1, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
         }
-        if (!$atasan && $pemohon->jabatan !== 'Direktur') {
-            $atasan = User::where('jabatan', 'Direktur')->first();
+        if ($approver2 && (!$approver1 || $approver2->id != $approver1->id)) {
+            Notification::send($approver2, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
         }
-        $kepalaFinance = User::where('divisi', 'Finance dan Gudang')->where('is_kepala_divisi', true)->first();
-        if ($atasan) {
-            Notification::send($atasan, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
+        if ($managerKeuanganDitugaskan && $pengajuanDana->status == 'proses_pembayaran') {
+             if ((!$approver1 || $managerKeuanganDitugaskan->id != $approver1->id) && (!$approver2 || $managerKeuanganDitugaskan->id != $approver2->id)) {
+                Notification::send($managerKeuanganDitugaskan, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
+            }
         }
-        if ($kepalaFinance && (!$atasan || $atasan->id !== $kepalaFinance->id)) {
-            Notification::send($kepalaFinance, new PengajuanDanaNotification($pengajuanDana, 'dibatalkan'));
-        }
+
         return redirect()->route('pengajuan_dana.index')->with('success', 'Pengajuan dana telah berhasil dibatalkan.');
     }
 
+    /**
+     * Download PDF pengajuan dana.
+     */
     public function downloadPDF(PengajuanDana $pengajuanDana)
     {
-        // Pastikan user yang mengakses berhak melihat data ini
         $this->authorize('view', $pengajuanDana);
-
-        // Load semua relasi yang dibutuhkan agar datanya muncul di PDF
-        $pengajuanDana->load(['user', 'atasanApprover', 'direkturApprover', 'financeApprover']);
-
-        // Data dikirim ke view PDF
-        $pdf = PDF::loadView('users.pdf_pengajuan_dana', compact('pengajuanDana'));
-
-        // Buat nama file yang dinamis
+        $pengajuanDana->load(['user.managerKeuangan', 'approver1', 'approver2', 'financeProcessor']);
+        $pdf = PDF::loadView('pdf.pdf_pengajuan_dana', compact('pengajuanDana'));
         $namaJudul = \Illuminate\Support\Str::slug($pengajuanDana->judul_pengajuan, '-');
         $filename = "pengajuan-dana-{$pengajuanDana->id}-{$namaJudul}.pdf";
-
-        // Tawarkan file untuk diunduh oleh browser
         return $pdf->download($filename);
     }
 }

@@ -4,7 +4,7 @@
     <div class="container mx-auto p-0 md:p-0">
         
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-            {{-- Tombol Kembali (Gaya Biru) --}}
+
             @if(Auth::id() == $pengajuanDana->user_id)
                 <a href="{{ route('pengajuan_dana.index') }}" 
                    class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors w-full sm:w-auto">
@@ -13,7 +13,7 @@
                 </a>
             @endif
 
-            {{-- Tombol Unduh PDF (Posisi Baru) --}}
+            {{-- Tombol Unduh PDF --}}
             @if(Auth::id() == $pengajuanDana->user_id)
             <a href="{{ route('pengajuan_dana.download', $pengajuanDana) }}" 
                class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-red-600 bg-red-100 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors w-full sm:w-auto"
@@ -24,7 +24,6 @@
             @endif
         </div>
 
-        {{-- KARTU UTAMA --}}
         <div class="bg-white rounded-2xl shadow-xl border border-slate-200">
             {{-- Header --}}
             <div class="p-6 md:p-8 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -48,11 +47,12 @@
                         $statusClass = '';
                         $statusText = '';
                         switch ($pengajuanDana->status) {
-                            case 'disetujui': $statusClass = 'bg-green-100 text-green-700'; $statusText = 'Disetujui'; break;
+                            case 'selesai': $statusClass = 'bg-green-100 text-green-700'; $statusText = 'Selesai'; break;
                             case 'ditolak': $statusClass = 'bg-red-100 text-red-700'; $statusText = 'Ditolak'; break;
-                            case 'diproses': $statusClass = 'bg-blue-100 text-blue-700'; $statusText = 'Diproses'; break;
+                            case 'proses_pembayaran': $statusClass = 'bg-blue-100 text-blue-700'; $statusText = 'Proses Pembayaran'; break;
+                            case 'diproses_appr_2': $statusClass = 'bg-blue-100 text-blue-700'; $statusText = 'Menunggu Approver 2'; break;
                             case 'dibatalkan': $statusClass = 'bg-slate-100 text-slate-600'; $statusText = 'Dibatalkan'; break;
-                            default: $statusClass = 'bg-yellow-100 text-yellow-700'; $statusText = 'Diajukan'; break;
+                            default: $statusClass = 'bg-yellow-100 text-yellow-700'; $statusText = 'Menunggu Approver 1'; break; // diajukan
                         }
                     @endphp
                     <span class="inline-block px-3 py-1 text-sm font-semibold rounded-full {{ $statusClass }}">
@@ -100,139 +100,217 @@
                         </div>
                     </div>
 
-                    {{-- DOKUMEN TERKAIT --}}
+                    {{-- ====================================================== --}}
+                    {{-- ==== AWAL BLOK YANG DIPERBARUI ==== --}}
+                    {{-- ====================================================== --}}
                     <div>
                         <h3 class="text-lg font-semibold text-slate-800 mb-3 border-b border-slate-200 pb-2">Dokumen Terkait</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            
+                            {{-- Lampiran --}}
                             @if ($pengajuanDana->lampiran && count($pengajuanDana->lampiran) > 0)
                                 @foreach ($pengajuanDana->lampiran as $lampiran)
-                                    <a href="{{ asset('storage/' . $lampiran) }}" target="_blank" class="bg-slate-100 hover:bg-slate-200 p-3 rounded-lg text-center text-slate-700 transition">
-                                        <i class="fas fa-paperclip mb-2 text-xl text-slate-500"></i>
-                                        <p class="text-sm font-semibold">Lampiran {{ $loop->iteration }}</p>
-                                        <p class="text-xs text-slate-500 truncate">{{ basename($lampiran) }}</p>
-                                    </a>
+                                    <div class="relative"> 
+                                        <a href="{{ asset('storage/' . $lampiran) }}" 
+                                           class="block bg-slate-100 hover:bg-slate-200 p-3 pt-12 rounded-lg text-center text-slate-700 transition">
+                                            
+                                            <i class="fas fa-paperclip mb-2 text-xl text-slate-500"></i>
+                                            <p class="text-sm font-semibold">Lampiran {{ $loop->iteration }}</p>
+                                            <p class="text-xs text-slate-500 truncate">{{ basename($lampiran) }}</p>
+                                        </a>
+                                        
+                                        <a href="{{ asset('storage/' . $lampiran) }}" 
+                                           download="{{ basename($lampiran) }}"
+                                           class="absolute top-3 right-3 w-8 h-8 flex items-center rounded-lg justify-center bg-slate-500 hover:bg-slate-600 text-white transition"
+                                           title="Download Lampiran {{ $loop->iteration }}">
+                                           <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
                                 @endforeach
                             @endif
+                            
+                            {{-- Bukti Transfer --}}
                             @if($pengajuanDana->bukti_transfer)
-                            <a href="{{ asset('storage/' . $pengajuanDana->bukti_transfer) }}" target="_blank" class="bg-green-50 hover:bg-green-100 p-3 rounded-lg text-center text-green-700 transition">
-                                <i class="fas fa-receipt mb-2 text-xl"></i><p class="text-sm font-semibold">Bukti Transfer</p>
-                            </a>
+                                <div class="relative">
+                                    <a href="{{ asset('storage/' . $pengajuanDana->bukti_transfer) }}" 
+                                       class="block bg-green-50 hover:bg-green-100 p-3 pt-12 rounded-lg text-center text-green-700 transition">
+                                        <i class="fas fa-receipt mb-2 text-xl"></i>
+                                        <p class="text-sm font-semibold">Bukti Transfer</p>
+                                    </a>
+                                    
+                                    <a href="{{ asset('storage/' . $pengajuanDana->bukti_transfer) }}" 
+                                       download="{{ basename($pengajuanDana->bukti_transfer) }}"
+                                       class="absolute top-3 right-3 w-8 h-8 flex items-center rounded-lg justify-center bg-slate-500 hover:bg-slate-600 text-white transition"
+                                       title="Download Bukti Transfer">
+                                       <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
                             @endif
+                            
+                            {{-- Invoice --}}
                             @if($pengajuanDana->invoice)
-                            <a href="{{ asset('storage/' . $pengajuanDana->invoice) }}" target="_blank" class="bg-purple-50 hover:bg-purple-100 p-3 rounded-lg text-center text-purple-700 transition">
-                                <i class="fas fa-file-invoice-dollar mb-2 text-xl"></i><p class="text-sm font-semibold">Invoice Final</p>
-                            </a>
+                                <div class="relative">
+                                    <a href="{{ asset('storage/' . $pengajuanDana->invoice) }}" 
+                                       class="block bg-purple-50 hover:bg-purple-100 p-3 pt-12 rounded-lg text-center text-purple-700 transition">
+                                        <i class="fas fa-file-invoice-dollar mb-2 text-xl"></i>
+                                        <p class="text-sm font-semibold">Invoice Final</p>
+                                    </a>
+                                    
+                                    <a href="{{ asset('storage/' . $pengajuanDana->invoice) }}" 
+                                       download="{{ basename($pengajuanDana->invoice) }}"
+                                       class="absolute top-3 right-3 p-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg transition"
+                                       title="Download Invoice Final">
+                                       <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
                             @endif
                         </div>
-                         @if (!$pengajuanDana->lampiran && !$pengajuanDana->bukti_transfer && !$pengajuanDana->invoice)
+                        
+                         {{-- Pesan jika tidak ada dokumen --}}
+                         @if (empty($pengajuanDana->lampiran) && !$pengajuanDana->bukti_transfer && !$pengajuanDana->invoice)
                             <p class="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">Tidak ada dokumen yang dilampirkan.</p>
                          @endif
                     </div>
+                    {{-- ====================================================== --}}
+                    {{-- ==== AKHIR BLOK YANG DIPERBARUI ==== --}}
+                    {{-- ====================================================== --}}
+
                 </div>
 
-                {{-- KOLOM KANAN: ALUR PERSETUJUAN --}}
+                {{-- Alur Persetujuan --}}
                 <div class="lg:col-span-1 space-y-6 border-t lg:border-t-0 lg:border-l border-slate-200 pt-6 lg:pt-0 lg:pl-8">
                     <h3 class="text-lg font-semibold text-slate-800 mb-3">Alur Persetujuan</h3>
 
-                    {{-- TAHAP 1: ATASAN ATAU DIREKTUR --}}
-                    @php
-                        $title_atasan = ''; $catatan_atasan = ''; $status_atasan_class = ''; $status_atasan_text = ''; $status_atasan_icon = '';
-                        $tanggal_atasan = null;
-
-                        if ($pengajuanDana->status === 'dibatalkan') {
-                            $status_atasan_text = 'Dibatalkan'; $status_atasan_class = 'text-slate-500'; $status_atasan_icon = 'fa-ban';
-                            $title_atasan = $pengajuanDana->user->is_kepala_divisi ? 'Persetujuan Direktur' : 'Persetujuan Atasan';
-                        } else {
-                            if ($pengajuanDana->user->is_kepala_divisi) {
-                                $status = $pengajuanDana->status_direktur;
-                                $title_atasan = 'Persetujuan Direktur';
-                                $catatan_atasan = $pengajuanDana->catatan_direktur;
-                                $tanggal_atasan = $pengajuanDana->direktur_approved_at;
-                                if ($status != 'menunggu' && $pengajuanDana->direkturApprover) {
-                                    $title_atasan .= ' (' . $pengajuanDana->direkturApprover->name . ')';
-                                }
-                            } else {
-                                $status = $pengajuanDana->status_atasan;
-                                $title_atasan = 'Persetujuan Atasan';
-                                $catatan_atasan = $pengajuanDana->catatan_atasan;
-                                $tanggal_atasan = $pengajuanDana->atasan_approved_at;
-                                if ($status != 'menunggu' && $pengajuanDana->atasanApprover) {
-                                    $title_atasan .= ' (' . $pengajuanDana->atasanApprover->name . ')';
-                                }
-                            }
-
+                    {{-- TAHAP 1: APPROVER 1 --}}
+                    @if ($pengajuanDana->approver_1_id)
+                        @php
+                            $status = $pengajuanDana->approver_1_status;
+                            $catatan = $pengajuanDana->approver_1_catatan;
+                            $tanggal = $pengajuanDana->approver_1_approved_at;
+                            $namaApprover = $pengajuanDana->approver1->name ?? 'Approver Dihapus';
+                            
+                            $statusClass = ''; $statusText = ''; $statusIcon = '';
                             switch ($status) {
-                                case 'disetujui': $status_atasan_class = 'text-green-600'; $status_atasan_icon = 'fa-check-circle'; $status_atasan_text = 'Disetujui'; break;
-                                case 'ditolak': $status_atasan_class = 'text-red-600'; $status_atasan_icon = 'fa-times-circle'; $status_atasan_text = 'Ditolak'; break;
-                                case 'skipped': $status_atasan_class = 'text-slate-500'; $status_atasan_icon = 'fa-minus-circle'; $status_atasan_text = 'Dilewati'; break;
-                                default: $status_atasan_class = 'text-yellow-600'; $status_atasan_icon = 'fa-clock'; $status_atasan_text = 'Menunggu'; break;
+                                case 'disetujui': $statusClass = 'text-green-600'; $statusIcon = 'fa-check-circle'; $statusText = 'Disetujui'; break;
+                                case 'ditolak': $statusClass = 'text-red-600'; $statusIcon = 'fa-times-circle'; $statusText = 'Ditolak'; break;
+                                case 'skipped': $statusClass = 'text-slate-500'; $statusIcon = 'fa-minus-circle'; $statusText = 'Dilewati'; break;
+                                default: $statusClass = 'text-yellow-600'; $statusIcon = 'fa-clock'; $statusText = 'Menunggu'; break;
                             }
-                        }
-                    @endphp
-                    <div>
-                        <label class="block text-sm font-medium text-slate-500 mb-1">{{ $title_atasan }}</label>
-                        <p class="flex items-center font-semibold {{ $status_atasan_class }}"><i class="fas {{ $status_atasan_icon }} mr-2 w-4 text-center"></i> {{ $status_atasan_text }}</p>
-                        
-                        {{-- =================== BAGIAN YANG DIPERBAIKI =================== --}}
-                        @if($tanggal_atasan || $catatan_atasan)
-                        <div class="mt-2 space-y-2"> {{-- Padding kiri (pl-7) dihapus, margin atas (mt-2) ditambahkan --}}
-                            @if($tanggal_atasan)
-                                <p class="text-xs text-slate-500 flex items-center">
-                                    <i class="fas fa-calendar-alt fa-fw mr-2 text-slate-400"></i>
-                                    <span>{{ \Carbon\Carbon::parse($tanggal_atasan)->translatedFormat('d F Y \p\u\k\u\l H:i') }}</span>
-                                </p>
-                            @endif
-                            @if($catatan_atasan)
-                            <div class="text-xs text-slate-600 bg-slate-50 border-l-4 border-slate-200 pl-3 pr-2 py-2 italic">"{{ $catatan_atasan }}"</div>
+                            if ($pengajuanDana->status === 'dibatalkan') {
+                                $statusClass = 'text-slate-500'; $statusIcon = 'fa-ban'; $statusText = 'Dibatalkan';
+                            }
+                        @endphp
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 mb-1">Approver 1: <span class="text-slate-700 font-semibold">{{ $namaApprover }}</span></label>
+                            <p class="flex items-center font-semibold {{ $statusClass }}"><i class="fas {{ $statusIcon }} mr-2 w-4 text-center"></i> {{ $statusText }}</p>
+                            
+                            @if($tanggal || $catatan)
+                            <div class="mt-2 space-y-2">
+                                @if($tanggal)
+                                    <p class="text-xs text-slate-500 flex items-center">
+                                        <i class="fas fa-calendar-alt fa-fw mr-2 text-slate-400"></i>
+                                        <span>{{ $tanggal->translatedFormat('d F Y \p\u\k\u\l H:i') }}</span>
+                                    </p>
+                                @endif
+                                @if($catatan)
+                                <div class="text-xs text-slate-600 bg-slate-50 border-l-4 border-slate-200 pl-3 pr-2 py-2 italic">"{{ $catatan }}"</div>
+                                @endif
+                            </div>
                             @endif
                         </div>
-                        @endif
-                        {{-- ============================================================= --}}
-                    </div>
+                    @endif
 
-                    {{-- TAHAP 2: FINANCE --}}
-                    @php
-                        $title_finance = 'Persetujuan Finance';
-                        $catatan_finance = $pengajuanDana->catatan_finance;
-                        $status_finance_class = ''; $status_finance_text = ''; $status_finance_icon = '';
-                        $tanggal_finance = $pengajuanDana->finance_approved_at;
-
-                        if ($pengajuanDana->status === 'dibatalkan') {
-                            $status_finance_text = 'Dibatalkan'; $status_finance_class = 'text-slate-500'; $status_finance_icon = 'fa-ban';
-                        } else {
-                            $status = $pengajuanDana->status_finance;
-                            if ($status != 'menunggu' && $pengajuanDana->financeApprover) {
-                                $title_finance .= ' (' . $pengajuanDana->financeApprover->name . ')';
-                            }
-
+                    {{-- TAHAP 2: APPROVER 2 --}}
+                    @if ($pengajuanDana->approver_2_id)
+                        @php
+                            $status = $pengajuanDana->approver_2_status;
+                            $catatan = $pengajuanDana->approver_2_catatan;
+                            $tanggal = $pengajuanDana->approver_2_approved_at;
+                            $namaApprover = $pengajuanDana->approver2->name ?? 'Approver Dihapus';
+                            
+                            $statusClass = ''; $statusText = ''; $statusIcon = '';
                             switch ($status) {
-                                case 'disetujui': $status_finance_class = 'text-green-600'; $status_finance_icon = 'fa-check-circle'; $status_finance_text = 'Disetujui'; break;
-                                case 'ditolak': $status_finance_class = 'text-red-600'; $status_finance_icon = 'fa-times-circle'; $status_finance_text = 'Ditolak'; break;
-                                case 'skipped': $status_finance_class = 'text-slate-500'; $status_finance_icon = 'fa-minus-circle'; $status_finance_text = 'Dilewati'; break;
-                                default: $status_finance_class = 'text-yellow-600'; $status_finance_icon = 'fa-clock'; $status_finance_text = 'Menunggu'; break;
+                                case 'disetujui': $statusClass = 'text-green-600'; $statusIcon = 'fa-check-circle'; $statusText = 'Disetujui'; break;
+                                case 'ditolak': $statusClass = 'text-red-600'; $statusIcon = 'fa-times-circle'; $statusText = 'Ditolak'; break;
+                                case 'skipped': $statusClass = 'text-slate-500'; $statusIcon = 'fa-minus-circle'; $statusText = 'Dilewati'; break;
+                                default: $statusClass = 'text-yellow-600'; $statusIcon = 'fa-clock'; $statusText = 'Menunggu'; break;
                             }
-                        }
-                    @endphp
-                    <div>
-                        <label class="block text-sm font-medium text-slate-500 mb-1">{{ $title_finance }}</label>
-                        <p class="flex items-center font-semibold {{ $status_finance_class }}"><i class="fas {{ $status_finance_icon }} mr-2 w-4 text-center"></i> {{ $status_finance_text }}</p>
-                        
-                        {{-- =================== BAGIAN YANG DIPERBAIKI =================== --}}
-                        @if($tanggal_finance || $catatan_finance)
-                        <div class="mt-2 space-y-2"> {{-- Padding kiri (pl-7) dihapus, margin atas (mt-2) ditambahkan --}}
-                            @if($tanggal_finance)
-                                <p class="text-xs text-slate-500 flex items-center">
-                                    <i class="fas fa-calendar-alt fa-fw mr-2 text-slate-400"></i>
-                                    <span>{{ \Carbon\Carbon::parse($tanggal_finance)->translatedFormat('d F Y \p\u\k\u\l H:i') }}</span>
-                                </p>
-                            @endif
-                            @if($catatan_finance)
-                            <div class="text-xs text-slate-600 bg-slate-50 border-l-4 border-slate-200 pl-3 pr-2 py-2 italic">"{{ $catatan_finance }}"</div>
+                            if ($pengajuanDana->status === 'dibatalkan') {
+                                $statusClass = 'text-slate-500'; $statusIcon = 'fa-ban'; $statusText = 'Dibatalkan';
+                            }
+                        @endphp
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 mb-1">Approver 2: <span class="text-slate-700 font-semibold">{{ $namaApprover }}</span></label>
+                            <p class="flex items-center font-semibold {{ $statusClass }}"><i class="fas {{ $statusIcon }} mr-2 w-4 text-center"></i> {{ $statusText }}</p>
+                            
+                            @if($tanggal || $catatan)
+                            <div class="mt-2 space-y-2">
+                                @if($tanggal)
+                                    <p class="text-xs text-slate-500 flex items-center">
+                                        <i class="fas fa-calendar-alt fa-fw mr-2 text-slate-400"></i>
+                                        <span>{{ $tanggal->translatedFormat('d F Y \p\u\k\u\l H:i') }}</span>
+                                    </p>
+                                @endif
+                                @if($catatan)
+                                <div class="text-xs text-slate-600 bg-slate-50 border-l-4 border-slate-200 pl-3 pr-2 py-2 italic">"{{ $catatan }}"</div>
+                                @endif
+                            </div>
                             @endif
                         </div>
-                        @endif
-                        {{-- ============================================================= --}}
-                    </div>
+                    @endif
+                    
+                    {{-- TAHAP 3: MANAGER KEUANGAN --}}
+                    @if ($pengajuanDana->user->managerKeuangan)
+                        @php
+                            $status = $pengajuanDana->payment_status; 
+                            $catatan = $pengajuanDana->catatan_finance;
+                            $tanggal = $pengajuanDana->finance_processed_at; 
+                            $namaApprover = $pengajuanDana->user->managerKeuangan->name ?? 'Finance Dihapus';
+                            
+                            $statusClass = ''; $statusText = ''; $statusIcon = '';
+                            switch ($status) {
+                                case 'selesai': $statusClass = 'text-green-600'; $statusIcon = 'fa-check-circle'; $statusText = 'Selesai (Dibayar)'; break;
+                                case 'diproses': $statusClass = 'text-blue-600'; $statusIcon = 'fa-sync-alt'; $statusText = 'Sedang Diproses'; break;
+                                case 'ditolak': $statusClass = 'text-red-600'; $statusIcon = 'fa-times-circle'; $statusText = 'Ditolak'; break;
+                                case 'skipped': $statusClass = 'text-slate-500'; $statusIcon = 'fa-minus-circle'; $statusText = 'Dilewati'; break;
+                                default: $statusClass = 'text-yellow-600'; $statusIcon = 'fa-clock'; $statusText = 'Menunggu'; break;
+                            }
+                            if ($pengajuanDana->status === 'dibatalkan') {
+                                $statusClass = 'text-slate-500'; $statusIcon = 'fa-ban'; $statusText = 'Dibatalkan';
+                            } elseif ($pengajuanDana->status === 'ditolak') {
+                                $statusClass = 'text-slate-500'; $statusIcon = 'fa-ban'; 
+                                // Tentukan siapa yang menolak
+                                if ($pengajuanDana->approver_1_status === 'ditolak') {
+                                    $statusText = 'Dihentikan (Ditolak Approver 1)';
+                                } elseif ($pengajuanDana->approver_2_status === 'ditolak') {
+                                    $statusText = 'Dihentikan (Ditolak Approver 2)';
+                                } else {
+                                    $statusText = 'Dihentikan'; // Fallback jika tidak jelas
+                                }
+                            }
+                            if ($status === 'selesai') {
+                                $tanggal = $pengajuanDana->updated_at;
+                            }
+                        @endphp
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 mb-1">Manager Keuangan: <span class="text-slate-700 font-semibold">{{ $namaApprover }}</span></label>
+                            <p class="flex items-center font-semibold {{ $statusClass }}"><i class="fas {{ $statusIcon }} mr-2 w-4 text-center"></i> {{ $statusText }}</p>
+                            
+                            @if($tanggal || $catatan)
+                            <div class="mt-2 space-y-2">
+                                @if($tanggal)
+                                    <p class="text-xs text-slate-500 flex items-center">
+                                        <i class="fas fa-calendar-alt fa-fw mr-2 text-slate-400"></i>
+                                        <span>{{ $tanggal->translatedFormat('d F Y \p\u\k\u\l H:i') }}</span>
+                                    </p>
+                                @endif
+                                @if($catatan)
+                                <div class="text-xs text-slate-600 bg-slate-50 border-l-4 border-slate-200 pl-3 pr-2 py-2 italic">"{{ $catatan }}"</div>
+                                @endif
+                            </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -251,6 +329,7 @@
             </div>
         @endcan
 
+        {{-- Approve/Reject HANYA untuk Approver 1 & 2 --}}
         @can('approve', $pengajuanDana)
             <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-8">
                 <h3 class="text-xl font-bold text-slate-800 mb-4">Tindakan Persetujuan</h3>
@@ -271,29 +350,32 @@
             </div>
         @endcan
 
+        {{-- Tombol "Proses Pembayaran" HANYA untuk Manager Keuangan --}}
+        @can('prosesPembayaran', $pengajuanDana)
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-8">
+                <h3 class="text-xl font-bold text-slate-800 mb-4">Tindakan Pembayaran</h3>
+                <p class="text-sm text-slate-500 mb-4">Tandai pengajuan ini sebagai "sedang diproses" sebelum mengunggah bukti transfer.</p>
+                <form action="{{ route('pengajuan_dana.proses_pembayaran', $pengajuanDana) }}" method="POST">
+                    @csrf
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="catatan-proses">Catatan Proses (Opsional)</label>
+                    <textarea id="catatan-proses" name="catatan_proses" rows="3" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+                    <button type="submit" class="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition"><i class="fas fa-sync-alt mr-2"></i>Tandai Sedang Diproses</button>
+                </form>
+            </div>
+        @endcan
+
+        {{-- Tombol "Upload Bukti Transfer" HANYA untuk Manager Keuangan --}}
         @can('uploadBuktiTransfer', $pengajuanDana)
             <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-8">
                 <h3 class="text-xl font-bold text-slate-800 mb-4">Unggah Bukti Transfer</h3>
                 <form action="{{ route('pengajuan_dana.upload_bukti_transfer', $pengajuanDana) }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <label class="block text-sm font-medium text-slate-700 mb-1" for="bukti-transfer">Pilih File</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="bukti-transfer">Pilih File</Elabel>
                     <input type="file" name="bukti_transfer" id="bukti-transfer" class="w-full p-2 border border-slate-300 rounded-lg" required>
-                    <button type="submit" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition"><i class="fas fa-upload mr-2"></i>Unggah Bukti</button>
+                    <button type="submit" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition"><i class="fas fa-upload mr-2"></i>Unggah Bukti</Tbutton>
                 </form>
             </div>
         @endcan
 
-        @can('uploadFinalInvoice', $pengajuanDana)
-            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 mt-8">
-                <h3 class="text-xl font-bold text-slate-800 mb-4">Unggah Invoice / Nota Pembelian</h3>
-                <p class="text-sm text-slate-500 mb-4">Silakan unggah invoice atau nota sebagai bukti penggunaan dana.</p>
-                <form action="{{ route('pengajuan_dana.upload_final_invoice', $pengajuanDana) }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <label class="block text-sm font-medium text-slate-700 mb-1" for="invoice">Pilih File Invoice</label>
-                    <input type="file" name="invoice" id="invoice" class="w-full p-2 border border-slate-300 rounded-lg" required>
-                    <button type="submit" class="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition"><i class="fas fa-upload mr-2"></i>Unggah Invoice</button>
-                </form>
-            </div>
-        @endcan
     </div>
 </x-layout-users>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Absensi;
 use App\Models\Cuti;
+use App\Models\Lembur;
+use App\Models\Aktivitas; // Tambahkan Model Aktivitas
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,46 +19,62 @@ class RekapAbsenController extends Controller
         $title = 'Rekap Absensi Saya';
         $user = Auth::user();
 
-        // 1. Ambil filter dari request, atau gunakan nilai default (bulan & tahun sekarang)
         $bulanDipilih = $request->input('bulan', now()->month);
         $tahunDipilih = $request->input('tahun', now()->year);
         
         $startDate = Carbon::create($tahunDipilih, $bulanDipilih, 1)->startOfMonth();
         $endDate = Carbon::create($tahunDipilih, $bulanDipilih, 1)->endOfMonth();
 
-        // 2. Ambil semua data yang relevan dalam satu kali panggilan ke database
+        // 1. Ambil Data Absensi
         $absensiDalamPeriode = Absensi::where('user_id', $user->id)
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->get()
             ->keyBy(fn($item) => Carbon::parse($item->tanggal)->toDateString());
 
+        // 2. Ambil Data Cuti
         $cutiDalamPeriode = Cuti::where('user_id', $user->id)
-            ->where('status', 'disetujui') // Pastikan hanya cuti yang disetujui
+            ->where('status', 'disetujui') 
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->where('tanggal_mulai', '<=', $endDate)
                       ->where('tanggal_selesai', '>=', $startDate);
             })
             ->get();
             
-        // 3. Inisialisasi rekapitulasi dan standar jam kerja
+        // 3. Ambil Data Lembur
+        $lemburDalamPeriode = Lembur::where('user_id', $user->id)
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->whereNotNull('jam_keluar_lembur')
+            ->get()
+            ->keyBy(fn($item) => Carbon::parse($item->tanggal)->toDateString());
+
+        // 4. Ambil Data Aktivitas (Hitung jumlahnya per hari)
+        $aktivitasDalamPeriode = Aktivitas::where('user_id', $user->id)
+            ->whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
+            ->selectRaw('DATE(created_at) as date, count(*) as total')
+            ->groupBy('date')
+            ->get()
+            ->keyBy('date');
+            
+        // 5. Inisialisasi Rekap
         $rekap = [
             'hadir' => 0,
             'sakit' => 0,
             'izin'  => 0,
             'cuti'  => 0,
             'alpa'  => 0,
-            'terlambat' => 0 // Dalam menit
+            'lembur' => 0,
+            'terlambat' => 0 
         ];
         $standardWorkHour = Carbon::createFromTime(8, 0, 0, 'Asia/Jakarta');
         
-        // ======================= PERUBAHAN UTAMA DI SINI =======================
-        // 4. Buat array baru untuk menampung detail setiap hari
         $detailHarian = [];
         $period = CarbonPeriod::create($startDate, $endDate);
 
         foreach ($period as $date) {
             $tanggalFormatted = $date->toDateString();
             $recordAbsensi = $absensiDalamPeriode->get($tanggalFormatted);
+            $recordLembur = $lemburDalamPeriode->get($tanggalFormatted);
+            $recordAktivitas = $aktivitasDalamPeriode->get($tanggalFormatted);
             
             $isOnLeave = $cutiDalamPeriode->first(function ($cuti) use ($date) {
                 return $date->between(Carbon::parse($cuti->tanggal_mulai), Carbon::parse($cuti->tanggal_selesai));
@@ -68,11 +86,12 @@ class RekapAbsenController extends Controller
                 'jam_masuk' => null,
                 'jam_keluar' => null,
                 'keterangan' => $date->isWeekend() ? 'Akhir Pekan' : null,
-                'is_weekend' => $date->isWeekend()
+                'is_weekend' => $date->isWeekend(),
+                'jumlah_aktivitas' => $recordAktivitas ? $recordAktivitas->total : 0 // Data untuk fitur baru
             ];
 
             if ($date->isWeekend()) {
-                // Biarkan status default untuk akhir pekan
+                // Weekend logic handled below for Overtime
             } elseif ($isOnLeave) {
                 $rekap['cuti']++;
                 $dailyData['status'] = 'cuti';
@@ -88,8 +107,12 @@ class RekapAbsenController extends Controller
                 $dailyData['jam_keluar'] = $recordAbsensi->jam_keluar;
                 $dailyData['keterangan'] = $recordAbsensi->keterangan;
                 
+                // Hitung Keterlambatan (Sesuai AbsenController)
                 if ($recordAbsensi->status === 'hadir' && $recordAbsensi->jam_masuk) {
                     $jamMasuk = Carbon::parse($recordAbsensi->jam_masuk, 'Asia/Jakarta');
+                    // Reset detik ke 0 agar adil (opsional, tergantung kebijakan)
+                    // $jamMasuk->second(0); 
+                    
                     if ($jamMasuk->gt($standardWorkHour)) {
                         $diffInMinutes = abs($jamMasuk->diffInMinutes($standardWorkHour));
                         $rekap['terlambat'] += $diffInMinutes;
@@ -104,17 +127,32 @@ class RekapAbsenController extends Controller
                     $dailyData['keterangan'] = 'Belum ada data';
                 }
             }
+
+            // Logika Lembur (Bisa terjadi di Weekend atau Hari Kerja)
+            if ($recordLembur) {
+                $rekap['lembur']++;
+                
+                if ($date->isWeekend()) {
+                    $dailyData['status'] = 'lembur';
+                    $dailyData['keterangan'] = $recordLembur->keterangan ?: 'Lembur Akhir Pekan';
+                    $dailyData['jam_masuk'] = $recordLembur->jam_masuk_lembur;
+                    $dailyData['jam_keluar'] = $recordLembur->jam_keluar_lembur;
+                } else {
+                    // Append keterangan lembur jika hari kerja
+                    $ketAwal = $dailyData['keterangan'] ? $dailyData['keterangan'] . '. ' : '';
+                    $dailyData['keterangan'] = $ketAwal . '(Lembur: ' . \Carbon\Carbon::parse($recordLembur->jam_masuk_lembur)->format('H:i') . ' - ' . \Carbon\Carbon::parse($recordLembur->jam_keluar_lembur)->format('H:i') . ')';
+                }
+            }
+            
             $detailHarian[] = (object)$dailyData;
         }
-        // ===================== AKHIR PERUBAHAN UTAMA =====================
         
-        // 5. Format total menit terlambat ke format "Jam Menit"
+        // Format Tampilan Terlambat
         $totalMenitTerlambat = $rekap['terlambat'];
         $jamTerlambat = floor($totalMenitTerlambat / 60);
         $menitTerlambat = $totalMenitTerlambat % 60;
         $rekap['terlambat_formatted'] = $jamTerlambat . ' Jam ' . $menitTerlambat . ' Menit';
 
-        // 6. Siapkan data untuk dropdown filter
         $daftarBulan = collect(range(1, 12))->mapWithKeys(function ($bulan) {
             return [$bulan => Carbon::create()->month($bulan)->translatedFormat('F')];
         });
@@ -122,7 +160,7 @@ class RekapAbsenController extends Controller
 
         return view('users.rekap_absen', compact(
             'title',
-            'detailHarian', // Mengirim data harian yang sudah lengkap
+            'detailHarian',
             'rekap',
             'bulanDipilih',
             'tahunDipilih',

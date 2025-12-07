@@ -63,13 +63,15 @@
                 </tr>
                 <tr class="border-b border-zinc-300">
                     <th class="px-4 py-3 bg-zinc-200 border-r border-zinc-300"></th>
+                    {{-- KODE HEADER DIPERBAIKI --}}
                     @foreach($allDates as $date)
                         @php
-                            // --- PERUBAHAN 1 ---
                             $isSunday = $date->isSunday();
-                            $textColor = $isSunday ? 'text-red-500' : ''; // Ubah warna untuk hari Minggu
+                            $isSaturday = $date->isSaturday();
+                            $textColor = $isSunday ? 'text-red-500' : ''; // Merah untuk Minggu
+                            $bgColor = $isSunday ? 'bg-red-50' : ($isSaturday ? 'bg-zinc-100' : ''); // Latar untuk Minggu & Sabtu
                         @endphp
-                        <th class="px-2 py-2 text-center border-r border-zinc-300 {{ $textColor }}">{{ $date->day }}</th>
+                        <th class="px-2 py-2 text-center border-r border-zinc-300 {{ $textColor }} {{ $bgColor }}">{{ $date->day }}</th>
                     @endforeach
                     <th class="px-2 py-2 text-center text-green-600 font-bold border-r border-zinc-300">H</th>
                     <th class="px-2 py-2 text-center text-red-600 font-bold border-r border-zinc-300">S</th>
@@ -87,32 +89,39 @@
                         <p class="font-semibold text-zinc-800">{{ $index + 1 }}. {{ $data['user']->name ?? 'User Dihapus' }}</p>
                         <p class="text-xs text-zinc-500">{{ $data['user']->jabatan ?? '-' }}</p>
                     </td>
+                    {{-- KODE ISI TABEL DIPERBAIKI (TANPA LOGIKA) --}}
                     @foreach($allDates as $date)
                         @php
-                            // --- PERUBAHAN 2 ---
                             $isSunday = $date->isSunday();
+                            $isSaturday = $date->isSaturday();
+                            
+                            // Ambil data status murni dari controller
                             $statusString = $data['daily'][$date->toDateString()] ?? '-';
                             $hasLembur = str_contains($statusString, 'L');
-                            $mainStatus = trim(str_replace('L', '', $statusString));
+                            // Pisahkan status utama (H, S, I, C, A, L, -)
+                            $mainStatus = $hasLembur ? trim(str_replace('L', '', $statusString)) : $statusString;
+                            if ($mainStatus == "") $mainStatus = 'L'; // Handle case 'L' murni
                             
                             // Tentukan warna badge berdasarkan status
-                            $colorClass = 'text-gray-600';
-                            if ($isSunday) {
-                                $colorClass = 'text-red-400'; // Warna untuk hari Minggu
-                                $mainStatus = '-'; // Pastikan status di hari Minggu adalah '-'
-                            } else {
-                                switch ($mainStatus) {
-                                    case 'H': $colorClass = 'text-green-600'; break;
-                                    case 'S': $colorClass = 'text-red-600'; break;
-                                    case 'I': $colorClass = 'text-orange-600'; break;
-                                    case 'C': $colorClass = 'text-blue-600'; break;
-                                    case 'A': $colorClass = 'text-gray-800'; break;
-                                    case '-': $colorClass = 'text-zinc-400'; break;
-                                }
+                            $colorClass = 'text-gray-600'; // Default
+                            switch ($mainStatus) {
+                                case 'H': $colorClass = 'text-green-600'; break;
+                                case 'S': $colorClass = 'text-red-600'; break;
+                                case 'I': $colorClass = 'text-orange-600'; break;
+                                case 'C': $colorClass = 'text-blue-600'; break;
+                                case 'A': $colorClass = 'text-gray-800'; break;
+                                case 'L': $colorClass = 'text-purple-600'; $hasLembur = false; break; // Jika status utama 'L', jangan tampilkan L ganda
+                                case '-': 
+                                    $colorClass = $isSunday ? 'text-red-400' : 'text-zinc-400';
+                                    break;
                             }
+
+                            // Tentukan background HANYA untuk styling
+                            $bgClass = '';
+                            if ($isSunday) $bgClass = 'bg-red-50';
+                            elseif ($isSaturday) $bgClass = 'bg-zinc-100';
                         @endphp
-                        {{-- --- PERUBAHAN 3 --- --}}
-                        <td class="px-2 py-2 text-center font-bold border-r border-zinc-300 {{ $isSunday ? 'bg-red-50' : '' }}">
+                        <td class="px-2 py-2 text-center font-bold border-r border-zinc-300 {{ $bgClass }}">
                             <span class="{{ $colorClass }}">{{ $mainStatus }}</span>
                             @if ($hasLembur)
                                 <span class="text-purple-600">L</span>

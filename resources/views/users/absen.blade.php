@@ -1,8 +1,10 @@
 <x-layout-users>
     <x-slot:title>{{ $title }}</x-slot:title>
 
-    <div class="bg-gray-50 p-0 md:p-8 min-h-screen">
+    <div class="bg-gradient-to-br from-sky-50 to-blue-100 p-0 md:p-0 min-h-screen">
         <div class="max-w-6xl mx-auto">
+            
+            {{-- ALERT MESSAGES --}}
             @if(session('success'))
                 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md mb-4" role="alert">
                     {{ session('success') }}
@@ -31,10 +33,19 @@
                 </div>
             @endif
 
+            {{-- TOMBOL KEMBALI KE DASHBOARD (POSISI: ATAS KIRI) --}}
+            <div class="mb-4">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+                </a>
+            </div>
+
             @if ($absensiHariIni)
-                {{-- TAMPILAN JIKA PENGGUNA SUDAH ABSEN MASUK --}}
-                <div class="flex flex-col lg:flex-row gap-8">
-                    <div class="w-full lg:w-2/3 bg-white p-6 md:p-8 rounded-xl shadow-sm">
+                {{-- ========================================================= --}}
+                {{-- KONDISI 1: SUDAH ABSEN MASUK --}}
+                {{-- ========================================================= --}}
+                <div class="flex flex-col lg:flex-row gap-6 items-start">
+                    <div class="w-full lg:w-2/3 bg-white p-6 rounded-xl shadow-sm">
                         <div class="flex flex-col md:flex-row items-start justify-between px-0">
                             <div>
                                 <h2 class="text-2xl font-bold text-gray-800">Absensi Hari Ini</h2>
@@ -45,7 +56,6 @@
                                     Keterangan : <span class="font-semibold capitalize">{{ $absensiHariIni->keterangan }}</span>
                                 </p>
                             </div>
-                            <a href="{{ route('dashboard') }}" class="mt-4 md:mt-0 text-blue-600 hover:underline font-semibold">Kembali ke Dashboard</a>
                         </div>
                         <div class="mt-6 border-t pt-6">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -103,45 +113,52 @@
                             @endif
                         </div>
                     </div>
-                    <div class="w-full lg:w-1/3 space-y-8">
-                        <div class="bg-white p-6 rounded-xl shadow-sm">
-                            <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Rekap Bulan Ini</h2>
-                            <p class="text-center text-gray-500 text-sm mb-6">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <div class="bg-green-100 p-4 rounded-lg flex items-center justify-between">
-                                    <p class="font-semibold text-sm text-green-700">Hadir</p>
-                                    <div class="text-base font-bold text-green-700">{{ $rekapAbsen['hadir'] }}</div>
+                    
+                    {{-- SIDEBAR REKAP --}}
+                    <div class="w-full lg:w-1/3 space-y-6">
+                        <div class="bg-white p-4 rounded-xl shadow-sm">
+                            <h2 class="text-lg font-bold text-gray-800 text-center mb-1">Rekap Bulan Ini</h2>
+                            <p class="text-center text-gray-500 text-xs mb-3">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                <div class="bg-green-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-xs text-green-700">Hadir</p>
+                                    <div class="text-sm font-bold text-green-700">{{ $rekapAbsen['hadir'] }}</div>
                                 </div>
-                                <div class="bg-red-100 p-4 rounded-lg flex items-center justify-between">
-                                    <p class="font-semibold text-sm text-red-700">Sakit</p>
-                                    <div class="text-base font-bold text-red-700">{{ $rekapAbsen['sakit'] }}</div>
+                                <div class="bg-red-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-xs text-red-700">Sakit</p>
+                                    <div class="text-sm font-bold text-red-700">{{ $rekapAbsen['sakit'] }}</div>
                                 </div>
-                                <div class="bg-yellow-100 p-4 rounded-lg flex items-center justify-between">
-                                    <p class="font-semibold text-sm text-yellow-700">Izin</p>
-                                    <div class="text-base font-bold text-yellow-700">{{ $rekapAbsen['izin'] }}</div>
+                                <div class="bg-yellow-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-xs text-yellow-700">Izin</p>
+                                    <div class="text-sm font-bold text-yellow-700">{{ $rekapAbsen['izin'] }}</div>
                                 </div>
-                                <div class="bg-blue-100 p-4 rounded-lg flex items-center justify-between">
-                                    <p class="font-semibold text-sm text-blue-700">Cuti</p>
-                                    <div class="text-base font-bold text-blue-700">{{ $rekapAbsen['cuti'] }}</div>
+                                <div class="bg-blue-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-xs text-blue-700">Cuti</p>
+                                    <div class="text-sm font-bold text-blue-700">{{ $rekapAbsen['cuti'] }}</div>
                                 </div>
-                                <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
-                                    <p class="font-semibold text-sm text-gray-700">Tidak Hadir</p>
-                                    <div class="text-base font-bold text-gray-700">{{ $rekapAbsen['tidak hadir'] }}</div>
+                                <div class="bg-gray-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-xs text-gray-700">Alpa</p>
+                                    <div class="text-sm font-bold text-gray-700">{{ $rekapAbsen['tidak hadir'] }}</div>
                                 </div>
-                                <div class="bg-orange-100 p-4 rounded-lg text-center">
-                                    <p class="font-semibold text-xs text-orange-700">Terlambat Hadir</p>
-                                    <div class="text-base font-bold text-orange-700 mt-1">{{ $rekapAbsen['terlambat'] }}</div>
+                                <div class="bg-indigo-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                    <p class="font-semibold text-xs text-indigo-700">Lembur</p>
+                                    <div class="text-sm font-bold text-indigo-700">{{ $rekapAbsen['lembur'] }}</div>
+                                </div>
+                                <div class="bg-orange-100 px-3 py-2 rounded-lg flex items-center justify-between col-span-2 md:col-span-3">
+                                    <p class="font-semibold text-xs text-orange-700">Terlambat</p>
+                                    <div class="text-sm font-bold text-orange-700">{{ $rekapAbsen['terlambat'] }}</div>
                                 </div>
                             </div>
                         </div>
+
                         @if(isset($daftarRekan) && count($daftarRekan) > 0)
-                        <div class="bg-white p-6 rounded-xl shadow-sm">
-                            <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
+                        <div class="bg-white p-4 rounded-xl shadow-sm">
+                            <h2 class="text-lg font-bold text-gray-800 text-center mb-3">
                                 Absensi Tim 
                             </h2>
                             <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
                                 @foreach($daftarRekan as $rekan)
-                                <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
                                     <div class="flex items-center">
                                         <img src="{{ $rekan->user->profile_picture ? asset('storage/' . $rekan->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($rekan->user->name ?? 'U').'&background=random&color=fff&size=32' }}" alt="{{ $rekan->user->name ?? '' }}" class="w-8 h-8 rounded-full object-cover mr-3">
                                         <p class="font-semibold text-gray-700 text-sm">{{ $rekan->user->name }}</p>
@@ -165,8 +182,10 @@
 
             @else
                 @if (isset($unfinishedAbsensi) && $unfinishedAbsensi)
-                    {{-- TAMPILAN JIKA ADA ABSEN KELUAR HARI SEBELUMNYA YANG BELUM SELESAI --}}
-                    <div class="flex flex-col lg:flex-row gap-8">
+                    {{-- ========================================================= --}}
+                    {{-- KONDISI 2: SELESAIKAN ABSEN KELUAR (UNFINISHED) --}}
+                    {{-- ========================================================= --}}
+                    <div class="flex flex-col lg:flex-row gap-6 items-start">
                         <div class="w-full lg:w-2/3 bg-white p-6 md:p-8 rounded-xl shadow-sm">
                             <h2 class="text-2xl font-bold text-gray-800">Selesaikan Absen Keluar Sebelumnya</h2>
                             <p class="text-gray-600 mt-2">
@@ -197,45 +216,51 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="w-full lg:w-1/3 space-y-8">
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Rekap Bulan Ini</h2>
-                                <p class="text-center text-gray-500 text-sm mb-6">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    <div class="bg-green-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-green-700">Hadir</p>
-                                        <div class="text-base font-bold text-green-700">{{ $rekapAbsen['hadir'] }}</div>
+                        
+                        {{-- SIDEBAR UNTUK UNFINISHED --}}
+                        <div class="w-full lg:w-1/3 space-y-6">
+                            <div class="bg-white p-4 rounded-xl shadow-sm">
+                                <h2 class="text-lg font-bold text-gray-800 text-center mb-1">Rekap Bulan Ini</h2>
+                                <p class="text-center text-gray-500 text-xs mb-3">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    <div class="bg-green-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-green-700">Hadir</p>
+                                        <div class="text-sm font-bold text-green-700">{{ $rekapAbsen['hadir'] }}</div>
                                     </div>
-                                    <div class="bg-red-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-red-700">Sakit</p>
-                                        <div class="text-base font-bold text-red-700">{{ $rekapAbsen['sakit'] }}</div>
+                                    <div class="bg-red-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-red-700">Sakit</p>
+                                        <div class="text-sm font-bold text-red-700">{{ $rekapAbsen['sakit'] }}</div>
                                     </div>
-                                    <div class="bg-yellow-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-yellow-700">Izin</p>
-                                        <div class="text-base font-bold text-yellow-700">{{ $rekapAbsen['izin'] }}</div>
+                                    <div class="bg-yellow-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-yellow-700">Izin</p>
+                                        <div class="text-sm font-bold text-yellow-700">{{ $rekapAbsen['izin'] }}</div>
                                     </div>
-                                    <div class="bg-blue-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-blue-700">Cuti</p>
-                                        <div class="text-base font-bold text-blue-700">{{ $rekapAbsen['cuti'] }}</div>
+                                    <div class="bg-blue-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-blue-700">Cuti</p>
+                                        <div class="text-sm font-bold text-blue-700">{{ $rekapAbsen['cuti'] }}</div>
                                     </div>
-                                    <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-gray-700">Tidak Hadir</p>
-                                        <div class="text-base font-bold text-gray-700">{{ $rekapAbsen['tidak hadir'] }}</div>
+                                    <div class="bg-gray-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-gray-700">Alpa</p>
+                                        <div class="text-sm font-bold text-gray-700">{{ $rekapAbsen['tidak hadir'] }}</div>
                                     </div>
-                                    <div class="bg-orange-100 p-4 rounded-lg text-center">
-                                        <p class="font-semibold text-xs text-orange-700">Terlambat Hadir</p>
-                                        <div class="text-base font-bold text-orange-700 mt-1">{{ $rekapAbsen['terlambat'] }}</div>
+                                    <div class="bg-indigo-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-indigo-700">Lembur</p>
+                                        <div class="text-sm font-bold text-indigo-700">{{ $rekapAbsen['lembur'] }}</div>
+                                    </div>
+                                    <div class="bg-orange-100 px-3 py-2 rounded-lg flex items-center justify-between col-span-2 md:col-span-3">
+                                        <p class="font-semibold text-xs text-orange-700">Terlambat</p>
+                                        <div class="text-sm font-bold text-orange-700">{{ $rekapAbsen['terlambat'] }}</div>
                                     </div>
                                 </div>
                             </div>
                             @if(isset($daftarRekan) && count($daftarRekan) > 0)
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
+                            <div class="bg-white p-4 rounded-xl shadow-sm">
+                                <h2 class="text-lg font-bold text-gray-800 text-center mb-3">
                                     Absensi Tim 
                                 </h2>
                                 <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
                                     @foreach($daftarRekan as $rekan)
-                                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                    <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
                                         <div class="flex items-center">
                                             <img src="{{ $rekan->user->profile_picture ? asset('storage/' . $rekan->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($rekan->user->name ?? 'U').'&background=random&color=fff&size=32' }}" alt="{{ $rekan->user->name ?? '' }}" class="w-8 h-8 rounded-full object-cover mr-3">
                                             <p class="font-semibold text-gray-700 text-sm">{{ $rekan->user->name }}</p>
@@ -256,159 +281,237 @@
                             @endif
                         </div>
                     </div>
+                    
+                    {{-- MODAL UNFINISHED (LAYOUT: KIRI KAMERA SQUARE, KANAN INFO) --}}
                     <div id="modal-absen-keluar-unfinished" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-                        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
+                        {{-- Lebar modal ditingkatkan --}}
+                        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl transform transition-all duration-300 scale-95 opacity-0">
                             <form action="{{ route('absen.keluar', $unfinishedAbsensi->id) }}" method="POST" enctype="multipart/form-data" id="form-absen-keluar-unfinished">
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="latitude_keluar" id="latitude-keluar-unfinished">
                                 <input type="hidden" name="longitude_keluar" id="longitude-keluar-unfinished">
-                                <div class="p-6">
+                                <div class="p-5">
                                     <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
-                                    <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar hari sebelumnya.</p>
-                                    <div class="mt-6">
-                                        <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
-                                        <div id="camera-container-keluar-unfinished" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
-                                            <video id="video-keluar-unfinished" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
-                                            <canvas id="canvas-keluar-unfinished" class="hidden"></canvas>
-                                            <div id="snap-ui-keluar-unfinished" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                                                <button type="button" id="snap-keluar-unfinished" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                                    <i class="fas fa-camera"></i>
-                                                </button>
-                                            </div>
-                                            <div id="preview-ui-keluar-unfinished" class="absolute inset-0 hidden">
-                                                <img id="preview-image-keluar-unfinished" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
-                                                <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
-                                                    <button type="button" id="retake-btn-keluar-unfinished" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
-                                                    <button type="button" id="use-photo-btn-keluar-unfinished" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                    <p class="text-gray-500 text-sm mt-1">Ambil foto selfie untuk konfirmasi absen keluar hari sebelumnya.</p>
+                                    
+                                    {{-- Layout Grid 2 Kolom --}}
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                        {{-- Kolom Kiri: Kamera SQUARE --}}
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Foto Selfie <span class="text-red-500">*</span></label>
+                                            {{-- Aspect-square (1:1) --}}
+                                            <div id="camera-container-keluar-unfinished" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900 shadow-inner">
+                                                <video id="video-keluar-unfinished" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
+                                                <canvas id="canvas-keluar-unfinished" class="hidden"></canvas>
+                                                <div id="snap-ui-keluar-unfinished" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                                    <button type="button" id="snap-keluar-unfinished" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                                        <i class="fas fa-camera"></i>
+                                                    </button>
+                                                </div>
+                                                <div id="preview-ui-keluar-unfinished" class="absolute inset-0 hidden">
+                                                    <img id="preview-image-keluar-unfinished" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
+                                                    <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
+                                                        <button type="button" id="retake-btn-keluar-unfinished" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ulang</button>
+                                                        <button type="button" id="use-photo-btn-keluar-unfinished" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <div id="upload-label-keluar-unfinished" class="hidden">
+                                                <input name="lampiran_keluar" id="lampiran-keluar-unfinished" type="file" class="hidden" accept="image/*" />
+                                            </div>
                                         </div>
-                                        <div id="upload-label-keluar-unfinished" class="hidden">
-                                            <input name="lampiran_keluar" id="lampiran-keluar-unfinished" type="file" class="hidden" accept="image/*" />
+
+                                        {{-- Kolom Kanan: Pesan --}}
+                                        <div class="flex flex-col justify-center text-gray-500 text-sm italic">
+                                            <p>Mohon pastikan wajah terlihat jelas.</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-                                    <button type="button" id="btn-tutup-modal-keluar-unfinished" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                                    <button type="submit" id="submit-button-keluar-unfinished" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
+                                <div class="bg-gray-50 px-5 py-3 flex justify-end gap-3 rounded-b-xl">
+                                    <button type="button" id="btn-tutup-modal-keluar-unfinished" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm">Batal</button>
+                                    <button type="submit" id="submit-button-keluar-unfinished" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm">Kirim</button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 @else
-                    {{-- TAMPILAN JIKA BELUM ABSEN --}}
-                    <div class="flex flex-col lg:flex-row gap-8">
-                        <form action="{{ route('absen.store') }}" method="POST" enctype="multipart/form-data" id="form-absen" class="w-full lg:w-2/3">
-                            @csrf
-                            <input type="hidden" name="latitude" id="latitude">
-                            <input type="hidden" name="longitude" id="longitude">
-                            <div class="bg-white p-6 rounded-xl shadow-sm space-y-6 min-h-[500px] flex flex-col justify-between">
-                                <div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div class="bg-gray-100 p-4 rounded-lg">
-                                            <label class="text-sm text-gray-500">Hari & Tanggal</label>
-                                            <p class="font-bold text-lg text-gray-800">{{ \Carbon\Carbon::now()->translatedFormat('l, j F Y') }}</p>
+                    {{-- ========================================================= --}}
+                    {{-- KONDISI 3: BELUM ABSEN (MAIN FORM - MODIFIKASI MOBILE) --}}
+                    {{-- ========================================================= --}}
+                    <div class="flex flex-col lg:flex-row gap-6 items-start">
+                        
+                        @if ($isWeekend)
+                            {{-- TAMPILAN KHUSUS WEEKEND (BELUM ABSEN LEMBUR) --}}
+                            <div class="w-full lg:w-2/3 bg-white p-6 md:p-8 rounded-xl shadow-sm">
+                                <h2 class="text-2xl font-bold text-gray-800">Absensi Lembur Akhir Pekan</h2>
+                                <p class="text-gray-600 mt-1">
+                                    Notifikasi akhir pekan Anda tetap muncul. Anda dapat melakukan absensi lembur di bawah ini.
+                                </p>
+                                <div class="mt-6 border-t pt-6">
+                                    @if (is_null($lemburHariIni))
+                                        <button type="button" id="btn-absen-lembur" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition">
+                                            Absen Lembur Sekarang
+                                        </button>
+                                    @elseif (is_null($lemburHariIni->jam_keluar_lembur))
+                                        <div class="mb-4 bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                            <p class="font-semibold text-lg text-purple-800">Anda Sudah Masuk Lembur</p>
+                                            <p class="text-3xl font-bold text-gray-800 mt-1">{{ \Carbon\Carbon::parse($lemburHariIni->jam_masuk_lembur)->format('H:i') }} <span class="text-lg font-medium">WIB</span></p>
+                                            @if($lemburHariIni->keterangan)
+                                                <p class="text-gray-600 text-sm mt-1">Keterangan: {{ $lemburHariIni->keterangan }}</p>
+                                            @endif
                                         </div>
-                                        <div class="bg-gray-100 p-4 rounded-lg">
-                                            <label class="text-sm text-gray-500">Jam Saat Ini</label>
-                                            <p class="font-bold text-lg text-gray-800" id="jam-realtime"></p>
+                                        <button type="button" id="btn-absen-keluar-lembur" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition">
+                                            Absen Keluar Lembur Sekarang
+                                        </button>
+                                    @else
+                                        <div class="p-4 rounded-lg bg-green-100 text-green-700 font-semibold text-center">
+                                            Absensi Lembur Hari Ini Selesai.
+                                            <p class="text-xs font-normal">Waktu Lembur: {{ \Carbon\Carbon::parse($lemburHariIni->jam_masuk_lembur)->format('H:i') }} - {{ \Carbon\Carbon::parse($lemburHariIni->jam_keluar_lembur)->format('H:i') }}</p>
                                         </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @else
+                            {{-- TAMPILAN HARI BIASA (BELUM ABSEN) --}}
+                            {{-- GANTI FORM INI (Cari: <form action="{{ route('absen.store') }}" ... id="form-absen" ...) --}}
+        <form action="{{ route('absen.store') }}" method="POST" enctype="multipart/form-data" id="form-absen" class="w-full lg:w-2/3">
+            @csrf
+            <input type="hidden" name="latitude" id="latitude">
+            <input type="hidden" name="longitude" id="longitude">
+
+            {{-- KONTAINER UTAMA (CARD PUTIH) --}}
+            <div class="bg-white p-6 rounded-xl shadow-sm space-y-6 min-h-[500px] flex flex-col justify-between">
+                
+                {{-- WRAPPER KONTEN ATAS --}}
+                <div>
+                    {{-- 1. TANGGAL & JAM (Tampilan Mobile Sebaris) --}}
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        <div class="bg-gray-100 p-2 rounded-lg">
+                            <label class="text-xs text-gray-500">Hari & Tanggal</label>
+                            <p class="font-bold text-sm text-gray-800">{{ \Carbon\Carbon::now()->translatedFormat('l, j F Y') }}</p>
+                        </div>
+                        <div class="bg-gray-100 p-2 rounded-lg">
+                            <label class="text-xs text-gray-500">Jam Saat Ini</label>
+                            <p class="font-bold text-sm text-gray-800" id="jam-realtime"></p>
+                        </div>
+                    </div>
+
+                    {{-- 2. STATUS KEHADIRAN --}}
+                    <div class="mb-6"> 
+                        <label class="block text-md font-medium text-gray-700 mb-3">Pilih Status Kehadiran</label>
+                        <input type="hidden" name="status" id="status" value="hadir">
+                        <div class="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-4 mt-2" id="status-buttons">
+                            <button type="button" data-status="hadir" class="status-btn border border-gray-200 font-semibold py-3 rounded-lg transition-all duration-200 text-sm shadow-sm hover:shadow-md">Hadir</button>
+                            <button type="button" data-status="izin" class="status-btn border border-gray-200 font-semibold py-3 rounded-lg transition-all duration-200 text-sm shadow-sm hover:shadow-md">Izin</button>
+                            <button type="button" data-status="sakit" class="status-btn border border-gray-200 font-semibold py-3 rounded-lg transition-all duration-200 text-sm shadow-sm hover:shadow-md">Sakit</button>
+                        </div>
+                    </div>
+                    
+                    {{-- 3. KETERANGAN & KAMERA --}}
+                    <div>
+                        <label for="keterangan" class="block text-md font-medium text-gray-700 mb-3">
+                            Keterangan & Lampiran <span id="keterangan-wajib" class="text-red-500 font-normal hidden">*</span>
+                        </label>
+                        
+                        {{-- GRID: Kamera (Kiri) & Keterangan (Kanan) --}}
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            
+                            {{-- KOLOM KIRI (2 Bagian): KAMERA --}}
+                            <div class="md:col-span-2">
+                                <div id="camera-container" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900 shadow-md">
+                                    <video id="video" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
+                                    <canvas id="canvas" class="hidden"></canvas>
+                                    <div id="snap-ui" class="absolute inset-0 flex items-end justify-center p-4 bg-gradient-to-t from-black/50 to-transparent">
+                                        <button type="button" id="snap" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400 transition-transform hover:scale-105" disabled>
+                                            <i class="fas fa-camera"></i>
+                                        </button>
                                     </div>
-                                    <div class="mt-6"> 
-                                        <label class="block text-md font-medium text-gray-700 mb-3">Pilih Status Kehadiran</label>
-                                        <input type="hidden" name="status" id="status" value="hadir">
-                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mt-2" id="status-buttons">
-                                            <button type="button" data-status="hadir" class="status-btn border font-semibold py-3 rounded-lg transition-all duration-200">Hadir</button>
-                                            <button type="button" data-status="izin" class="status-btn border font-semibold py-3 rounded-lg transition-all duration-200">Izin</button>
-                                            <button type="button" data-status="sakit" class="status-btn border font-semibold py-3 rounded-lg transition-all duration-200">Sakit</button>
-                                        </div>
-                                    </div>
-                                    <div class="mt-6">
-                                        <label for="keterangan" class="block text-md font-medium text-gray-700 mb-3">
-                                            Keterangan & Lampiran <span id="keterangan-wajib" class="text-red-500 font-normal hidden">*</span>
-                                        </label>
-                                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                                            <div class="md:col-span-3">
-                                                <textarea name="keterangan" id="keterangan" rows="5" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Ada keperluan keluarga.">{{ old('keterangan') }}</textarea>
-                                            </div>
-                                            <div class="md:col-span-2">
-                                                <div id="camera-container" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
-                                                    <video id="video" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
-                                                    <canvas id="canvas" class="hidden"></canvas>
-                                                    <div id="snap-ui" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                                                        <button type="button" id="snap" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                                            <i class="fas fa-camera"></i>
-                                                        </button>
-                                                    </div>
-                                                    <div id="preview-ui" class="absolute inset-0 hidden">
-                                                        <img id="preview-image" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
-                                                        <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
-                                                            <button type="button" id="retake-btn" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
-                                                            <button type="button" id="use-photo-btn" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[250px] hidden">
-                                                    <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui">
-                                                        <i id="upload-icon" class="fas fa-paperclip text-3xl text-gray-400"></i>
-                                                        <p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Sertakan Lampiran</span></p>
-                                                    </div>
-                                                    <input name="lampiran" id="lampiran" type="file" class="hidden" accept="image/*,application/pdf" />
-                                                </label>
-                                            </div>
+                                    <div id="preview-ui" class="absolute inset-0 hidden bg-black">
+                                        <img id="preview-image" src="" class="w-full h-full object-contain" alt="Pratinjau Foto"/>
+                                        <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-gradient-to-t from-black/60 to-transparent">
+                                            <button type="button" id="retake-btn" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center shadow-lg"><i class="fas fa-sync-alt mr-1.5"></i>Ulang</button>
+                                            <button type="button" id="use-photo-btn" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center shadow-lg"><i class="fas fa-check mr-1.5"></i>Pakai</button>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="pt-2">
-                                    <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                                        Kirim Absensi
-                                    </button>
-                                </div>
+
+                                <label for="lampiran" id="upload-label" class="flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition min-h-[250px] hidden relative">
+                                    <div class="flex flex-col items-center justify-center text-center p-2" id="upload-ui">
+                                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-2">
+                                            <i id="upload-icon" class="fas fa-paperclip text-xl"></i>
+                                        </div>
+                                        <p id="upload-text" class="mt-2 text-sm text-gray-500"><span class="font-semibold">Sertakan Lampiran</span></p>
+                                        <p class="text-xs text-gray-400 mt-1">JPG, PNG, PDF</p>
+                                    </div>
+                                    <input name="lampiran" id="lampiran" type="file" class="hidden" accept="image/*,application/pdf" />
+                                </label>
                             </div>
-                        </form>
-                        <div class="w-full lg:w-1/3 space-y-8">
-                            <div class="flex justify-end mb-4">
-                                <a href="{{ route('dashboard') }}" class="text-blue-600 hover:underline font-semibold hidden lg:block">Kembali ke Dashboard</a>
+
+                            {{-- KOLOM KANAN (3 Bagian): KETERANGAN --}}
+                            <div class="md:col-span-3">
+                                <textarea name="keterangan" id="keterangan" rows="5" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all text-sm h-full" placeholder="Contoh: Ada keperluan keluarga.">{{ old('keterangan') }}</textarea>
                             </div>
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <h2 class="text-xl font-bold text-gray-800 text-center mb-2">Rekap Bulan Ini</h2>
-                                <p class="text-center text-gray-500 text-sm mb-6">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    <div class="bg-green-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-green-700">Hadir</p>
-                                        <div class="text-base font-bold text-green-700">{{ $rekapAbsen['hadir'] }}</div>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 4. FOOTER: TOMBOL KIRIM --}}
+                <div class="pt-4 border-t border-gray-100 mt-6">
+                    <button type="submit" id="submit-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> Kirim Absensi
+                    </button>
+                </div>
+
+            </div>
+        </form>                        
+        @endif {{-- End of $isWeekend check --}}
+                        
+                        {{-- SIDEBAR REKAP UNTUK BELUM ABSEN --}}
+                        <div class="w-full lg:w-1/3 space-y-6">
+                            <div class="bg-white p-4 rounded-xl shadow-sm relative">
+                                <h2 class="text-lg font-bold text-gray-800 text-center mb-1">Rekap Bulan Ini</h2>
+                                <p class="text-center text-gray-500 text-xs mb-3">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    <div class="bg-green-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-green-700">Hadir</p>
+                                        <div class="text-sm font-bold text-green-700">{{ $rekapAbsen['hadir'] }}</div>
                                     </div>
-                                    <div class="bg-red-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-red-700">Sakit</p>
-                                        <div class="text-base font-bold text-red-700">{{ $rekapAbsen['sakit'] }}</div>
+                                    <div class="bg-red-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-red-700">Sakit</p>
+                                        <div class="text-sm font-bold text-red-700">{{ $rekapAbsen['sakit'] }}</div>
                                     </div>
-                                    <div class="bg-yellow-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-yellow-700">Izin</p>
-                                        <div class="text-base font-bold text-yellow-700">{{ $rekapAbsen['izin'] }}</div>
+                                    <div class="bg-yellow-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-yellow-700">Izin</p>
+                                        <div class="text-sm font-bold text-yellow-700">{{ $rekapAbsen['izin'] }}</div>
                                     </div>
-                                    <div class="bg-blue-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-blue-700">Cuti</p>
-                                        <div class="text-base font-bold text-blue-700">{{ $rekapAbsen['cuti'] }}</div>
+                                    <div class="bg-blue-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-blue-700">Cuti</p>
+                                        <div class="text-sm font-bold text-blue-700">{{ $rekapAbsen['cuti'] }}</div>
                                     </div>
-                                    <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
-                                        <p class="font-semibold text-sm text-gray-700">Tidak Hadir</p>
-                                        <div class="text-base font-bold text-gray-700">{{ $rekapAbsen['tidak hadir'] }}</div>
+                                    <div class="bg-gray-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-gray-700">Alpa</p>
+                                        <div class="text-sm font-bold text-gray-700">{{ $rekapAbsen['tidak hadir'] }}</div>
                                     </div>
-                                    <div class="bg-orange-100 p-4 rounded-lg text-center">
-                                        <p class="font-semibold text-xs text-orange-700">Terlambat Hadir</p>
-                                        <div class="text-base font-bold text-orange-700 mt-1">{{ $rekapAbsen['terlambat'] }}</div>
+                                    <div class="bg-indigo-100 px-3 py-2 rounded-lg flex items-center justify-between">
+                                        <p class="font-semibold text-xs text-indigo-700">Lembur</p>
+                                        <div class="text-sm font-bold text-indigo-700">{{ $rekapAbsen['lembur'] }}</div>
+                                    </div>
+                                    <div class="bg-orange-100 px-3 py-2 rounded-lg flex items-center justify-between col-span-2 md:col-span-3">
+                                        <p class="font-semibold text-xs text-orange-700">Terlambat</p>
+                                        <div class="text-sm font-bold text-orange-700">{{ $rekapAbsen['terlambat'] }}</div>
                                     </div>
                                 </div>
                             </div>
                             @if(isset($daftarRekan) && count($daftarRekan) > 0)
-                                <div class="bg-white p-6 rounded-xl shadow-sm">
-                                    <h2 class="text-xl font-bold text-gray-800 text-center mb-4">
+                                <div class="bg-white p-4 rounded-xl shadow-sm">
+                                    <h2 class="text-lg font-bold text-gray-800 text-center mb-3">
                                         Absensi Tim 
                                     </h2>
                                     <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
                                         @foreach($daftarRekan as $rekan)
-                                        <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
                                             <div class="flex items-center">
                                                 <img src="{{ $rekan->user->profile_picture ? asset('storage/' . $rekan->user->profile_picture) : 'https://ui-avatars.com/api/?name='.urlencode($rekan->user->name ?? 'U').'&background=random&color=fff&size=32' }}" alt="{{ $rekan->user->name ?? '' }}" class="w-8 h-8 rounded-full object-cover mr-3">
                                                 <p class="font-semibold text-gray-700 text-sm">{{ $rekan->user->name }}</p>
@@ -434,135 +537,169 @@
         </div>
     </div>
 
-    {{-- MODAL UNTUK ABSEN KELUAR --}}
+    {{-- MODAL UNTUK ABSEN KELUAR (LAYOUT: KIRI KAMERA SQUARE, KANAN INFO) --}}
     @if ($absensiHariIni && is_null($absensiHariIni->jam_keluar) && $absensiHariIni->status == 'hadir')
     <div id="modal-absen-keluar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
+        {{-- Lebar modal ditingkatkan --}}
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl transform transition-all duration-300 scale-95 opacity-0">
             <form action="{{ route('absen.keluar', $absensiHariIni->id) }}" method="POST" enctype="multipart/form-data" id="form-absen-keluar">
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="latitude_keluar" id="latitude-keluar">
                 <input type="hidden" name="longitude_keluar" id="longitude-keluar">
-                <div class="p-6">
+                <div class="p-5">
                     <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar</h3>
-                    <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi absen keluar.</p>
-                    <div class="mt-6">
-                        <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar <span class="text-red-500">*</span></label>
-                        <div id="camera-container-keluar" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
-                            <video id="video-keluar" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
-                            <canvas id="canvas-keluar" class="hidden"></canvas>
-                            <div id="snap-ui-keluar" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                                <button type="button" id="snap-keluar" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                    <i class="fas fa-camera"></i>
-                                </button>
-                            </div>
-                            <div id="preview-ui-keluar" class="absolute inset-0 hidden">
-                                <img id="preview-image-keluar" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
-                                <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
-                                    <button type="button" id="retake-btn-keluar" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
-                                    <button type="button" id="use-photo-btn-keluar" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                    <p class="text-gray-500 text-sm mt-1">Ambil foto selfie untuk konfirmasi absen keluar.</p>
+                    
+                    {{-- Grid 2 Kolom --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        {{-- Kiri: Kamera SQUARE --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Foto Selfie <span class="text-red-500">*</span></label>
+                            {{-- Aspect-square (1:1) --}}
+                            <div id="camera-container-keluar" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900 shadow-inner">
+                                <video id="video-keluar" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
+                                <canvas id="canvas-keluar" class="hidden"></canvas>
+                                <div id="snap-ui-keluar" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                    <button type="button" id="snap-keluar" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                        <i class="fas fa-camera"></i>
+                                    </button>
+                                </div>
+                                <div id="preview-ui-keluar" class="absolute inset-0 hidden">
+                                    <img id="preview-image-keluar" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
+                                    <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
+                                        <button type="button" id="retake-btn-keluar" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ulang</button>
+                                        <button type="button" id="use-photo-btn-keluar" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                    </div>
                                 </div>
                             </div>
+                            <div id="upload-label-keluar" class="hidden">
+                                <input name="lampiran_keluar" id="lampiran-keluar" type="file" class="hidden" accept="image/*" />
+                            </div>
                         </div>
-                        <div id="upload-label-keluar" class="hidden">
-                            <input name="lampiran_keluar" id="lampiran-keluar" type="file" class="hidden" accept="image/*" />
+                        
+                        {{-- Kanan: Info --}}
+                        <div class="flex flex-col justify-center text-gray-500 text-sm italic">
+                             <p>Terima kasih atas kerja keras Anda hari ini. Hati-hati di jalan!</p>
                         </div>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-                    <button type="button" id="btn-tutup-modal-keluar" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                    <button type="submit" id="submit-button-keluar" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">Kirim Absen Keluar</button>
+                <div class="bg-gray-50 px-5 py-3 flex justify-end gap-3 rounded-b-xl">
+                    <button type="button" id="btn-tutup-modal-keluar" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm">Batal</button>
+                    <button type="submit" id="submit-button-keluar" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm">Kirim</button>
                 </div>
             </form>
         </div>
     </div>
     @endif
     
-    {{-- MODAL UNTUK ABSEN LEMBUR --}}
-    @if ($absensiHariIni && $absensiHariIni->jam_keluar && $absensiHariIni->status == 'hadir')
+    {{-- MODAL UNTUK ABSEN LEMBUR (LAYOUT: KIRI KAMERA SQUARE, KANAN TEXTAREA) --}}
+    @if ( ($absensiHariIni && $absensiHariIni->jam_keluar && $absensiHariIni->status == 'hadir') || $isWeekend )
     <div id="modal-absen-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
+        {{-- Lebar modal ditingkatkan --}}
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl transform transition-all duration-300 scale-95 opacity-0">
             <form action="{{ route('absen.lembur.store') }}" method="POST" enctype="multipart/form-data" id="form-absen-lembur">
                 @csrf
                 <input type="hidden" name="latitude_masuk" id="latitude-lembur">
                 <input type="hidden" name="longitude_masuk" id="longitude-lembur">
-                <div class="p-6">
+                <div class="p-5">
                     <h3 class="text-xl font-bold text-gray-800">Form Absen Lembur</h3>
-                    <p class="text-gray-500 mt-1">Ambil foto selfie dan isi keterangan untuk memulai lembur.</p>
-                    <div class="mt-6">
-                        <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Lembur <span class="text-red-500">*</span></label>
-                        <div id="camera-container-lembur" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
-                            <video id="video-lembur" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
-                            <canvas id="canvas-lembur" class="hidden"></canvas>
-                            <div id="snap-ui-lembur" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                                <button type="button" id="snap-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                    <i class="fas fa-camera"></i>
-                                </button>
-                            </div>
-                            <div id="preview-ui-lembur" class="absolute inset-0 hidden">
-                                <img id="preview-image-lembur" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
-                                <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
-                                    <button type="button" id="retake-btn-lembur" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
-                                    <button type="button" id="use-photo-btn-lembur" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                    <p class="text-gray-500 text-sm mt-1">Ambil foto selfie dan isi keterangan untuk memulai lembur.</p>
+                    
+                    {{-- Grid 2 Kolom --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        {{-- Kiri: Kamera SQUARE --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Foto Selfie <span class="text-red-500">*</span></label>
+                            {{-- Aspect-square (1:1) --}}
+                            <div id="camera-container-lembur" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900 shadow-inner">
+                                <video id="video-lembur" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
+                                <canvas id="canvas-lembur" class="hidden"></canvas>
+                                <div id="snap-ui-lembur" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                    <button type="button" id="snap-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                        <i class="fas fa-camera"></i>
+                                    </button>
+                                </div>
+                                <div id="preview-ui-lembur" class="absolute inset-0 hidden">
+                                    <img id="preview-image-lembur" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
+                                    <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
+                                        <button type="button" id="retake-btn-lembur" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ulang</button>
+                                        <button type="button" id="use-photo-btn-lembur" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                    </div>
                                 </div>
                             </div>
+                            <div id="upload-label-lembur" class="hidden">
+                                <input name="lampiran_masuk" id="lampiran-lembur" type="file" class="hidden" accept="image/*" />
+                            </div>
                         </div>
-                        <div id="upload-label-lembur" class="hidden">
-                            <input name="lampiran_masuk" id="lampiran-lembur" type="file" class="hidden" accept="image/*" />
+
+                        {{-- Kanan: Textarea --}}
+                        <div class="flex flex-col">
+                            <label for="keterangan-lembur" class="block text-sm font-medium text-gray-700 mb-2">Keterangan Lembur <span class="text-red-500">*</span></label>
+                            {{-- Tinggi textarea menyesuaikan container --}}
+                            <textarea id="keterangan-lembur" name="keterangan" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all text-sm h-full" placeholder="Contoh: Menyelesaikan laporan bulanan." required></textarea>
                         </div>
-                    </div>
-                    <div class="mt-4">
-                        <label for="keterangan-lembur" class="block text-md font-medium text-gray-700 mb-2">Keterangan Lembur <span class="text-red-500">*</span></label>
-                        <textarea id="keterangan-lembur" name="keterangan" rows="3" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Contoh: Menyelesaikan laporan bulanan." required></textarea>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-                    <button type="button" id="btn-tutup-modal-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                    <button type="submit" id="submit-button-lembur" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400">Kirim Absen Lembur</button>
+                <div class="bg-gray-50 px-5 py-3 flex justify-end gap-3 rounded-b-xl">
+                    <button type="button" id="btn-tutup-modal-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm">Batal</button>
+                    <button type="submit" id="submit-button-lembur" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 text-sm">Kirim</button>
                 </div>
             </form>
         </div>
     </div>
     @endif
 
-    {{-- MODAL UNTUK ABSEN KELUAR LEMBUR --}}
+    {{-- MODAL UNTUK ABSEN KELUAR LEMBUR (LAYOUT: KIRI KAMERA SQUARE, KANAN INFO) --}}
     @if ($lemburHariIni && is_null($lemburHariIni->jam_keluar_lembur))
     <div id="modal-keluar-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0">
+        {{-- Lebar modal ditingkatkan --}}
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl transform transition-all duration-300 scale-95 opacity-0">
             <form action="{{ route('absen.lembur.keluar', $lemburHariIni->id) }}" method="POST" enctype="multipart/form-data" id="form-keluar-lembur">
                 @csrf
                 @method('PATCH')
                 <input type="hidden" name="latitude_keluar" id="latitude-keluar-lembur">
                 <input type="hidden" name="longitude_keluar" id="longitude-keluar-lembur">
-                <div class="p-6">
+                <div class="p-5">
                     <h3 class="text-xl font-bold text-gray-800">Form Absen Keluar Lembur</h3>
-                    <p class="text-gray-500 mt-1">Ambil foto selfie untuk konfirmasi selesai lembur.</p>
-                    <div class="mt-6">
-                        <label class="block text-md font-medium text-gray-700 mb-2">Foto Selfie Keluar Lembur <span class="text-red-500">*</span></label>
-                        <div id="camera-container-keluar-lembur" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900">
-                            <video id="video-keluar-lembur" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
-                            <canvas id="canvas-keluar-lembur" class="hidden"></canvas>
-                            <div id="snap-ui-keluar-lembur" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
-                                <button type="button" id="snap-keluar-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
-                                    <i class="fas fa-camera"></i>
-                                </button>
-                            </div>
-                            <div id="preview-ui-keluar-lembur" class="absolute inset-0 hidden">
-                                <img id="preview-image-keluar-lembur" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
-                                <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
-                                    <button type="button" id="retake-btn-keluar-lembur" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ambil Ulang</button>
-                                    <button type="button" id="use-photo-btn-keluar-lembur" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                    <p class="text-gray-500 text-sm mt-1">Ambil foto selfie untuk konfirmasi selesai lembur.</p>
+                    
+                    {{-- Grid 2 Kolom --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                         {{-- Kiri: Kamera SQUARE --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Foto Selfie <span class="text-red-500">*</span></label>
+                            {{-- Aspect-square (1:1) --}}
+                            <div id="camera-container-keluar-lembur" class="relative aspect-square rounded-lg overflow-hidden bg-gray-900 shadow-inner">
+                                <video id="video-keluar-lembur" class="w-full h-full object-cover" style="transform: scaleX(-1);" autoplay></video>
+                                <canvas id="canvas-keluar-lembur" class="hidden"></canvas>
+                                <div id="snap-ui-keluar-lembur" class="absolute inset-0 flex items-end justify-center p-4 bg-black bg-opacity-25">
+                                    <button type="button" id="snap-keluar-lembur" class="bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center text-xl border-4 border-white shadow-lg disabled:bg-gray-400" disabled>
+                                        <i class="fas fa-camera"></i>
+                                    </button>
+                                </div>
+                                <div id="preview-ui-keluar-lembur" class="absolute inset-0 hidden">
+                                    <img id="preview-image-keluar-lembur" src="" class="w-full h-full object-cover" alt="Pratinjau Foto"/>
+                                    <div class="absolute inset-0 flex items-end justify-center p-4 gap-3 bg-black bg-opacity-40">
+                                        <button type="button" id="retake-btn-keluar-lembur" class="bg-red-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-sync-alt mr-1.5"></i>Ulang</button>
+                                        <button type="button" id="use-photo-btn-keluar-lembur" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs flex items-center"><i class="fas fa-check mr-1.5"></i>Gunakan</button>
+                                    </div>
                                 </div>
                             </div>
+                            <div id="upload-label-keluar-lembur" class="hidden">
+                                <input name="lampiran_keluar" id="lampiran-keluar-lembur" type="file" class="hidden" accept="image/*" />
+                            </div>
                         </div>
-                        <div id="upload-label-keluar-lembur" class="hidden">
-                            <input name="lampiran_keluar" id="lampiran-keluar-lembur" type="file" class="hidden" accept="image/*" />
+
+                        {{-- Kanan: Info --}}
+                        <div class="flex flex-col justify-center text-gray-500 text-sm italic">
+                             <p>Terima kasih sudah lembur hari ini. Selamat beristirahat.</p>
                         </div>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-                    <button type="button" id="btn-tutup-modal-keluar-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
-                    <button type="submit" id="submit-button-keluar-lembur" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 disabled:bg-gray-400">Kirim Absen Keluar Lembur</button>
+                <div class="bg-gray-50 px-5 py-3 flex justify-end gap-3 rounded-b-xl">
+                    <button type="button" id="btn-tutup-modal-keluar-lembur" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm">Batal</button>
+                    <button type="submit" id="submit-button-keluar-lembur" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 disabled:bg-gray-400 text-sm">Kirim</button>
                 </div>
             </form>
         </div>
@@ -634,6 +771,7 @@
                 video.classList.add('hidden');
                 snapUI.classList.add('hidden');
                 previewUI.classList.remove('hidden');
+                retakeButton.parentNode.classList.remove('hidden'); // Pastikan tombol terlihat
             });
             
             retakeButton.addEventListener('click', function() {
@@ -643,7 +781,7 @@
             });
 
             usePhotoButton.addEventListener('click', function() {
-                previewUI.classList.add('hidden');
+                retakeButton.parentNode.classList.add('hidden'); // Sembunyikan tombol, biarkan foto
                 canvas.toBlob(function(blob) {
                     const file = new File([blob], `selfie${prefix.replace('-', '_')}_${Date.now()}.png`, { type: "image/png" });
                     const dataTransfer = new DataTransfer();
@@ -684,8 +822,8 @@
                 
                 if(isPhotoReady) {
                     const successMsg = document.createElement('div');
-                    successMsg.className = 'success-message mt-2 text-center text-sm text-green-600 font-semibold p-2 bg-green-50 rounded-lg';
-                    successMsg.innerHTML = `<i class="fas fa-check-circle"></i> Foto berhasil diambil.`;
+                    successMsg.className = 'success-message mt-2 text-center text-xs text-green-600 font-semibold p-1 bg-green-50 rounded-lg';
+                    successMsg.innerHTML = `<i class="fas fa-check-circle"></i> Foto berhasil.`;
                     cameraContainer.parentNode.insertBefore(successMsg, cameraContainer.nextSibling);
                 }
                 checkFormReadiness();
@@ -765,8 +903,10 @@
             };
             
             document.getElementById('status-buttons').addEventListener('click', function(e) {
-                if (e.target.matches('.status-btn')) {
-                    const selectedStatus = e.target.dataset.status;
+                // Fix: Gunakan .closest() untuk menangani klik pada icon di dalam tombol
+                const btn = e.target.closest('.status-btn');
+                if (btn) {
+                    const selectedStatus = btn.dataset.status;
                     hiddenStatusInput.value = selectedStatus;
                     setActiveButton(selectedStatus);
                     toggleUiForStatus(selectedStatus);
@@ -798,17 +938,11 @@
             const checkReadiness = () => {
                 const isKeteranganReady = keteranganInput ? keteranganInput.value.trim() !== '' : true;
                 const allReady = isLocationReady && isPhotoReady && isKeteranganReady;
+                
                 submitBtn.disabled = !allReady;
 
-                if (allReady) {
-                    submitBtn.textContent = submitBtn.dataset.readyText || 'Kirim';
-                } else {
-                    // PERBAIKAN: Teks dinamis saat tombol disabled
-                    if (keteranganInput && !isKeteranganReady) {
-                        submitBtn.textContent = 'Mohon Isi Data Lengkap';
-                    } else {
-                        submitBtn.textContent = 'Mohon Ambil Foto & Lokasi';
-                    }
+                if (submitBtn.dataset.readyText) {
+                    submitBtn.textContent = submitBtn.dataset.readyText;
                 }
             };
 
@@ -852,6 +986,7 @@
                 window.cameraInstances[prefix].startCamera();
                 getLocation();
                 submitBtn.dataset.readyText = submitBtn.textContent;
+                checkReadiness(); // Jalankan sekali saat buka
             };
 
             const closeModal = () => {

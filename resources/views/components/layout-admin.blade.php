@@ -33,6 +33,8 @@
         <div class="flex-grow overflow-y-auto">
             <nav class="p-4 pt-6">
                 <ul class="space-y-2">
+
+                    {{-- Karyawan --}}
                     <li>
                         <a href="{{ route('admin.employees.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200 
                             {{ request()->routeIs('admin.employees.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
@@ -40,6 +42,8 @@
                             <span class="ml-3 font-semibold">Kelola Karyawan</span>
                         </a>
                     </li>
+
+                    {{-- Admin --}}
                     <li>
                         <a href="{{ route('admin.admins.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
                             {{ request()->routeIs('admin.admins.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
@@ -47,24 +51,32 @@
                             <span class="ml-3 font-semibold">Kelola Admin</span>
                         </a>
                     </li>
-                    <li x-data="{ open: {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lembur.*') ? 'true' : 'false' }} }">
+
+                    {{-- Absensi --}}
+                    {{-- PERBAIKAN: Menambahkan 'admin.aktivitas.*' di logika x-data dan class --}}
+                    <li x-data="{ open: {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lembur.*') || request()->routeIs('admin.aktivitas.*') ? 'true' : 'false' }} }">
                         <a @click.prevent="open = !open" href="#" 
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
-                            {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lembur.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-                            
+                            {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lembur.*') || request()->routeIs('admin.aktivitas.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
                             <i class="fas fa-calendar-check text-xl w-8 text-center"></i> 
-                            
-                            <span class="ml-3 font-semibold flex-1">Kelola Absen</span>
+                            <span class="ml-3 font-semibold flex-1">Kelola Absen & Aktivitas</span>
                             <i class="fas fa-chevron-down text-sm transition-transform" :class="open ? 'rotate-180' : ''"></i>
                         </a>
                         
                         <div x-show="open" x-collapse>
                             <ul class="ml-12 mt-2 space-y-1">
                                 <li>
+                                    <a href="{{ route('admin.aktivitas.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
+                                        {{ request()->routeIs('admin.aktivitas.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Aktivitas
+                                    </a>
+                                </li>
+                                <li>
                                     <a href="{{ route('admin.absensi.index') }}" 
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
                                         {{ request()->routeIs('admin.absensi.index', 'admin.lembur.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
-                                        Aktivitas
+                                        Absensi
                                     </a>
                                 </li>
                                 <li>
@@ -77,15 +89,14 @@
                             </ul>
                         </div>
                     </li>
+
+                    {{-- Cuti --}}
                     <li x-data="{ open: {{ request()->routeIs('admin.cuti.*') ? 'true' : 'false' }} }">
                         <a @click.prevent="open = !open" href="#"
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer
                             {{ request()->routeIs('admin.cuti.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-
                             <i class="fas fa-calendar-alt text-xl w-8 text-center"></i>
-
                             <span class="ml-3 font-semibold flex-1">Kelola Cuti</span>
-                            {{-- BADGE NOTIFIKASI CUTI --}}
                             @if(isset($pending_cuti_count) && $pending_cuti_count > 0)
                                 <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{{ $pending_cuti_count }}</span>
                             @endif
@@ -105,7 +116,6 @@
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
                                         {{ request()->routeIs('admin.cuti.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
                                         Manajemen Pengajuan
-                                        {{-- BADGE NOTIFIKASI CUTI --}}
                                         @if(isset($pending_cuti_count) && $pending_cuti_count > 0)
                                             <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_cuti_count }}</span>
                                         @endif
@@ -123,47 +133,70 @@
                         </a>
                     </li>
 
-                    {{-- DROPDOWN BARU UNTUK SEMUA JENIS PENGAJUAN --}}
-                    <li x-data="{ open: {{ request()->routeIs('admin.pengajuan_dana.*') || request()->routeIs('admin.pengajuan-dokumen.*') ? 'true' : 'false' }} }">
+    
+                    {{-- =============================================== --}}
+                    {{--         PERUBAHAN DIMULAI DARI SINI           --}}
+                    {{-- =============================================== --}}
+
+                    {{-- 1. KELOLA PENGAJUAN DANA (DROPDOWN) --}}
+                    <li x-data="{ open: {{ request()->routeIs('admin.pengajuan_dana.*') ? 'true' : 'false' }} }">
                         <a @click.prevent="open = !open" href="#" 
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
-                            {{ request()->routeIs('admin.pengajuan_dana.*') || request()->routeIs('admin.pengajuan-dokumen.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-                            <i class="fas fa-folder-open text-xl w-8 text-center"></i> 
-                            <span class="ml-3 font-semibold flex-1">Kelola Pengajuan</span>
-                             {{-- BADGE NOTIFIKASI TOTAL PENGAJUAN --}}
-                            @php
-                                $total_pengajuan = ($pending_dana_count ?? 0) + ($pending_dokumen_count ?? 0);
-                            @endphp
-                            @if($total_pengajuan > 0)
-                                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{{ $total_pengajuan }}</span>
+                            {{ request()->routeIs('admin.pengajuan_dana.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            {{-- Icon diganti --}}
+                            <i class="fas fa-money-bill-wave text-xl w-8 text-center"></i> 
+                            <span class="ml-3 font-semibold flex-1">Kelola Pengajuan Dana</span>
+                             {{-- Badge notifikasi hanya untuk dana --}}
+                            @if(isset($pending_dana_count) && $pending_dana_count > 0)
+                                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{{ $pending_dana_count }}</span>
                             @endif
                             <i class="fas fa-chevron-down text-sm transition-transform ml-2" :class="open ? 'rotate-180' : ''"></i>
                         </a>
                         <div x-show="open" x-collapse>
                             <ul class="ml-12 mt-2 space-y-1">
+                                {{-- Link Pengajuan Dana --}}
                                 <li>
                                     <a href="{{ route('admin.pengajuan_dana.index') }}" 
-                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm {{ request()->routeIs('admin.pengajuan_dana.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm 
+                                        {{-- Logic active state dibuat spesifik agar tidak bentrok --}}
+                                        {{ request()->routeIs('admin.pengajuan_dana.index') || request()->routeIs('admin.pengajuan_dana.show') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
                                         Pengajuan Dana
-                                        {{-- BADGE NOTIFIKASI DANA --}}
                                         @if(isset($pending_dana_count) && $pending_dana_count > 0)
                                             <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_dana_count }}</span>
                                         @endif
                                     </a>
                                 </li>
+                                {{-- Link Pengaturan Approvers --}}
                                 <li>
-                                    <a href="{{ route('admin.pengajuan-dokumen.index') }}" 
-                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm {{ request()->routeIs('admin.pengajuan-dokumen.*') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
-                                        Pengajuan Dokumen
-                                        {{-- BADGE NOTIFIKASI DOKUMEN --}}
-                                        @if(isset($pending_dokumen_count) && $pending_dokumen_count > 0)
-                                            <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_dokumen_count }}</span>
-                                        @endif
+                                    <a href="{{ route('admin.pengajuan_dana.set_approvers.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm 
+                                        {{ request()->routeIs('admin.pengajuan_dana.set_approvers.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Pengaturan Approvers
                                     </a>
                                 </li>
                             </ul>
                         </div>
                     </li>
+
+                    {{-- 2. KELOLA PENGAJUAN DOKUMEN (LINK LANGSUNG) --}}
+                    <li>
+                        <a href="{{ route('admin.pengajuan-dokumen.index') }}" 
+                            class="flex items-center p-3 rounded-lg transition-colors duration-200 
+                            {{ request()->routeIs('admin.pengajuan-dokumen.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            {{-- Icon diganti --}}
+                            <i class="fas fa-file-alt text-xl w-8 text-center"></i>
+                            <span class="ml-3 font-semibold flex-1">Kelola Dokumen</span>
+                            {{-- Badge notifikasi hanya untuk dokumen --}}
+                            @if(isset($pending_dokumen_count) && $pending_dokumen_count > 0)
+                                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_dokumen_count }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    
+                    {{-- =============================================== --}}
+                    {{--           PERUBAHAN SELESAI DI SINI           --}}
+                    {{-- =============================================== --}}
+
                 </ul>
             </nav>
         </div>

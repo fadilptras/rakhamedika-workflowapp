@@ -12,7 +12,7 @@
         .header h1 { margin: 0; font-size: 22px; color: #003366; }
         .header p { margin: 5px 0; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; word-wrap: break-word; /* Agar judul panjang wrap */ }
         th { background-color: #f2f2f2; font-weight: bold; }
         .filter-info {
             border: 1px solid #e3e3e3;
@@ -23,6 +23,13 @@
         }
         .text-right { text-align: right; }
         .total-row td { font-weight: bold; background-color: #f2f2f2; }
+        /* Style untuk status */
+        .status { padding: 3px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; white-space: nowrap; }
+        .status-selesai { background-color: #e6fffa; color: #38a169; }
+        .status-ditolak { background-color: #fed7d7; color: #c53030; }
+        .status-proses { background-color: #ebf8ff; color: #3182ce; }
+        .status-dibatalkan { background-color: #e2e8f0; color: #4a5568; }
+        .status-diajukan { background-color: #fefcbf; color: #d69e2e; }
     </style>
 </head>
 <body>
@@ -42,10 +49,10 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 12%;">Tanggal</th>
+                    <th style="width: 10%;">Tanggal</th>
                     <th>Nama Karyawan</th>
-                    <th>Judul Pengajuan</th>
-                    <th style="width: 13%;">Status</th>
+                    <th style="width: 30%;">Judul Pengajuan</th> {{-- Lebarkan sedikit --}}
+                    <th style="width: 15%;">Status</th> {{-- Lebarkan sedikit --}}
                     <th style="width: 18%;" class="text-right">Total Dana</th>
                 </tr>
             </thead>
@@ -53,17 +60,32 @@
                 @php
                     $grandTotal = 0;
                 @endphp
-                @forelse($pengajuanDana as $pengajuan)
+                @forelse($pengajuanDanas as $pengajuan) {{-- Pastikan ini $pengajuanDanas (plural) --}}
                     <tr>
                         <td>{{ $pengajuan->created_at->format('d M Y') }}</td>
                         <td>{{ $pengajuan->user->name }}</td>
                         <td>{{ $pengajuan->judul_pengajuan }}</td>
-                        <td>{{ ucfirst($pengajuan->status) }}</td>
+                        <td>
+                            {{-- [FIX] Logika Status Lebih Rapi --}}
+                            @if ($pengajuan->status == 'selesai')
+                                <span class="status status-selesai">Selesai</span>
+                            @elseif ($pengajuan->status == 'ditolak')
+                                <span class="status status-ditolak">Ditolak</span>
+                            @elseif ($pengajuan->status == 'proses_pembayaran')
+                                <span class="status status-proses">Proses Bayar</span>
+                            @elseif ($pengajuan->status == 'diproses_appr_2')
+                                <span class="status status-proses">Menunggu Appr 2</span>
+                            @elseif ($pengajuan->status == 'dibatalkan')
+                                <span class="status status-dibatalkan">Dibatalkan</span>
+                            @else {{-- 'diajukan' --}}
+                                <span class="status status-diajukan">Menunggu Appr 1</span>
+                            @endif
+                        </td>
                         <td class="text-right">Rp {{ number_format($pengajuan->total_dana, 0, ',', '.') }}</td>
                     </tr>
                     @php
-                        // Hanya total dana yang disetujui atau masih diproses yang dihitung
-                        if (in_array($pengajuan->status, ['disetujui', 'diproses'])) {
+                        // [FIX] Hanya total dana yang statusnya akan dibayar atau sudah dibayar
+                        if (in_array($pengajuan->status, ['selesai', 'proses_pembayaran', 'diproses_appr_2'])) {
                             $grandTotal += $pengajuan->total_dana;
                         }
                     @endphp
@@ -77,7 +99,7 @@
             </tbody>
             <tfoot>
                 <tr class="total-row">
-                    <td colspan="4" class="text-right">GRAND TOTAL (Hanya status Disetujui & Diproses)</td>
+                    <td colspan="4" class="text-right">GRAND TOTAL (Status Selesai, Proses Bayar, Menunggu Appr 2)</td>
                     <td class="text-right">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
                 </tr>
             </tfoot>

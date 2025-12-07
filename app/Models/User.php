@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\PengajuanDana;
@@ -29,6 +30,13 @@ class User extends Authenticatable
         'tanggal_bergabung',
         'divisi',
         'is_kepala_divisi',
+
+        // Approver
+        'approver_1_id',
+        'approver_2_id',
+        'manager_keuangan_id',
+
+        // Informasi Pribadi
         'nomor_telepon',
         'tempat_lahir',
         'tanggal_lahir',
@@ -36,7 +44,6 @@ class User extends Authenticatable
         'nik',
         'kontak_darurat_nama',
         'kontak_darurat_nomor',
-
         'nip',
         'status_karyawan',
         'atasan_id',
@@ -47,7 +54,7 @@ class User extends Authenticatable
         'agama',
         'golongan_darah',
         'status_pernikahan',
-        'alamat_ktp', // Ini pengganti 'alamat'
+        'alamat_ktp',
         'alamat_domisili',
         'kontak_darurat_hubungan',
         'npwp',
@@ -71,57 +78,54 @@ class User extends Authenticatable
             'password'          => 'hashed',
             'tanggal_bergabung' => 'date:Y-m-d',
             'tanggal_lahir'     => 'date:Y-m-d',
-            // --- TAMBAHKAN INI ---
             'tanggal_mulai_kontrak' => 'date:Y-m-d',
             'tanggal_akhir_kontrak' => 'date:Y-m-d',
             'tanggal_berhenti'      => 'date:Y-m-d',
         ];
     }
     
-    // --- (Relasi lama Anda tetap di sini) ---
+    public function approver1(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approver_1_id');
+    }
+
+    public function approver2(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approver_2_id');
+    }
+
+    public function managerKeuangan(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_keuangan_id');
+    }
     public function pengajuanDanas(): HasMany
     {
         return $this->hasMany(PengajuanDana::class, 'user_id');
     }
-
     public function absensis(): HasMany
     {
         return $this->hasMany(Absensi::class);
     }
-
     public function cutis(): HasMany
     {
         return $this->hasMany(Cuti::class);
     }
-    
-    // --- TAMBAHAN BARU: RELASI KE TABEL LEMBUR ---
     public function lemburs(): HasMany
     {
         return $this->hasMany(Lembur::class);
     }
-
     public function invitedAgendas()
     {
         return $this->belongsToMany(Agenda::class, 'agenda_user', 'user_id', 'agenda_id');
     }
-
     public function pengajuanDokumens(): HasMany
     {
         return $this->hasMany(PengajuanDokumen::class);
     }
-
-
-    /**
-     * Relasi ke Riwayat Pendidikan.
-     */
     public function riwayatPendidikan(): HasMany
     {
         return $this->hasMany(RiwayatPendidikan::class, 'user_id');
     }
-
-    /**
-     * Relasi ke Riwayat Pekerjaan.
-     */
     public function riwayatPekerjaan(): HasMany
     {
         return $this->hasMany(RiwayatPekerjaan::class, 'user_id');

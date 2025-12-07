@@ -18,6 +18,9 @@ use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\Admin\AdminPengajuanDokumenController;
 use App\Http\Controllers\Admin\AdminAgendaController;
 use App\Http\Controllers\CrmController;
+use App\Http\Controllers\AktivitasController;
+use App\Http\Controllers\Admin\AdminAktivitasController;
+use App\Http\Controllers\InteractionController;
 
 // Route utama, langsung arahkan ke halaman login
 Route::get('/', fn() => redirect()->route('login'));
@@ -35,6 +38,7 @@ Route::view('/forgot-password', 'auth.forgot-password')->middleware('guest')->na
 // Route untuk Fitur Utama Pengguna (yang sudah login)
 Route::middleware('auth')->group(function () {
     
+    // Dasboard
     Route::get('/dashboard', function () {
         return view('users.dashboard', ['title' => 'Dashboard']);
     })->name('dashboard');
@@ -44,10 +48,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/absen', [AbsenController::class, 'store'])->name('absen.store');
     Route::patch('/absen/keluar/{absensi}', [AbsenController::class, 'updateKeluar'])->name('absen.keluar');
 
-    // --- TAMBAHAN BARU UNTUK FITUR LEMBUR ---
+    // Lembur
     Route::post('/absen/lembur', [AbsenController::class, 'storeLembur'])->name('absen.lembur.store');
     Route::patch('/absen/lembur/keluar/{lembur}', [AbsenController::class, 'updateLemburKeluar'])->name('absen.lembur.keluar');
-    // --- AKHIR TAMBAHAN ---
 
     // Cuti
     Route::get('/cuti', [CutiController::class, 'create'])->name('cuti.create'); // Nama diubah dari 'cuti' menjadi 'cuti.create'
@@ -59,6 +62,7 @@ Route::middleware('auth')->group(function () {
     // Notifikasi
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
     
+    // Profile
     Route::get('/profile', [ProfileController::class, 'editProfile'])->name('profil.index');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profil.update');
     Route::post('/profile/check-password', [ProfileController::class, 'checkCurrentPassword'])->name('profile.checkPassword');
@@ -70,56 +74,70 @@ Route::middleware('auth')->group(function () {
     Route::get('/pengajuan-dana/{pengajuanDana}', [PengajuanDanaController::class, 'show'])->name('pengajuan_dana.show');
     Route::post('/pengajuan-dana/{pengajuanDana}/approve', [PengajuanDanaController::class, 'approve'])->name('pengajuan_dana.approve');
     Route::post('/pengajuan-dana/{pengajuanDana}/reject', [PengajuanDanaController::class, 'reject'])->name('pengajuan_dana.reject');
-    // --- PERUBAHAN DI SINI ---
-    // Mengubah nama route untuk lebih jelas (bukti transfer oleh finance)
+    Route::post('/pengajuan-dana/{pengajuanDana}/proses-pembayaran', [PengajuanDanaController::class, 'prosesPembayaran'])
+        ->name('pengajuan_dana.proses_pembayaran');
     Route::post('/pengajuan-dana/{pengajuanDana}/upload-bukti-transfer', [PengajuanDanaController::class, 'uploadBuktiTransfer'])
         ->name('pengajuan_dana.upload_bukti_transfer');
-
-    // --- TAMBAHAN BARU DI SINI ---
-    // Route baru untuk upload invoice final oleh pemohon
-    Route::post('/pengajuan-dana/{pengajuanDana}/upload-final-invoice', [PengajuanDanaController::class, 'uploadFinalInvoice'])
-        ->name('pengajuan_dana.upload_final_invoice');
     Route::get('/pengajuan-dana/{pengajuanDana}/download', [PengajuanDanaController::class, 'downloadPDF'])->name('pengajuan_dana.download');
     Route::post('/pengajuan-dana/{pengajuanDana}/cancel', [PengajuanDanaController::class, 'cancel'])->name('pengajuan_dana.cancel');
 
-    // Di dalam Route::middleware('auth')->group(...)
+    // Pengajuan Dokumen
     Route::get('/pengajuan-dokumen', [PengajuanDokumenController::class, 'index'])->name('pengajuan_dokumen.index');
     Route::post('/pengajuan-dokumen', [PengajuanDokumenController::class, 'store'])->name('pengajuan_dokumen.store');
     Route::get('/pengajuan-dokumen/{dokumen}/download', [PengajuanDokumenController::class, 'download'])->name('pengajuan_dokumen.download');
-    
 
-    // Rekap Absensi Karyawan
+    // Rekap Absensi 
     Route::get('/rekap-absen', [RekapAbsenController::class, 'index'])->name('rekap_absen.index');
 
-    // Route untuk fitur Agenda/Kalender
+    // Agenda
     Route::get('/agendas', [AgendaController::class, 'index'])->name('agendas.index');
     Route::post('/agendas', [AgendaController::class, 'store'])->name('agendas.store');
     Route::get('/get-users', [AgendaController::class, 'getUsers'])->name('agendas.getUsers');
     Route::put('/agendas/{agenda}', [AgendaController::class, 'update'])->name('agendas.update');
     Route::delete('/agendas/{agenda}', [AgendaController::class, 'destroy'])->name('agendas.destroy');
 
-    Route::get('/crm', [CrmController::class, 'index'])->name('crm.index');
-    Route::get('/crm/create', [CrmController::class, 'create'])->name('crm.create');
-    Route::get('/crm/detail', [CrmController::class, 'show'])->name('crm.show'); // Menggunakan /detail sementara
+    
+Route::controller(CrmController::class)->group(function () {
+    Route::get('/crm', 'index')->name('crm.index');
+    Route::get('/crm/matrix', 'matrix')->name('crm.matrix');
+    Route::post('/crm/store', 'store')->name('crm.store');
+    Route::get('/crm/{client}', 'show')->name('crm.show');
+    Route::post('/crm/interaction', 'storeInteraction')->name('crm.interaction.store');
+    Route::post('/crm/interaction/support', 'storeSupport')->name('crm.interaction.support');
+    Route::delete('/crm/client/{client}', 'destroyClient')->name('crm.client.destroy');
+    Route::delete('/crm/interaction/{interaction}', 'destroyInteraction')->name('crm.interaction.destroy');
+});
+
+    Route::resource('aktivitas', AktivitasController::class)
+        ->only(['index', 'store']) // Kita hanya butuh method index() dan store()
+        ->middleware('auth');
+
+    Route::get('/aktivitas/json', [AktivitasController::class, 'getAktivitasJson'])
+        ->name('aktivitas.json')
+        ->middleware('auth');
+    Route::get('/aktivitas/json', [AktivitasController::class, 'getAktivitasJson'])->name('aktivitas.getJson');
+
+    Route::get('/kirim-ulang-tahun', [NotifikasiController::class, 'kirimUlangTahun'])
+        ->name('notifikasi.ulangtahun');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     
     Route::get('/', fn() => redirect()->route('admin.employees.index'));
     
-    // Rute untuk mengelola KARYAWAN (role='user')
+    // (role='user')
     Route::prefix('employees')->name('employees.')->group(function () {
         Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'user')->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
         Route::post('/update', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
 
-        // --- RUTE BARU UNTUK SET KEPALA DIVISI ---
+        // Kepala Divisi
         Route::post('/{user}/set-as-head', [UserController::class, 'setAsDivisionHead'])->name('setAsHead');
         Route::get('/{user}/download-pdf', [UserController::class, 'downloadProfilePdf'])->name('downloadProfilePdf');
     });
 
-    // Rute untuk mengelola ADMIN (role='admin')
+    // (role='admin')
     Route::prefix('admins')->name('admins.')->group(function () {
         Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'admin')->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
@@ -127,26 +145,26 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
     });
     
-    // Rute untuk menu Kelola Absen
+    // Kelola Absen
     Route::prefix('absensi')->name('absensi.')->group(function () {
-        // Rute untuk Aktivitas Harian & download PDF
+        // Aktivitas Harian & download PDF
         Route::get('/', [AbsensiController::class, 'index'])->name('index');
         Route::get('/pdf/harian', [AbsensiController::class, 'downloadPdfHarian'])->name('downloadPdfHarian');
         
-        // Rute untuk Rekap Absensi Bulanan & download PDF
+        // Rekap Absensi Bulanan & download PDF
         Route::get('/rekap', [AbsensiController::class, 'rekap'])->name('rekap');
         Route::get('/rekap/pdf', [AbsensiController::class, 'downloadPdf'])->name('rekap.downloadPdf');
         Route::get('/rekap/excel', [AbsensiController::class, 'downloadExcel'])->name('rekap.downloadExcel');
     });
 
 
-    // Rute untuk Rekap Lembur (terpisah)
+    // Rekap Lembur 
     Route::prefix('lembur')->name('lembur.')->group(function () {
         Route::get('/', [AdminLemburController::class, 'index'])->name('index');
         Route::get('/pdf', [AdminLemburController::class, 'downloadPdf'])->name('downloadPdf');
     });
         
-    // Manajemen Cuti (HANYA UNTUK MELIHAT)
+    // Cuti
     Route::prefix('cuti')->name('cuti.')->group(function () {
         Route::get('/', [AdminCutiController::class, 'index'])->name('index');
         Route::get('/pengaturan', [AdminCutiController::class, 'pengaturanCuti'])->name('pengaturan');
@@ -154,39 +172,33 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{cuti}', [AdminCutiController::class, 'show'])->name('show');
     });
 
-    // == PERBAIKAN DI SINI ==
-    // Hapus 'admin/' dari URL dan 'admin.' dari nama rute
+    // Pengajuan Dana
     Route::prefix('pengajuan-dana')->name('pengajuan_dana.')->group(function() {
         Route::get('/', [AdminPengajuanDanaController::class, 'index'])->name('index');
         Route::get('/rekap-pdf', [AdminPengajuanDanaController::class, 'downloadRekapPDF'])->name('downloadRekapPdf');
         Route::get('/{pengajuanDana}', [AdminPengajuanDanaController::class, 'show'])->name('show');
         Route::get('/{pengajuanDana}/download', [AdminPengajuanDanaController::class, 'downloadPDF'])->name('downloadPdf');
+        Route::get('/pengaturan/approvers', [AdminPengajuanDanaController::class, 'showSetApprovers'])->name('set_approvers.index');
+        Route::post('/pengaturan/approvers', [AdminPengajuanDanaController::class, 'saveSetApprovers'])->name('set_approvers.save');
     });
 
+    // Pengajuan Dokumen
     Route::prefix('pengajuan-dokumen')->name('pengajuan-dokumen.')->group(function() {
         Route::get('/', [AdminPengajuanDokumenController::class, 'index'])->name('index');
         Route::get('/{dokumen}', [AdminPengajuanDokumenController::class, 'show'])->name('show');
         Route::put('/{dokumen}', [AdminPengajuanDokumenController::class, 'update'])->name('update');
     });
 
+    // Agenda
     Route::prefix('agenda')->name('agenda.')->group(function () {
-        // [GET] Menampilkan halaman utama kalender dan daftar agenda
         Route::get('/', [AdminAgendaController::class, 'index'])->name('index');
-
-        // [POST] Menyimpan agenda baru dari modal
         Route::post('/', [AdminAgendaController::class, 'store'])->name('store');
-
-        // [GET] Mengambil data semua user untuk ditampilkan di form
         Route::get('/get-all-users', [AdminAgendaController::class, 'getAllUsers'])->name('getAllUsers');
-
-        // [GET] Mengambil data event untuk ditampilkan di FullCalendar
         Route::get('/events', [AdminAgendaController::class, 'getAdminAgendas'])->name('getEvents');
-
-        // [PUT] Mengupdate agenda yang sudah ada
         Route::put('/{agenda}', [AdminAgendaController::class, 'update'])->name('update');
-
-        // [DELETE] Menghapus agenda
         Route::delete('/{agenda}', [AdminAgendaController::class, 'destroy'])->name('destroy');
     });
+
+    Route::get('aktivitas', [AdminAktivitasController::class, 'index'])->name('aktivitas.index');
     
 });

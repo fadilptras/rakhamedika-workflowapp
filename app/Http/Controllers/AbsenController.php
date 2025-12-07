@@ -12,13 +12,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Carbon\CarbonPeriod;
-use Jenssegers\Agent\Agent; // <-- TAMBAHKAN INI
+use Jenssegers\Agent\Agent;
 
 class AbsenController extends Controller
 {
-    /**
-     * Menampilkan halaman absensi.
-     */
     public function absen()
     {
         $title = 'Form Absensi';
@@ -45,7 +42,6 @@ class AbsenController extends Controller
         $rekapAbsen = $this->rekapAbsensiBulanan($user, $today);
         $daftarRekan = $this->getDaftarRekan($user, $today);
 
-        // Kumpulkan semua data untuk dikirim ke view
         $data = compact(
             'title',
             'absensiHariIni',
@@ -56,29 +52,14 @@ class AbsenController extends Controller
             'isWeekend'
         );
 
-        // =======================================================
-        // LOGIKA BARU: DETEKSI PERANGKAT DAN PILIH VIEW
-        // =======================================================
-        $agent = new Agent();
-
-        if ($agent->isMobile() || $agent->isTablet()) {
-            // Jika perangkat adalah mobile atau tablet, tampilkan view baru
-            return view('users.mobile-absen', $data);
-        } else {
-            // Jika bukan (desktop), tampilkan view yang lama
-            return view('users.absen', $data);
-        }
+        return view('users.absen', $data);
     }
 
-    /**
-     * Metode helper untuk menghitung rekap absensi bulanan.
-     */
     protected function rekapAbsensiBulanan(User $user, Carbon $date): array
     {
         $startDate = $date->copy()->startOfMonth();
         $endDate = $date->copy()->endOfMonth();
 
-        // 1. Ambil semua data relevan sekaligus
         $absensiDalamPeriode = Absensi::where('user_id', $user->id)
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->get()
@@ -91,34 +72,39 @@ class AbsenController extends Controller
                       ->where('tanggal_selesai', '>=', $startDate);
             })
             ->get();
+            
+        $lemburDalamPeriode = Lembur::where('user_id', $user->id)
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->whereNotNull('jam_keluar_lembur')
+            ->get()
+            ->keyBy(fn($item) => Carbon::parse($item->tanggal)->toDateString());
 
-        // 2. Inisialisasi rekap
         $rekap = [
             'hadir' => 0,
             'sakit' => 0,
             'izin'  => 0,
             'cuti'  => 0,
-            'tidak hadir' => 0, // Ini akan menjadi 'alpa'
-            'terlambat' => 0 // Dalam menit
+            'tidak hadir' => 0, 
+            'lembur' => 0,
+            'terlambat' => 0,
+            'total_menit_kerja' => 0
         ];
         $standardWorkHour = Carbon::createFromTime(8, 0, 0, 'Asia/Jakarta');
         
-        // 3. Iterasi setiap hari dalam sebulan
         $period = CarbonPeriod::create($startDate, $endDate);
 
         foreach ($period as $day) {
-            if ($day->isWeekend()) {
-                continue; // Lewati akhir pekan
-            }
-
             $tanggalFormatted = $day->toDateString();
             $recordAbsensi = $absensiDalamPeriode->get($tanggalFormatted);
+            $recordLembur = $lemburDalamPeriode->get($tanggalFormatted);
 
             $isOnLeave = $cutiDalamPeriode->first(function ($cuti) use ($day) {
                 return $day->between(Carbon::parse($cuti->tanggal_mulai), Carbon::parse($cuti->tanggal_selesai));
             });
 
-            if ($isOnLeave) {
+            if ($day->isWeekend()) {
+                // Weekend logic
+            } elseif ($isOnLeave) {
                 $rekap['cuti']++;
             } elseif ($recordAbsensi) {
                 $status = strtolower($recordAbsensi->status);
@@ -128,21 +114,37 @@ class AbsenController extends Controller
                 
                 if ($status === 'hadir' && $recordAbsensi->jam_masuk) {
                     $jamMasuk = Carbon::parse($recordAbsensi->jam_masuk, 'Asia/Jakarta');
+                    
                     if ($jamMasuk->gt($standardWorkHour)) {
                         $diffInMinutes = abs($jamMasuk->diffInMinutes($standardWorkHour));
                         $rekap['terlambat'] += $diffInMinutes;
                     }
+
+                    // --- LOGIKA HITUNG DURASI BERSIH ---
+                    if ($recordAbsensi->jam_keluar) {
+                        $tglKeluar = $recordAbsensi->tanggal_keluar ?? $recordAbsensi->tanggal;
+
+                        $waktuMasuk = Carbon::parse($recordAbsensi->tanggal . ' ' . $recordAbsensi->jam_masuk);
+                        $waktuKeluar = Carbon::parse($tglKeluar . ' ' . $recordAbsensi->jam_keluar);
+
+                        if (is_null($recordAbsensi->tanggal_keluar) && $waktuKeluar->lt($waktuMasuk)) {
+                            $waktuKeluar->addDay();
+                        }
+
+                        $rekap['total_menit_kerja'] += $waktuMasuk->diffInMinutes($waktuKeluar);
+                    }
                 }
             } else {
-                // Karyawan tidak cuti dan tidak ada catatan absensi
-                // Jika tanggal sudah lewat, hitung sebagai 'tidak hadir' (alpa)
                 if ($day->isPast() && !$day->isToday()) {
                     $rekap['tidak hadir']++;
                 }
             }
+            
+            if ($recordLembur) {
+                $rekap['lembur']++;
+            }
         }
         
-        // 4. Format waktu terlambat
         $totalMenitTerlambat = $rekap['terlambat'];
         $jamTerlambat = floor($totalMenitTerlambat / 60);
         $menitTerlambat = $totalMenitTerlambat % 60;
@@ -151,20 +153,22 @@ class AbsenController extends Controller
         return $rekap;
     }
 
-
-    /**
-     * Metode helper untuk mendapatkan daftar rekan satu divisi dan status absensi mereka.
-     */
     protected function getDaftarRekan(User $user, Carbon $date): array
     {
         $daftarRekan = [];
         $jabatanUser = $user->jabatan;
 
+        // Logika pengambilan user diperbaiki di sini
         if (in_array($jabatanUser, ['HRD', 'Manajer', 'Direktur'])) {
-            $rekanDilihat = User::where('id', '!=', $user->id)->get();
+            // Ambil semua user KECUALI diri sendiri DAN harus role 'user'
+            $rekanDilihat = User::where('id', '!=', $user->id)
+                ->where('role', 'user') 
+                ->get();
         } else if ($user->divisi) {
+            // Ambil satu divisi KECUALI diri sendiri DAN harus role 'user'
             $rekanDilihat = User::where('divisi', $user->divisi)
                 ->where('id', '!=', $user->id)
+                ->where('role', 'user')
                 ->get();
         } else {
             $rekanDilihat = collect();
@@ -184,12 +188,10 @@ class AbsenController extends Controller
                 ];
             }
         }
+
         return $daftarRekan;
     }
 
-    /**
-     * Menyimpan data absensi masuk.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -261,15 +263,12 @@ class AbsenController extends Controller
         ]);
 
         if ($inputStatus === 'tidak hadir') {
-            return redirect()->route('absen')->with('error', 'Absensi masuk Anda melewati batas waktu (11:00). Status Anda otomatis menjadi Tidak Hadir.');
+            return redirect()->route('absen')->with('error', 'Absensi masuk Anda melewati batas waktu. Status Anda otomatis menjadi Tidak Hadir.');
         }
 
         return redirect()->route('absen')->with('success', 'Absensi berhasil direkam!');
     }
 
-    /**
-     * Menyimpan data absensi keluar.
-     */
     public function updateKeluar(Request $request, Absensi $absensi)
     {
         $request->validate([
@@ -287,8 +286,10 @@ class AbsenController extends Controller
             $pathLampiranKeluar = $request->file('lampiran_keluar')->store('lampiran_absensi_keluar', 'public');
         }
 
+        // --- UPDATE PENTING: SIMPAN TANGGAL KELUAR SAAT KLIK KELUAR ---
         $absensi->update([
             'jam_keluar'        => now()->toTimeString(),
+            'tanggal_keluar'    => now()->toDateString(), // Mengisi kolom baru
             'lampiran_keluar'   => $pathLampiranKeluar,
             'latitude_keluar'   => $request->latitude_keluar,
             'longitude_keluar'  => $request->longitude_keluar,
@@ -297,9 +298,6 @@ class AbsenController extends Controller
         return redirect()->route('absen')->with('success', 'Absensi keluar berhasil direkam!');
     }
 
-    /**
-     * Menyimpan data absensi masuk lembur.
-     */
     public function storeLembur(Request $request)
     {
         $request->validate([
@@ -310,16 +308,20 @@ class AbsenController extends Controller
         ]);
 
         $user = Auth::user();
-        $today = today()->toDateString();
+        $todayCarbon = Carbon::today();
+        $todayString = $todayCarbon->toDateString();
+
         $absensiHariIni = Absensi::where('user_id', $user->id)
-                                         ->where('tanggal', $today)
+                                         ->where('tanggal', $todayString)
                                          ->first();
 
-        if (!$absensiHariIni || !$absensiHariIni->jam_keluar) {
-            return redirect()->route('absen')->with('error', 'Anda harus absen pulang terlebih dahulu untuk memulai lembur.');
+        if (!$todayCarbon->isWeekend()) {
+            if (!$absensiHariIni || !$absensiHariIni->jam_keluar) {
+                return redirect()->route('absen')->with('error', 'Anda harus absen pulang terlebih dahulu untuk memulai lembur.');
+            }
         }
 
-        if (Lembur::where('user_id', $user->id)->where('tanggal', $today)->exists()) {
+        if (Lembur::where('user_id', $user->id)->where('tanggal', $todayString)->exists()) {
            return redirect()->route('absen')->with('error', 'Anda sudah melakukan absensi lembur masuk hari ini.');
         }
 
@@ -330,7 +332,7 @@ class AbsenController extends Controller
 
         Lembur::create([
             'user_id'   => $user->id,
-            'tanggal'   => $today,
+            'tanggal'   => $todayString,
             'jam_masuk_lembur' => now()->toTimeString(),
             'keterangan'=> $request->keterangan,
             'lampiran_masuk'   => $pathLampiranMasuk,
@@ -341,9 +343,6 @@ class AbsenController extends Controller
         return redirect()->route('absen')->with('success', 'Absensi lembur masuk berhasil direkam!');
     }
 
-    /**
-     * Menyimpan data absensi keluar lembur.
-     */
     public function updateLemburKeluar(Request $request, Lembur $lembur)
     {
         $request->validate([

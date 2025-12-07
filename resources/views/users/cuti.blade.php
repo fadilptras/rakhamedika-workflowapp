@@ -7,9 +7,9 @@
     <div class="bg-gray-100 font-sans bg-gradient-to-br from-sky-50 to-blue-100 p-0 md:p-0 min-h-screen">
         <div class="max-w-7xl mx-auto space-y-6">
 
-            <div class="flex items-right">
-                <a href="{{ route('dashboard') }}" class="text-sm font-semibold text-blue-600 hover:underline">
-                    <i class="fas fa-arrow-left mr-2"></i>Kembali ke Dashboard
+            <div class="mb-4">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
                 </a>
             </div>
 
