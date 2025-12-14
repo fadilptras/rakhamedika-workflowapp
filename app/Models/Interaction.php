@@ -13,6 +13,8 @@ class Interaction extends Model
         'client_id',
         'nama_produk',
         'jenis_transaksi',
+        'lokasi',
+        'peserta',
         'nilai_kontribusi',
         'tanggal_interaksi',
         'catatan',

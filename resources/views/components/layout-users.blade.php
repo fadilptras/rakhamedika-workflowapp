@@ -64,15 +64,11 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('pengajuan_dokumen.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
-                            <i class="fas fa-folder text-xl"></i>
+                        <a href="{{ route('pengajuan_barang.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
+                            <i class="fas fa-box-open text-xl"></i>
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('notifikasi.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
-                            <i class="fas fa-envelope-open-text text-xl"></i>
-                        </a>
-                    </li>
+                    
                     <li>
                         <a href="{{ route('crm.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
                             <i class="fas fa-users text-xl"></i>
@@ -83,9 +79,14 @@
         </div>
         
         <div class="p-4 border-t border-blue-500 space-y-4">
+            <a href="{{ route('notifikasi.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
+                <i class="fas fa-envelope-open-text text-xl"></i>
+            </a>
+
             <a href="{{ route('profil.index') }}" class="flex items-center justify-center p-3 rounded-lg hover:bg-blue-700/50">
                 <i class="fas fa-user-cog text-xl"></i>
             </a>
+
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="w-full flex items-center justify-center p-3 rounded-lg hover:bg-red-500">

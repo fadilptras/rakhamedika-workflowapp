@@ -51,9 +51,17 @@
                             <span class="ml-3 font-semibold">Kelola Admin</span>
                         </a>
                     </li>
+                    
+                    {{-- Monitoring Sales (MENU BARU - DIPINDAHKAN KESINI) --}}
+                    <li>
+                        <a href="{{ route('admin.crm.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
+                            {{ request()->routeIs('admin.crm.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            <i class="fas fa-chart-line text-xl w-8 text-center"></i>
+                            <span class="ml-3 font-semibold">Monitoring Sales</span>
+                        </a>
+                    </li>
 
                     {{-- Absensi --}}
-                    {{-- PERBAIKAN: Menambahkan 'admin.aktivitas.*' di logika x-data dan class --}}
                     <li x-data="{ open: {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lembur.*') || request()->routeIs('admin.aktivitas.*') ? 'true' : 'false' }} }">
                         <a @click.prevent="open = !open" href="#" 
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
@@ -125,6 +133,7 @@
                         </div>
                     </li>
 
+                    {{-- Agenda --}}
                     <li>
                         <a href="{{ route('admin.agenda.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200 
                             {{ request()->routeIs('admin.agenda.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
@@ -133,20 +142,13 @@
                         </a>
                     </li>
 
-    
-                    {{-- =============================================== --}}
-                    {{--         PERUBAHAN DIMULAI DARI SINI           --}}
-                    {{-- =============================================== --}}
-
-                    {{-- 1. KELOLA PENGAJUAN DANA (DROPDOWN) --}}
+                    {{-- Pengajuan Dana --}}
                     <li x-data="{ open: {{ request()->routeIs('admin.pengajuan_dana.*') ? 'true' : 'false' }} }">
                         <a @click.prevent="open = !open" href="#" 
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
                             {{ request()->routeIs('admin.pengajuan_dana.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-                            {{-- Icon diganti --}}
                             <i class="fas fa-money-bill-wave text-xl w-8 text-center"></i> 
                             <span class="ml-3 font-semibold flex-1">Kelola Pengajuan Dana</span>
-                             {{-- Badge notifikasi hanya untuk dana --}}
                             @if(isset($pending_dana_count) && $pending_dana_count > 0)
                                 <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{{ $pending_dana_count }}</span>
                             @endif
@@ -154,11 +156,9 @@
                         </a>
                         <div x-show="open" x-collapse>
                             <ul class="ml-12 mt-2 space-y-1">
-                                {{-- Link Pengajuan Dana --}}
                                 <li>
                                     <a href="{{ route('admin.pengajuan_dana.index') }}" 
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm 
-                                        {{-- Logic active state dibuat spesifik agar tidak bentrok --}}
                                         {{ request()->routeIs('admin.pengajuan_dana.index') || request()->routeIs('admin.pengajuan_dana.show') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
                                         Pengajuan Dana
                                         @if(isset($pending_dana_count) && $pending_dana_count > 0)
@@ -166,7 +166,6 @@
                                         @endif
                                     </a>
                                 </li>
-                                {{-- Link Pengaturan Approvers --}}
                                 <li>
                                     <a href="{{ route('admin.pengajuan_dana.set_approvers.index') }}" 
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm 
@@ -178,24 +177,19 @@
                         </div>
                     </li>
 
-                    {{-- 2. KELOLA PENGAJUAN DOKUMEN (LINK LANGSUNG) --}}
+                    {{-- Pengajuan Dokumen --}}
                     <li>
-                        <a href="{{ route('admin.pengajuan-dokumen.index') }}" 
+                        <a href="{{ route('admin.pengajuan_barang.index') }}" 
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 
-                            {{ request()->routeIs('admin.pengajuan-dokumen.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-                            {{-- Icon diganti --}}
-                            <i class="fas fa-file-alt text-xl w-8 text-center"></i>
-                            <span class="ml-3 font-semibold flex-1">Kelola Dokumen</span>
-                            {{-- Badge notifikasi hanya untuk dokumen --}}
-                            @if(isset($pending_dokumen_count) && $pending_dokumen_count > 0)
-                                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_dokumen_count }}</span>
+                            {{ request()->routeIs('admin.pengajuan_barang.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            <i class="fas fa-box text-xl w-8 text-center"></i>
+                            <span class="ml-3 font-semibold flex-1">Kelola Barang</span>
+                            {{-- Jika Anda ingin menambahkan badge notifikasi untuk barang nanti, bisa tambahkan logic di sini --}}
+                            @if(isset($pending_barang_count) && $pending_barang_count > 0)
+                                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_barang_count }}</span>
                             @endif
                         </a>
                     </li>
-                    
-                    {{-- =============================================== --}}
-                    {{--           PERUBAHAN SELESAI DI SINI           --}}
-                    {{-- =============================================== --}}
 
                 </ul>
             </nav>

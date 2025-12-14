@@ -12,6 +12,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\CutiNotification;
 use App\Policies\CutiPolicy;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CutiController extends Controller
 {
@@ -207,5 +208,22 @@ class CutiController extends Controller
             }
         }
         return $cutiTerpakai;
+    }
+
+    public function download(Cuti $cuti)
+    {
+        $this->authorize('view', $cuti);
+        
+        // Ambil data approver untuk ditampilkan di PDF
+        $approver = $this->getApprover($cuti->user);
+
+        $pdf = Pdf::loadView('pdf.cuti', [
+            'cuti' => $cuti,
+            'approver' => $approver
+        ]);
+        
+        $pdf->setPaper('a4', 'portrait');
+        
+        return $pdf->download('Formulir-Cuti-' . $cuti->user->name . '-' . $cuti->created_at->format('dmY') . '.pdf');
     }
 }

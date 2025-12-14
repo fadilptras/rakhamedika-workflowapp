@@ -13,18 +13,39 @@ class Client extends Model
         'user_id',
         'area',
         'pic',
+        
+        // Informasi Client
         'nama_user',
-        'nama_perusahaan',
-        'tanggal_berdiri',
         'email',
         'no_telpon',
-        'alamat',
+        'alamat_user', 
+        'tanggal_lahir',
+        
+        // Informasi Perusahaan
+        'nama_perusahaan',
+        'tanggal_berdiri',
+        'alamat_perusahaan', 
+        
+        // Informasi Bank
+        'bank',
+        'no_rekening',
+        'nama_di_rekening',
+        'saldo_awal',
+        
     ];
 
-    // Opsional: Agar otomatis dianggap tanggal oleh Laravel
     protected $casts = [
         'tanggal_berdiri' => 'date',
+        'tanggal_lahir' => 'date',
     ];
+
+    /**
+     * Relasi ke User (Sales Person) - TAMBAHKAN INI
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function interactions()
     {
@@ -33,18 +54,14 @@ class Client extends Model
 
     public function getTotalKontribusiAttribute()
     {
-        // Pastikan relasi diload dulu agar irit query
         if (!$this->relationLoaded('interactions')) {
             $this->load('interactions');
         }
 
-        // Gunakan $this->interactions (Collection) bukan $this->interactions() (Query Builder)
-        // IN (Pemasukan)
         $pemasukan = $this->interactions
                           ->where('jenis_transaksi', 'IN') 
                           ->sum('nilai_kontribusi');
         
-        // OUT (Pengeluaran)
         $pengeluaran = $this->interactions
                             ->where('jenis_transaksi', 'OUT') 
                             ->sum('nilai_kontribusi');

@@ -22,7 +22,9 @@
                         <thead class="bg-zinc-700 text-xs uppercase font-semibold text-zinc-200">
                             <tr>
                                 <th class="px-6 py-4">Nama Karyawan</th>
-                                <th class="px-6 py-4">Jatah Cuti Tahunan (Hari)</th>
+                                <th class="px-6 py-4 text-center text-amber-500">Terpakai (Thn Ini)</th>
+                                <th class="px-6 py-4 text-center text-emerald-400">Sisa Cuti</th>
+                                <th class="px-6 py-4">Jatah Cuti Tahunan (Input)</th>
                             </tr>
                         </thead>
 
@@ -30,12 +32,24 @@
                         <tbody class="divide-y divide-zinc-700">
                             @forelse ($users as $user)
                                 <tr class="hover:bg-zinc-700/30">
+                                    {{-- Nama --}}
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="font-semibold text-white">{{ $user->name }}</div>
                                         <div class="text-xs text-zinc-400">{{ $user->jabatan ?? 'Jabatan tidak diatur' }}</div>
                                     </td>
+
+                                    {{-- Terpakai --}}
+                                    <td class="px-6 py-4 text-center font-mono">
+                                        {{ $user->cuti_terpakai }} Hari
+                                    </td>
+
+                                    {{-- Sisa (Merah jika minus) --}}
+                                    <td class="px-6 py-4 text-center font-bold font-mono {{ $user->sisa_cuti < 0 ? 'text-red-500' : 'text-emerald-400' }}">
+                                        {{ $user->sisa_cuti }} Hari
+                                    </td>
+
+                                    {{-- Input Jatah --}}
                                     <td class="px-6 py-4">
-                                        {{-- Input field yang sudah di-styling --}}
                                         <input 
                                             type="number" 
                                             name="jatah_cuti[{{ $user->id }}]" 
@@ -47,7 +61,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="2" class="text-center py-10 text-zinc-400">
+                                    <td colspan="4" class="text-center py-10 text-zinc-400">
                                         <i class="fas fa-users-slash fa-2x mb-2"></i>
                                         <p>Belum ada data karyawan.</p>
                                     </td>

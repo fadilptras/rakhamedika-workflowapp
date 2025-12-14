@@ -8,18 +8,28 @@
         <div class="max-w-4xl mx-auto">
             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
                 
-                {{-- Header Halaman --}}
+                {{-- HEADER HALAMAN (UPDATED: Ada Tombol PDF) --}}
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-200 mb-6">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900">Detail Pengajuan Cuti</h1>
                         <p class="text-sm text-gray-500 mt-1">Diajukan pada {{ $cuti->created_at->format('d F Y, H:i') }}</p>
                     </div>
-                    @if(Auth::id() == $cuti->user_id)
-                    <a href="{{ route('cuti.create') }}" class="mt-4 sm:mt-0 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800">
-                        <i class="fas fa-arrow-left"></i>
-                        Kembali ke Riwayat
-                    </a>
-                @endif
+                    
+                    <div class="mt-4 sm:mt-0 flex flex-wrap gap-3">
+                        {{-- Tombol Kembali --}}
+                        @if(Auth::id() == $cuti->user_id)
+                            <a href="{{ route('cuti.create') }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors">
+                                <i class="fas fa-arrow-left"></i>
+                                Kembali
+                            </a>
+                        @endif
+
+                        {{-- Tombol Cetak PDF --}}
+                        <a href="{{ route('cuti.download', $cuti) }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                            <i class="fas fa-file-pdf"></i>
+                            Cetak PDF
+                        </a>
+                    </div>
                 </div>
 
                 <div class="space-y-6">

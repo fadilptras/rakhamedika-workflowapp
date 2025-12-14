@@ -5,18 +5,19 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Cuti;
 use App\Models\Absensi;
-use App\Models\User; // Ditambahkan
-use Illuminate\Http\Request; // Ditambahkan
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon; 
 
 class CutiController extends Controller
 {
     /**
      * Menampilkan daftar semua pengajuan cuti dengan filter.
      */
-    public function index(Request $request) // Request ditambahkan
+    public function index(Request $request)
     {
         $query = Cuti::with('user')->latest();
 
@@ -31,13 +32,13 @@ class CutiController extends Controller
             $query->whereBetween('tanggal_mulai', [$request->tanggal_mulai, $request->tanggal_akhir]);
         }
 
-        $cutiRequests = $query->paginate(10)->withQueryString(); // withQueryString() agar filter tetap aktif saat pindah halaman
+        $cutiRequests = $query->paginate(10)->withQueryString(); 
         $users = User::where('role', 'user')->orderBy('name')->get();
 
         return view('admin.cuti.index', [
             'title' => 'Manajemen Pengajuan Cuti',
             'cutiRequests' => $cutiRequests,
-            'users' => $users, // Kirim data user untuk filter
+            'users' => $users, 
         ]);
     }
     
@@ -65,6 +66,7 @@ class CutiController extends Controller
         $userJabatan = strtolower($user->jabatan);
         $catatan = $request->status === 'disetujui' ? $request->catatan_persetujuan : $request->catatan_penolakan;
 
+        // Logika Manajer
         if ($userJabatan === 'manajer' && $cuti->status_manajer === 'diajukan') {
             $cuti->update([
                 'status_manajer' => $request->status,
@@ -78,6 +80,7 @@ class CutiController extends Controller
             return redirect()->route('admin.cuti.show', $cuti)->with('success', 'Status pengajuan cuti berhasil diperbarui oleh Manajer.');
         }
 
+        // Logika HRD
         if ($userJabatan === 'hrd' && $cuti->status_manajer === 'disetujui' && $cuti->status_hrd === 'diajukan') {
             $cuti->update([
                 'status_hrd' => $request->status,
@@ -86,6 +89,7 @@ class CutiController extends Controller
 
             $cuti->update(['status' => $request->status]);
 
+            // Jika disetujui HRD, masukkan ke tabel Absensi
             if ($request->status === 'disetujui') {
                  $period = CarbonPeriod::create($cuti->tanggal_mulai, $cuti->tanggal_selesai);
                  foreach ($period as $date) {
@@ -104,10 +108,31 @@ class CutiController extends Controller
 
     /**
      * Menampilkan halaman pengaturan jatah cuti untuk admin.
+     * UPDATE: Menambahkan perhitungan sisa cuti.
      */
     public function pengaturanCuti()
     {
-        $users = User::where('role', 'user')->get(); // Ambil karyawan saja
+        // Ambil user dan hitung sisa cuti on-the-fly
+        $users = User::where('role', 'user')->get()->map(function ($user) {
+            
+            // Hitung total hari cuti yang SUDAH DISETUJUI tahun ini
+            $terpakai = Cuti::where('user_id', $user->id)
+                ->where('status', 'disetujui')
+                ->whereYear('tanggal_mulai', now()->year) // Hanya hitung tahun berjalan
+                ->get()
+                ->sum(function ($cuti) {
+                    $start = Carbon::parse($cuti->tanggal_mulai);
+                    $end = Carbon::parse($cuti->tanggal_selesai);
+                    return $start->diffInDays($end) + 1; // +1 agar inklusif
+                });
+
+            // Attach data sementara ke object user
+            $user->cuti_terpakai = $terpakai;
+            $user->sisa_cuti = ($user->jatah_cuti ?? 0) - $terpakai;
+            
+            return $user;
+        });
+
         return view('admin.cuti.pengaturan', [
             'title' => 'Pengaturan Jatah Cuti',
             'users' => $users

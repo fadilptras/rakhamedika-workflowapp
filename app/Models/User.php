@@ -10,6 +10,7 @@ use Illuminate\Notifications\Notifiable;
 use App\Models\PengajuanDana;
 use App\Models\RiwayatPendidikan;
 use App\Models\RiwayatPekerjaan;
+use App\Models\PengajuanBarang;
 
 class User extends Authenticatable
 {
@@ -129,5 +130,10 @@ class User extends Authenticatable
     public function riwayatPekerjaan(): HasMany
     {
         return $this->hasMany(RiwayatPekerjaan::class, 'user_id');
+    }
+
+    public function pengajuanBarangs(): HasMany
+    {
+        return $this->hasMany(PengajuanBarang::class);
     }
 }

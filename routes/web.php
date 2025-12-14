@@ -21,6 +21,9 @@ use App\Http\Controllers\CrmController;
 use App\Http\Controllers\AktivitasController;
 use App\Http\Controllers\Admin\AdminAktivitasController;
 use App\Http\Controllers\InteractionController;
+use App\Http\Controllers\Admin\AdminCrmController;
+use App\Http\Controllers\PengajuanBarangController;
+use App\Http\Controllers\Admin\AdminPengajuanBarangController;
 
 // Route utama, langsung arahkan ke halaman login
 Route::get('/', fn() => redirect()->route('login'));
@@ -58,6 +61,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/cuti/{cuti}', [CutiController::class, 'show'])->name('cuti.show');
     Route::match(['PUT', 'PATCH'], '/cuti/{cuti}/status', [CutiController::class, 'updateStatus'])->name('cuti.updateStatus');
     Route::post('/cuti/{cuti}/cancel', [CutiController::class, 'cancel'])->name('cuti.cancel');
+    Route::get('/cuti/{cuti}/download', [CutiController::class, 'download'])->name('cuti.download');
     
     // Notifikasi
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
@@ -106,6 +110,11 @@ Route::controller(CrmController::class)->group(function () {
     Route::post('/crm/interaction/support', 'storeSupport')->name('crm.interaction.support');
     Route::delete('/crm/client/{client}', 'destroyClient')->name('crm.client.destroy');
     Route::delete('/crm/interaction/{interaction}', 'destroyInteraction')->name('crm.interaction.destroy');
+    Route::get('/crm/matrix/export', 'exportMatrix')->name('crm.matrix.export');
+    Route::get('/crm/{client}/export', 'exportClientRecap')->name('crm.client.export');
+    Route::get('/crm/client/{client}/edit', [CrmController::class, 'edit'])->name('crm.client.edit');
+    Route::put('/crm/client/{client}', [CrmController::class, 'update'])->name('crm.client.update');
+    Route::post('/crm/interaction/entertain', 'storeEntertain')->name('crm.interaction.entertain');
 });
 
     Route::resource('aktivitas', AktivitasController::class)
@@ -119,6 +128,23 @@ Route::controller(CrmController::class)->group(function () {
 
     Route::get('/kirim-ulang-tahun', [NotifikasiController::class, 'kirimUlangTahun'])
         ->name('notifikasi.ulangtahun');
+
+    Route::controller(PengajuanBarangController::class)
+        ->prefix('pengajuan-barang')
+        ->name('pengajuan_barang.')
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            
+            // Halaman Detail
+            Route::get('/{pengajuanBarang}', 'show')->name('show');
+            
+            // Action Approve & Reject
+            Route::post('/{pengajuanBarang}/approve', 'approve')->name('approve');
+            Route::post('/{pengajuanBarang}/reject', 'reject')->name('reject');
+            Route::get('/{pengajuanBarang}/download', 'download')->name('download');
+            Route::post('/{pengajuanBarang}/cancel', 'cancel')->name('cancel');
+        });
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -200,5 +226,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
 
     Route::get('aktivitas', [AdminAktivitasController::class, 'index'])->name('aktivitas.index');
+
+    Route::controller(AdminCrmController::class)->prefix('crm')->name('crm.')->group(function () {
+            Route::get('/', 'index')->name('index');       // route('admin.crm.index')
+            Route::get('/{client}', 'show')->name('show'); // route('admin.crm.show')
+            Route::put('/client/{client}', 'update')->name('client.update'); // Route Edit Klien
+            Route::delete('/client/{client}', 'destroyClient')->name('client.destroy'); // Route Hapus Klien
+            Route::delete('/interaction/{interaction}', 'destroyInteraction')->name('interaction.destroy'); // Route Hapus Transaksi
+            Route::get('/{client}/export', 'exportClientRecap')->name('client.export'); // Route Export Excel
+            Route::post('/interaction', 'storeInteraction')->name('interaction.store'); // Simpan Sales (IN)
+            Route::post('/interaction/support', 'storeSupport')->name('interaction.support'); // Simpan Support (OUT)
+        });
     
+    // Pengajuan Barang (Admin)
+    Route::prefix('pengajuan-barang')->name('pengajuan_barang.')->group(function() {
+        Route::get('/', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'index'])->name('index');
+        Route::get('/rekap-pdf', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'downloadRekapPDF'])->name('downloadRekapPdf');
+        Route::get('/{pengajuanBarang}', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'show'])->name('show');
+        Route::get('/{pengajuanBarang}/download', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'downloadPDF'])->name('downloadPdf');
+    });
 });

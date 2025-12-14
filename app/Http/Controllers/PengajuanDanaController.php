@@ -30,7 +30,7 @@ class PengajuanDanaController extends Controller
 
         // Mengarah ke view 'resources/views/users/pengajuan-dana.blade.php'
         return view('users.pengajuan-dana', [
-            'title' => 'Riwayat Pengajuan Dana Saya',
+            'title' => 'Pengajuan Dana',
             'pengajuanDanas' => $pengajuanDanas,
         ]);
     }
