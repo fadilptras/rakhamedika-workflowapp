@@ -2,20 +2,28 @@
 
     <div class="w-full max-w-7xl mx-auto px-0 py-0 relative">
         
-        <div class="mb-6">
+        {{-- TOMBOL KEMBALI & FLASH MESSAGE --}}
+        <div class="mb-6 flex justify-between items-center">
             <a href="{{ route('admin.crm.index') }}" class="inline-flex items-center text-zinc-400 hover:text-amber-500 font-semibold transition-colors text-sm">
                 <i class="fas fa-arrow-left mr-2"></i> Kembali ke Monitoring Sales
             </a>
         </div>
 
-        {{-- SECTION 1: HERO PROFILE (Nama & Total Sales) --}}
+        @if (session('success'))
+        <div class="mb-6 bg-emerald-900/50 border-l-4 border-emerald-500 text-emerald-200 p-4 rounded-r shadow-sm flex items-center animate-fade-in-down">
+            <i class="fas fa-check-circle mr-3 text-lg"></i>
+            <div>
+                <p class="font-bold">Berhasil</p>
+                <p class="text-sm">{{ session('success') }}</p>
+            </div>
+        </div>
+        @endif
+
+        {{-- SECTION 1: HERO PROFILE --}}
         <div class="bg-gradient-to-r from-zinc-800 to-zinc-900 rounded-xl shadow-lg border border-zinc-700/50 p-6 mb-6 relative overflow-hidden group">
-            {{-- Dekorasi Background --}}
             <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
             <div class="flex flex-col md:flex-row justify-between items-start gap-6 relative z-10">
-                
-                {{-- Kiri: Identitas Utama --}}
                 <div class="flex-grow">
                     <div class="flex items-center gap-3 mb-3">
                         <span class="bg-amber-500/10 text-amber-500 text-xs font-bold px-3 py-1 rounded-full border border-amber-500/20 uppercase tracking-wide">
@@ -31,12 +39,11 @@
                     </h1>
                     
                     <p class="text-zinc-400 text-sm flex items-center gap-4">
-                        <span class="flex items-center"><i class="fas fa-map-pin mr-2 text-red-500"></i> {{ $client->area ?? 'Area Belum diset' }}</span>
+                        <span class="flex items-center"> {{ $client->area ?? 'Area Belum diset' }}</span>
                         <span class="text-zinc-600">|</span>
                         <span class="flex items-center"><i class="fas fa-calendar-alt mr-2 text-blue-500"></i> Join: {{ $client->created_at->format('d M Y') }}</span>
                     </p>
 
-                    {{-- TOMBOL AKSI (Edit & Hapus) --}}
                     <div class="flex items-center gap-3 mt-6">
                         <button onclick="toggleModal('editClientModal')" class="flex items-center text-xs font-bold text-amber-400 bg-amber-900/20 hover:bg-amber-900/40 px-4 py-2 rounded-lg border border-amber-800/50 transition">
                             <i class="fas fa-edit mr-2"></i> Edit Data Lengkap
@@ -71,21 +78,18 @@
         {{-- SECTION 2: DATA LENGKAP KLIEN (GRID 3 KOLOM) --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             
-            {{-- KARTU 1: KONTAK & ALAMAT --}}
+            {{-- KARTU 1: PERSONAL & KONTAK --}}
             <div class="bg-zinc-800 rounded-xl border border-zinc-700/50 p-5 shadow-lg flex flex-col h-full">
                 <div class="mb-4 pb-3 border-b border-zinc-700 flex items-center justify-between">
                     <h4 class="text-sm font-bold text-zinc-300 uppercase tracking-wide">
-                        <i class="fas fa-address-book mr-2 text-blue-500"></i> Kontak
+                        <i class="fas fa-address-book mr-2 text-blue-500"></i> Personal Info
                     </h4>
                 </div>
                 <div class="space-y-4 flex-grow">
                     <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Email</p>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Email & Telepon</p>
                         <p class="text-zinc-200 text-sm font-medium">{{ $client->email ?? '-' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">No. Telepon / WA</p>
-                        <p class="text-zinc-200 text-sm font-medium flex items-center">
+                        <p class="text-zinc-200 text-sm font-medium flex items-center mt-1">
                             {{ $client->no_telpon ?? '-' }}
                             @if($client->no_telpon)
                                 <a href="https://wa.me/{{ preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $client->no_telpon)) }}" target="_blank" class="ml-2 text-green-500 hover:text-green-400"><i class="fab fa-whatsapp"></i></a>
@@ -93,8 +97,14 @@
                         </p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Alamat Lengkap</p>
-                        <p class="text-zinc-300 text-sm leading-relaxed">{{ $client->alamat ?? '-' }}</p>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Tanggal Lahir</p>
+                        <p class="text-zinc-200 text-sm font-medium">
+                            {{ $client->tanggal_lahir ? \Carbon\Carbon::parse($client->tanggal_lahir)->translatedFormat('d F Y') : '-' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Alamat Rumah</p>
+                        <p class="text-zinc-300 text-sm leading-relaxed">{{ $client->alamat_user ?? '-' }}</p>
                     </div>
                 </div>
             </div>
@@ -103,37 +113,34 @@
             <div class="bg-zinc-800 rounded-xl border border-zinc-700/50 p-5 shadow-lg flex flex-col h-full">
                 <div class="mb-4 pb-3 border-b border-zinc-700 flex items-center justify-between">
                     <h4 class="text-sm font-bold text-zinc-300 uppercase tracking-wide">
-                        <i class="fas fa-hospital mr-2 text-amber-500"></i> Data Instansi
+                        <i class="fas fa-hospital mr-2 text-amber-500"></i> Perusahaan
                     </h4>
                 </div>
                 <div class="space-y-4 flex-grow">
                     <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">PIC Klien (Internal)</p>
-                        <p class="text-zinc-200 text-sm font-medium">{{ $client->pic ?? '-' }}</p>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Nama Instansi</p>
+                        <p class="text-zinc-200 text-sm font-bold">{{ $client->nama_perusahaan }}</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Tanggal Berdiri</p>
-                        <p class="text-zinc-200 text-sm font-medium">
-                            @if($client->tanggal_berdiri)
-                                {{ \Carbon\Carbon::parse($client->tanggal_berdiri)->format('d F Y') }}
-                                <span class="text-[10px] text-zinc-500 ml-1">({{ \Carbon\Carbon::parse($client->tanggal_berdiri)->age }} Tahun)</span>
-                            @else
-                                -
-                            @endif
-                        </p>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Berdiri & Area</p>
+                        <div class="flex items-center gap-2">
+                            <span class="text-zinc-200 text-sm">
+                                {{ $client->tanggal_berdiri ? \Carbon\Carbon::parse($client->tanggal_berdiri)->format('Y') : '-' }}
+                            </span>
+                            <span class="bg-zinc-700 text-zinc-300 text-[10px] px-2 py-0.5 rounded">
+                                {{ $client->area ?? 'Non-Area' }}
+                            </span>
+                        </div>
                     </div>
                     <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Wilayah / Area</p>
-                        <span class="bg-zinc-700 text-zinc-300 text-xs px-2 py-1 rounded inline-block">
-                            {{ $client->area ?? '-' }}
-                        </span>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Alamat Kantor</p>
+                        <p class="text-zinc-300 text-sm leading-relaxed">{{ $client->alamat_perusahaan ?? '-' }}</p>
                     </div>
                 </div>
             </div>
 
-            {{-- KARTU 3: INFORMASI KEUANGAN --}}
+            {{-- KARTU 3: KEUANGAN --}}
             <div class="bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl border border-zinc-700/50 p-5 shadow-lg flex flex-col h-full relative overflow-hidden">
-                {{-- Efek Kartu Kredit --}}
                 <div class="absolute -right-6 -bottom-6 text-9xl text-white/5 rotate-12 pointer-events-none">
                     <i class="fas fa-wallet"></i>
                 </div>
@@ -144,11 +151,15 @@
                     </h4>
                     <i class="fas fa-wifi text-zinc-600 rotate-90"></i>
                 </div>
-                <div class="space-y-5 relative z-10">
+                <div class="space-y-4 relative z-10">
                     <div>
-                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Bank & No. Rekening</p>
-                        <p class="text-white text-lg font-bold tracking-wide">{{ $client->bank ?? 'BANK' }}</p>
-                        <p class="text-zinc-300 text-sm font-mono tracking-wider">{{ $client->no_rekening ?? '---- ---- ----' }}</p>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Bank</p>
+                        <p class="text-white text-lg font-bold tracking-wide">{{ $client->bank ?? 'BANK -' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">No. Rekening</p>
+                        <p class="text-zinc-300 text-sm font-mono tracking-wider">{{ $client->no_rekening ?? '----' }}</p>
+                        <p class="text-zinc-500 text-xs mt-0.5">{{ $client->nama_di_rekening ? 'A/n '.$client->nama_di_rekening : '' }}</p>
                     </div>
                     <div class="pt-2 border-t border-zinc-700/50">
                         <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Saldo Awal</p>
@@ -160,10 +171,9 @@
             </div>
         </div>
 
-        {{-- SECTION 3: TABS NAVIGATION (DIPISAH KIRI & KANAN) --}}
+        {{-- SECTION 3: TABS NAVIGATION --}}
         <div class="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            
-            {{-- BAGIAN KIRI: MONITORING DATA --}}
+            {{-- Kiri: Navigasi Data --}}
             <div class="bg-zinc-900 p-1 rounded-lg inline-flex border border-zinc-700 w-full md:w-auto justify-center md:justify-start">
                 <button id="btn-history" onclick="switchTab('history')" class="px-6 py-2 rounded-md text-sm font-bold bg-zinc-700 text-amber-500 shadow-sm transition-all flex-1 md:flex-none">
                     <i class="fas fa-history mr-2"></i> Riwayat
@@ -173,30 +183,27 @@
                 </button>
             </div>
 
-            {{-- BAGIAN KANAN: INPUT TRANSAKSI --}}
-            <div class="bg-zinc-900 p-1 rounded-lg inline-flex border border-zinc-700 w-full md:w-auto justify-center md:justify-end gap-1">
-                {{-- Tombol Sales (IN) --}}
-                <button id="btn-sales" onclick="switchTab('sales')" class="px-5 py-2 rounded-md text-sm font-bold text-zinc-500 hover:text-emerald-400 transition-all flex-1 md:flex-none">
+            {{-- Kanan: Navigasi Input --}}
+            <div class="bg-zinc-900 p-1 rounded-lg inline-flex border border-zinc-700 w-full md:w-auto justify-center md:justify-end gap-1 overflow-x-auto">
+                <button id="btn-sales" onclick="switchTab('sales')" class="px-4 py-2 rounded-md text-sm font-bold text-zinc-500 hover:text-emerald-400 transition-all whitespace-nowrap">
                     <i class="fas fa-plus-circle mr-2"></i> Sales (In)
                 </button>
-                {{-- Tombol Support (OUT) --}}
-                <button id="btn-support" onclick="switchTab('support')" class="px-5 py-2 rounded-md text-sm font-bold text-zinc-500 hover:text-red-400 transition-all flex-1 md:flex-none">
+                <button id="btn-support" onclick="switchTab('support')" class="px-4 py-2 rounded-md text-sm font-bold text-zinc-500 hover:text-red-400 transition-all whitespace-nowrap">
                     <i class="fas fa-hand-holding-usd mr-2"></i> Usage (Out)
                 </button>
+                <button id="btn-activity" onclick="switchTab('activity')" class="px-4 py-2 rounded-md text-sm font-bold text-zinc-500 hover:text-purple-400 transition-all whitespace-nowrap">
+                    <i class="fas fa-glass-cheers mr-2"></i> Activity
+                </button>
             </div>
-
         </div>
 
         {{-- SECTION 4: CONTENT AREA --}}
         
-        {{-- [TAB 1] TAB FORM SALES (IN) --}}
+        {{-- [TAB 1] SALES (IN) --}}
         <div id="section-sales" class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700/50 overflow-hidden relative hidden">
             <div class="bg-emerald-900/20 px-6 py-4 border-b border-emerald-900/50 flex justify-between items-center">
                 <h3 class="font-bold text-emerald-400 text-lg flex items-center">
-                    <span class="w-8 h-8 bg-emerald-600 text-white rounded-lg flex items-center justify-center mr-3 text-sm shadow">
-                        <i class="fas fa-plus"></i>
-                    </span>
-                    Input Penjualan (Admin)
+                    <i class="fas fa-plus-circle mr-3"></i> Input Penjualan (Admin)
                 </h3>
             </div>
             <div class="p-6 md:p-8">
@@ -207,55 +214,40 @@
                         <div class="space-y-5">
                             <div>
                                 <label class="block text-sm font-bold text-zinc-400 mb-1">Tanggal Transaksi <span class="text-red-500">*</span></label>
-                                <input type="date" name="tanggal_interaksi" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:ring-emerald-500 focus:border-emerald-500 px-4 py-2.5" required>
+                                <input type="date" name="tanggal_interaksi" value="{{ date('Y-m-d') }}" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-emerald-500 px-4 py-2.5 [color-scheme:dark]" required>
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-zinc-400 mb-1">Nama Produk / Layanan <span class="text-red-500">*</span></label>
-                                <input type="text" name="nama_produk" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:ring-emerald-500 focus:border-emerald-500 px-4 py-2.5" placeholder="Contoh: Kassa Lipat" required>
+                                <label class="block text-sm font-bold text-zinc-400 mb-1">Nama Produk <span class="text-red-500">*</span></label>
+                                <input type="text" name="nama_produk" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-emerald-500 px-4 py-2.5" placeholder="Contoh: Kassa Lipat" required>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-zinc-500 mb-1">Catatan Tambahan</label>
-                                <textarea name="catatan" rows="3" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:ring-emerald-500 focus:border-emerald-500 px-4 py-2.5"></textarea>
+                                <label class="block text-sm font-semibold text-zinc-500 mb-1">Catatan</label>
+                                <textarea name="catatan" rows="3" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-emerald-500 px-4 py-2.5"></textarea>
                             </div>
                         </div>
                         <div class="space-y-5 bg-zinc-900/50 p-6 rounded-xl border border-zinc-700">
                             <div>
                                 <label class="block text-sm font-bold text-zinc-400 mb-1">Nilai Sales (Rp) <span class="text-red-500">*</span></label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                      <span class="text-zinc-500 sm:text-sm">Rp</span>
-                                    </div>
-                                    <input type="number" name="nilai_sales" class="w-full bg-zinc-800 border-zinc-600 rounded-lg shadow-sm text-white focus:ring-emerald-500 focus:border-emerald-500 pl-10 px-4 py-2.5 font-mono text-lg" placeholder="0" required>
-                                </div>
+                                <input type="text" id="inputSales" name="nilai_sales" class="w-full bg-zinc-800 border-zinc-600 rounded-lg shadow-sm text-white focus:border-emerald-500 px-4 py-2.5 font-mono text-lg" placeholder="0" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-zinc-400 mb-1">Komisi (%) <span class="text-red-500">*</span></label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <input type="number" name="komisi" step="0.1" max="100" class="w-full bg-zinc-800 border-zinc-600 rounded-lg shadow-sm text-white focus:ring-emerald-500 focus:border-emerald-500 px-4 py-2.5 font-mono" placeholder="10" required>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                      <span class="text-zinc-500 sm:text-sm">%</span>
-                                    </div>
-                                </div>
+                                <input type="number" name="komisi" step="0.1" max="100" class="w-full bg-zinc-800 border-zinc-600 rounded-lg shadow-sm text-white focus:border-emerald-500 px-4 py-2.5 font-mono" placeholder="10" required>
                             </div>
-                            <div class="pt-2">
-                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform active:scale-95 flex justify-center items-center gap-2">
-                                    <i class="fas fa-save"></i> Simpan Data Sales
-                                </button>
-                            </div>
+                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform active:scale-95 flex justify-center items-center gap-2 mt-2">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
 
-        {{-- [TAB 2] TAB FORM SUPPORT (OUT) --}}
+        {{-- [TAB 2] SUPPORT (OUT) --}}
         <div id="section-support" class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700/50 overflow-hidden relative hidden">
             <div class="bg-red-900/20 px-6 py-4 border-b border-red-900/50 flex justify-between items-center">
                 <h3 class="font-bold text-red-400 text-lg flex items-center">
-                    <span class="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center mr-3 text-sm shadow">
-                        <i class="fas fa-hand-holding-usd"></i>
-                    </span>
-                    Pengeluaran Support (Admin)
+                    <i class="fas fa-hand-holding-usd mr-3"></i> Pengeluaran Support (Admin)
                 </h3>
             </div>
             <div class="p-6 md:p-8">
@@ -266,40 +258,80 @@
                         <div class="space-y-5">
                             <div>
                                 <label class="block text-sm font-bold text-zinc-400 mb-1">Tanggal <span class="text-red-500">*</span></label>
-                                <input type="date" name="tanggal_interaksi" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:ring-red-500 focus:border-red-500 px-4 py-2.5" required>
+                                <input type="date" name="tanggal_interaksi" value="{{ date('Y-m-d') }}" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-red-500 px-4 py-2.5 [color-scheme:dark]" required>
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-zinc-400 mb-1">Keperluan Support <span class="text-red-500">*</span></label>
-                                <input type="text" name="keperluan" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:ring-red-500 focus:border-red-500 px-4 py-2.5" placeholder="Contoh: Transport" required>
+                                <label class="block text-sm font-bold text-zinc-400 mb-1">Keperluan <span class="text-red-500">*</span></label>
+                                <input type="text" name="keperluan" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-red-500 px-4 py-2.5" placeholder="Contoh: Transport" required>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-zinc-500 mb-1">Catatan Detail</label>
-                                <textarea name="catatan" rows="3" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:ring-red-500 focus:border-red-500 px-4 py-2.5"></textarea>
+                                <label class="block text-sm font-semibold text-zinc-500 mb-1">Catatan</label>
+                                <textarea name="catatan" rows="3" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-red-500 px-4 py-2.5"></textarea>
                             </div>
                         </div>
                         <div class="space-y-5 bg-zinc-900/50 p-6 rounded-xl border border-zinc-700">
                             <div>
                                 <label class="block text-sm font-bold text-zinc-400 mb-1">Nominal Keluar (Rp) <span class="text-red-500">*</span></label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                      <span class="text-zinc-500 sm:text-sm">Rp</span>
-                                    </div>
-                                    <input type="number" name="nominal" class="w-full bg-zinc-800 border-zinc-600 rounded-lg shadow-sm text-white focus:ring-red-500 focus:border-red-500 pl-10 px-4 py-2.5 font-mono text-lg" placeholder="0" required>
-                                </div>
-                                <p class="text-xs text-red-400 mt-2 flex items-center"><i class="fas fa-info-circle mr-1"></i> Mengurangi saldo kontribusi</p>
+                                <input type="text" id="inputSupport" name="nominal" class="w-full bg-zinc-800 border-zinc-600 rounded-lg shadow-sm text-white focus:border-red-500 px-4 py-2.5 font-mono text-lg" placeholder="0" required>
+                                <p class="text-xs text-red-400 mt-2 flex items-center"><i class="fas fa-info-circle mr-1"></i> Mengurangi saldo</p>
                             </div>
-                            <div class="pt-10">
-                                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform active:scale-95 flex justify-center items-center gap-2">
-                                    <i class="fas fa-minus-circle"></i> Simpan Pengeluaran
-                                </button>
-                            </div>
+                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform active:scale-95 flex justify-center items-center gap-2 mt-8">
+                                <i class="fas fa-minus-circle"></i> Simpan
+                            </button>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
 
-        {{-- [TAB 3] RIWAYAT TRANSAKSI --}}
+        {{-- [TAB 3] ACTIVITY (ENTERTAIN) --}}
+        <div id="section-activity" class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700/50 overflow-hidden relative hidden">
+            <div class="bg-purple-900/20 px-6 py-4 border-b border-purple-900/50 flex justify-between items-center">
+                <h3 class="font-bold text-purple-400 text-lg flex items-center">
+                    <i class="fas fa-glass-cheers mr-3"></i> Catat Aktivitas / Entertain (Admin)
+                </h3>
+            </div>
+            <div class="p-6 md:p-8">
+                <form action="{{ route('admin.crm.interaction.entertain') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="client_id" value="{{ $client->id }}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                        <div class="space-y-5">
+                            <div>
+                                <label class="block text-sm font-bold text-zinc-400 mb-1">Tanggal <span class="text-red-500">*</span></label>
+                                <input type="date" name="tanggal_interaksi" value="{{ date('Y-m-d') }}" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-purple-500 px-4 py-2.5 [color-scheme:dark]" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-zinc-400 mb-1">Judul Kegiatan <span class="text-red-500">*</span></label>
+                                <input type="text" name="catatan" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-purple-500 px-4 py-2.5" placeholder="Contoh: Makan Siang / Meeting" required>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-zinc-400 mb-1">Lokasi</label>
+                                    <input type="text" name="lokasi" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-purple-500 px-4 py-2.5" placeholder="Nama Tempat">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-zinc-400 mb-1">Peserta</label>
+                                    <input type="text" name="peserta" class="w-full bg-zinc-900 border-zinc-600 rounded-lg shadow-sm text-white focus:border-purple-500 px-4 py-2.5" placeholder="Client / User">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-5 bg-zinc-900/50 p-6 rounded-xl border border-zinc-700">
+                            <div>
+                                <label class="block text-sm font-bold text-zinc-400 mb-1">Biaya / Cost (Rp) <span class="text-red-500">*</span></label>
+                                <input type="text" id="inputEntertain" name="nominal" class="w-full bg-zinc-800 border-zinc-600 rounded-lg shadow-sm text-white focus:border-purple-500 px-4 py-2.5 font-mono text-lg" placeholder="0" required>
+                                <p class="text-xs text-purple-400 mt-2 flex items-center"><i class="fas fa-check-circle mr-1"></i> Tidak mengurangi saldo klien</p>
+                            </div>
+                            <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform active:scale-95 flex justify-center items-center gap-2 mt-8">
+                                <i class="fas fa-save"></i> Simpan Aktivitas
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- [TAB 4] RIWAYAT TRANSAKSI --}}
         <div id="section-history" class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700/50 overflow-hidden">
              <div class="px-6 py-4 border-b border-zinc-700 bg-zinc-800 flex justify-between items-center">
                 <h3 class="font-bold text-zinc-200">Data Transaksi</h3>
@@ -313,7 +345,7 @@
                             <th class="px-6 py-3">Item / Keterangan</th>
                             <th class="px-6 py-3 text-right">Sales (In)</th>
                             <th class="px-6 py-3 text-center">Komisi</th>
-                            <th class="px-6 py-3 text-right text-blue-400">Value (In x Komisi)</th>
+                            <th class="px-6 py-3 text-right text-blue-400">Value (Net)</th>
                             <th class="px-6 py-3 text-right text-red-400">Usage (Out)</th>
                             <th class="px-6 py-3 text-center">Opsi</th>
                         </tr>
@@ -322,42 +354,68 @@
                         @forelse ($interactions as $item)
                         @php
                             $isOut = $item->jenis_transaksi == 'OUT';
+                            $isEntertain = $item->jenis_transaksi == 'ENTERTAIN';
+                            
                             $rate = $item->komisi ?? 0;
                             if(!$isOut && !$rate && preg_match('/\[Rate:([\d\.]+)\]/', $item->catatan, $m)) { $rate = $m[1]; }
                             $displayNote = trim(preg_replace('/\[Rate:[\d\.]+\]/', '', $item->catatan));
+                            
                             $gross = ($item->nilai_sales > 0) ? $item->nilai_sales : $item->nilai_kontribusi;
                             $valueNet = $isOut ? 0 : ($gross * ($rate/100));
+                            
+                            // Style Row
+                            $rowClass = "hover:bg-zinc-700/30 transition";
+                            if($isEntertain) $rowClass = "bg-purple-900/10 hover:bg-purple-900/20 transition border-l-4 border-purple-500";
                         @endphp
-                        <tr class="hover:bg-zinc-700/30 transition">
+                        
+                        <tr class="{{ $rowClass }}">
                             <td class="px-6 py-3 font-medium text-zinc-400">
                                 {{ \Carbon\Carbon::parse($item->tanggal_interaksi)->format('d/m/Y') }}
                             </td>
                             <td class="px-6 py-3">
-                                <div class="font-bold {{ $isOut ? 'text-red-400' : 'text-zinc-200' }}">
-                                    {{ $item->nama_produk }}
-                                </div>
-                                <div class="text-xs text-zinc-500 italic">{{ $displayNote }}</div>
+                                @if($isEntertain)
+                                    <div class="font-bold text-purple-400">Aktivitas: {{ $displayNote }}</div>
+                                    <div class="text-xs text-zinc-500 italic mt-0.5"><i class="fas fa-map-marker-alt text-purple-500/50"></i> {{ $item->lokasi ?? '-' }} &bull; | {{ $item->peserta ?? '-' }}</div>
+                                @else
+                                    <div class="font-bold {{ $isOut ? 'text-red-400' : 'text-zinc-200' }}">{{ $item->nama_produk }}</div>
+                                    <div class="text-xs text-zinc-500 italic">{{ $displayNote }}</div>
+                                @endif
                             </td>
+                            
+                            {{-- Kolom IN --}}
                             <td class="px-6 py-3 text-right font-mono text-emerald-500">
-                                {{ !$isOut ? number_format($gross, 0, ',', '.') : '-' }}
+                                {{ (!$isOut && !$isEntertain) ? number_format($gross, 0, ',', '.') : '-' }}
                             </td>
+                            
+                            {{-- Komisi --}}
                             <td class="px-6 py-3 text-center">
-                                @if(!$isOut && $rate > 0)
+                                @if(!$isOut && !$isEntertain && $rate > 0)
                                     <span class="bg-zinc-700 text-zinc-300 text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-600">{{ $rate }}%</span>
                                 @else
                                     -
                                 @endif
                             </td>
+                            
+                            {{-- Value NET --}}
                             <td class="px-6 py-3 text-right font-bold font-mono text-blue-400">
-                                {{ !$isOut ? number_format($valueNet, 0, ',', '.') : '-' }}
+                                {{ (!$isOut && !$isEntertain) ? number_format($valueNet, 0, ',', '.') : '-' }}
                             </td>
-                            <td class="px-6 py-3 text-right font-bold font-mono text-red-400">
-                                {{ $isOut ? number_format($item->nilai_kontribusi, 0, ',', '.') : '-' }}
+                            
+                            {{-- OUT / USAGE --}}
+                            <td class="px-6 py-3 text-right font-bold font-mono">
+                                @if($isOut)
+                                    <span class="text-red-400">{{ number_format($item->nilai_kontribusi, 0, ',', '.') }}</span>
+                                @elseif($isEntertain)
+                                    <span class="text-purple-400 text-xs font-normal">({{ number_format($item->nilai_kontribusi, 0, ',', '.') }})</span>
+                                @else
+                                    -
+                                @endif
                             </td>
+                            
                             <td class="px-6 py-3 text-center">
                                 <form action="{{ route('admin.crm.interaction.destroy', $item->id) }}" method="POST" onsubmit="return confirm('ADMIN: Hapus transaksi ini?');">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="text-zinc-600 hover:text-red-500 transition">
+                                    <button type="submit" class="text-zinc-600 hover:text-red-500 transition" title="Hapus Transaksi">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
@@ -370,16 +428,15 @@
                 </table>
             </div>
             <div class="px-6 py-4 bg-zinc-800 border-t border-zinc-700">
-                {{ $interactions->links() }}
+                {{ $interactions->appends(request()->query())->links() }}
             </div>
         </div>
 
-        {{-- [TAB 4] TAB REKAPITULASI (Dengan Tombol Export) --}}
+        {{-- [TAB 5] REKAPITULASI --}}
         <div id="section-recap" class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700/50 overflow-hidden hidden">
             <div class="px-6 py-4 border-b border-zinc-700 flex flex-col md:flex-row justify-between items-center gap-4 bg-zinc-800">
                 <div class="flex items-center gap-3">
                     <h3 class="font-bold text-zinc-200">Rekapitulasi Tahun {{ $year }}</h3>
-                    {{-- TOMBOL EXPORT ADMIN --}}
                     <a href="{{ route('admin.crm.client.export', ['client' => $client->id, 'year' => $year]) }}" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded shadow-sm border border-emerald-800 transition flex items-center">
                         <i class="fas fa-file-excel mr-1.5"></i> Export Excel
                     </a>
@@ -406,6 +463,16 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-zinc-700">
+                        {{-- Row Saldo Awal --}}
+                        <tr class="bg-amber-900/20 border-b border-zinc-700">
+                            <td colspan="5" class="px-6 py-3 font-bold text-amber-500 italic">
+                                <i class="fas fa-arrow-right mr-2"></i> {{ $startingLabel }}
+                            </td>
+                            <td class="px-6 py-3 text-right font-mono font-bold text-zinc-100 border-l border-zinc-700">
+                                {{ number_format($startingBalance, 0, ',', '.') }}
+                            </td>
+                        </tr>
+
                         @foreach ($recap as $r)
                         <tr class="hover:bg-zinc-700/30 transition">
                             <td class="px-6 py-3 font-bold text-zinc-300">{{ $r['month_name'] }}</td>
@@ -442,82 +509,91 @@
         </div>
     </div>
 
-    {{-- MODAL EDIT DATA KLIEN (Versi Admin Dark Mode) --}}
+    {{-- MODAL EDIT DATA KLIEN --}}
     <div id="editClientModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden transition-opacity duration-300">
-        <div class="bg-zinc-900 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-zinc-700">
-            
-            {{-- Modal Header --}}
+        <div class="bg-zinc-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-zinc-700">
             <div class="bg-zinc-800 px-6 py-4 flex justify-between items-center border-b border-zinc-700 sticky top-0 z-10">
                 <h3 class="text-white font-bold text-lg flex items-center">
                     <i class="fas fa-user-edit mr-2 text-amber-500"></i> Edit Data Klien (Admin)
                 </h3>
-                <button onclick="toggleModal('editClientModal')" class="text-zinc-400 hover:text-white transition focus:outline-none">
-                    <i class="fas fa-times text-lg"></i>
-                </button>
+                <button onclick="toggleModal('editClientModal')" class="text-zinc-400 hover:text-white transition focus:outline-none"><i class="fas fa-times text-lg"></i></button>
             </div>
             
-            {{-- Modal Body --}}
             <div class="p-6">
                 <form action="{{ route('admin.crm.client.update', $client->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
+                    @csrf @method('PUT')
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div class="col-span-2 md:col-span-1">
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Klien / Dokter</label>
-                            <input type="text" name="nama_user" value="{{ old('nama_user', $client->nama_user) }}" class="w-full bg-zinc-800 border-zinc-600 px-4 py-2 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500" required>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {{-- Kolom 1 --}}
+                        <div class="space-y-4">
+                            <h4 class="text-amber-500 text-xs font-bold uppercase border-b border-zinc-700 pb-2">Identitas Personal</h4>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Client / Dokter</label>
+                                <input type="text" name="nama_user" value="{{ old('nama_user', $client->nama_user) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Tanggal Lahir</label>
+                                <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $client->tanggal_lahir ? \Carbon\Carbon::parse($client->tanggal_lahir)->format('Y-m-d') : '') }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm [color-scheme:dark]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Kontak</label>
+                                <div class="space-y-2">
+                                    <input type="text" name="no_telpon" value="{{ old('no_telpon', $client->no_telpon) }}" placeholder="Telp" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
+                                    <input type="email" name="email" value="{{ old('email', $client->email) }}" placeholder="Email" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Alamat Rumah</label>
+                                <textarea name="alamat_user" rows="2" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">{{ old('alamat_user', $client->alamat_user) }}</textarea>
+                            </div>
                         </div>
-                        <div class="col-span-2 md:col-span-1">
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Instansi / RS</label>
-                            <input type="text" name="nama_perusahaan" value="{{ old('nama_perusahaan', $client->nama_perusahaan) }}" class="w-full px-4 py-2 bg-zinc-800 border-zinc-600 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500" required>
+
+                        {{-- Kolom 2 --}}
+                        <div class="space-y-4">
+                            <h4 class="text-amber-500 text-xs font-bold uppercase border-b border-zinc-700 pb-2">Data Perusahaan</h4>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Instansi / RS</label>
+                                <input type="text" name="nama_perusahaan" value="{{ old('nama_perusahaan', $client->nama_perusahaan) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Tanggal Berdiri</label>
+                                <input type="date" name="tanggal_berdiri" value="{{ old('tanggal_berdiri', $client->tanggal_berdiri ? \Carbon\Carbon::parse($client->tanggal_berdiri)->format('Y-m-d') : '') }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm [color-scheme:dark]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Area</label>
+                                <input type="text" name="area" value="{{ old('area', $client->area) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Alamat Kantor</label>
+                                <textarea name="alamat_perusahaan" rows="2" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">{{ old('alamat_perusahaan', $client->alamat_perusahaan) }}</textarea>
+                            </div>
                         </div>
-                        <div class="col-span-2 md:col-span-1">
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Area</label>
-                            <input type="text" name="area" value="{{ old('area', $client->area) }}" class="w-full bg-zinc-800 border-zinc-600 px-4 py-2 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500">
-                        </div>
-                        <div class="col-span-2 md:col-span-1">
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Tanggal Berdiri</label>
-                            <input type="date" name="tanggal_berdiri" value="{{ old('tanggal_berdiri', $client->tanggal_berdiri) }}" class="w-full bg-zinc-800 border-zinc-600 px-4 py-2 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500">
+
+                        {{-- Kolom 3 --}}
+                        <div class="space-y-4">
+                            <h4 class="text-amber-500 text-xs font-bold uppercase border-b border-zinc-700 pb-2">Data Bank</h4>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Bank</label>
+                                <input type="text" name="bank" value="{{ old('bank', $client->bank) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Nomor Rekening</label>
+                                <input type="text" name="no_rekening" value="{{ old('no_rekening', $client->no_rekening) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm font-mono focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Atas Nama (A/N)</label>
+                                <input type="text" name="nama_di_rekening" value="{{ old('nama_di_rekening', $client->nama_di_rekening) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1">Saldo Awal (Rp)</label>
+                                <input type="number" name="saldo_awal" value="{{ old('saldo_awal', $client->saldo_awal) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm font-mono focus:border-amber-500">
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pt-4 border-t border-zinc-700">
-                        <div class="col-span-2 md:col-span-1">
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Email</label>
-                            <input type="email" name="email" value="{{ old('email', $client->email) }}" class="w-full bg-zinc-800 border-zinc-600 px-4 py-2 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500">
-                        </div>
-                        <div class="col-span-2 md:col-span-1">
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Telepon / WA</label>
-                            <input type="text" name="no_telpon" value="{{ old('no_telpon', $client->no_telpon) }}" class="w-full bg-zinc-800 border-zinc-600 px-4 py-2 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500">
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Alamat</label>
-                            <textarea name="alamat" rows="2" class="w-full bg-zinc-800 border-zinc-600 px-4 py-2 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500">{{ old('alamat', $client->alamat) }}</textarea>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 pt-4 border-t border-zinc-700">
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Bank</label>
-                            <input type="text" name="bank" value="{{ old('bank', $client->bank) }}" class="w-full bg-zinc-800 border-zinc-600 px-4 py-2 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">No. Rekening</label>
-                            <input type="text" name="no_rekening" value="{{ old('no_rekening', $client->no_rekening) }}" class="w-full bg-zinc-800 border-zinc-600 px-4 py-2 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-400 mb-1">Saldo Awal (Rp)</label>
-                            <input type="number" name="saldo_awal" value="{{ old('saldo_awal', $client->saldo_awal) }}" class="w-full bg-zinc-800 border-zinc-600 px-4 py-2 rounded text-white text-sm focus:border-amber-500 focus:ring-amber-500">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end gap-3 pt-4 border-t border-zinc-700">
-                        <button type="button" onclick="toggleModal('editClientModal')" class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded text-sm transition">
-                            Batal
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow text-sm transition">
-                            Simpan Perubahan
-                        </button>
+                    <div class="flex justify-end gap-3 pt-6 border-t border-zinc-700 mt-4">
+                        <button type="button" onclick="toggleModal('editClientModal')" class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded text-sm transition">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow text-sm transition">Simpan Perubahan</button>
                     </div>
                 </form>
             </div>
@@ -545,44 +621,65 @@
         }
 
         function switchTab(tabName) {
-            // 1. Sembunyikan Semua Section
-            const sections = ['history', 'recap', 'sales', 'support'];
+            const sections = ['history', 'recap', 'sales', 'support', 'activity'];
             sections.forEach(sec => {
                 const el = document.getElementById('section-' + sec);
                 if(el) el.classList.add('hidden');
             });
 
-            // 2. Reset Style Semua Tombol (Kembali ke Tampilan Default/Mati)
-            // Style Default untuk Tombol Monitoring (Kiri)
+            // Reset tombol navigasi data (Kiri)
             const defaultStyleLeft = "px-6 py-2 rounded-md text-sm font-bold text-zinc-500 hover:text-zinc-300 transition-all flex-1 md:flex-none";
             document.getElementById('btn-history').className = defaultStyleLeft;
             document.getElementById('btn-recap').className   = defaultStyleLeft;
 
-            // Style Default untuk Tombol Input (Kanan)
-            const defaultStyleRight = "px-5 py-2 rounded-md text-sm font-bold text-zinc-500 hover:text-white transition-all flex-1 md:flex-none";
-            document.getElementById('btn-sales').className   = defaultStyleRight.replace('hover:text-white', 'hover:text-emerald-400');
-            document.getElementById('btn-support').className = defaultStyleRight.replace('hover:text-white', 'hover:text-red-400');
+            // Reset tombol navigasi input (Kanan)
+            const defaultStyleRight = "px-4 py-2 rounded-md text-sm font-bold text-zinc-500 hover:text-white transition-all whitespace-nowrap";
+            document.getElementById('btn-sales').className    = defaultStyleRight.replace('hover:text-white', 'hover:text-emerald-400');
+            document.getElementById('btn-support').className  = defaultStyleRight.replace('hover:text-white', 'hover:text-red-400');
+            document.getElementById('btn-activity').className = defaultStyleRight.replace('hover:text-white', 'hover:text-purple-400');
 
-            // 3. Aktifkan Section yang Dipilih
+            // Aktifkan Section
             const targetSection = document.getElementById('section-' + tabName);
             if(targetSection) targetSection.classList.remove('hidden');
 
-            // 4. Berikan Style Aktif pada Tombol yang Dipilih
+            // Style Tombol Aktif
             const activeBtn = document.getElementById('btn-' + tabName);
             
             if (tabName === 'history' || tabName === 'recap') {
-                // Style Aktif Kelompok Kiri (Amber)
                 activeBtn.className = "px-6 py-2 rounded-md text-sm font-bold bg-zinc-700 text-amber-500 shadow-sm transition-all flex-1 md:flex-none";
             } else if (tabName === 'sales') {
-                // Style Aktif Sales (Emerald)
-                activeBtn.className = "px-5 py-2 rounded-md text-sm font-bold bg-emerald-900/30 text-emerald-400 border border-emerald-800 shadow-sm transition-all flex-1 md:flex-none";
+                activeBtn.className = "px-4 py-2 rounded-md text-sm font-bold bg-emerald-900/30 text-emerald-400 border border-emerald-800 shadow-sm transition-all whitespace-nowrap";
             } else if (tabName === 'support') {
-                // Style Aktif Support (Red)
-                activeBtn.className = "px-5 py-2 rounded-md text-sm font-bold bg-red-900/30 text-red-400 border border-red-800 shadow-sm transition-all flex-1 md:flex-none";
+                activeBtn.className = "px-4 py-2 rounded-md text-sm font-bold bg-red-900/30 text-red-400 border border-red-800 shadow-sm transition-all whitespace-nowrap";
+            } else if (tabName === 'activity') {
+                activeBtn.className = "px-4 py-2 rounded-md text-sm font-bold bg-purple-900/30 text-purple-400 border border-purple-800 shadow-sm transition-all whitespace-nowrap";
             }
         }
         
-        // Default Tab: History agar langsung lihat data
+        // Format Rupiah Input
+        const formatRupiah = (angka, prefix) => {
+            let number_string = angka.replace(/[^,\d]/g, '').toString(),
+                split = number_string.split(','),
+                sisa = split[0].length % 3,
+                rupiah = split[0].substr(0, sisa),
+                ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+            if (ribuan) {
+                separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
+            rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+            return prefix == undefined ? rupiah : (rupiah ? rupiah : '');
+        };
+
+        ['inputSales', 'inputSupport', 'inputEntertain'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                el.addEventListener('keyup', function(e){
+                    this.value = formatRupiah(this.value);
+                });
+            }
+        });
+
         document.addEventListener("DOMContentLoaded", () => switchTab('history'));
     </script>
 </x-layout-admin>

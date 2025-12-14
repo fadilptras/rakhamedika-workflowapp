@@ -34,6 +34,15 @@
             <nav class="p-4 pt-6">
                 <ul class="space-y-2">
 
+                    {{-- Admin --}}
+                    <li>
+                        <a href="{{ route('admin.admins.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
+                            {{ request()->routeIs('admin.admins.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            <i class="fas fa-user-cog text-xl w-8 text-center"></i>
+                            <span class="ml-3 font-semibold">Kelola Admin</span>
+                        </a>
+                    </li>
+
                     {{-- Karyawan --}}
                     <li>
                         <a href="{{ route('admin.employees.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200 
@@ -43,21 +52,12 @@
                         </a>
                     </li>
 
-                    {{-- Admin --}}
-                    <li>
-                        <a href="{{ route('admin.admins.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
-                            {{ request()->routeIs('admin.admins.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-                            <i class="fas fa-user-cog text-xl w-8 text-center"></i>
-                            <span class="ml-3 font-semibold">Kelola Admin</span>
-                        </a>
-                    </li>
-                    
                     {{-- Monitoring Sales (MENU BARU - DIPINDAHKAN KESINI) --}}
                     <li>
                         <a href="{{ route('admin.crm.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200
                             {{ request()->routeIs('admin.crm.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
                             <i class="fas fa-chart-line text-xl w-8 text-center"></i>
-                            <span class="ml-3 font-semibold">Monitoring Sales</span>
+                            <span class="ml-3 font-semibold">CRM</span>
                         </a>
                     </li>
 
@@ -67,24 +67,24 @@
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
                             {{ request()->routeIs('admin.absensi.*') || request()->routeIs('admin.lembur.*') || request()->routeIs('admin.aktivitas.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
                             <i class="fas fa-calendar-check text-xl w-8 text-center"></i> 
-                            <span class="ml-3 font-semibold flex-1">Kelola Absen & Aktivitas</span>
+                            <span class="ml-3 font-semibold flex-1">Kelola Kehadiran</span>
                             <i class="fas fa-chevron-down text-sm transition-transform" :class="open ? 'rotate-180' : ''"></i>
                         </a>
                         
                         <div x-show="open" x-collapse>
                             <ul class="ml-12 mt-2 space-y-1">
                                 <li>
-                                    <a href="{{ route('admin.aktivitas.index') }}" 
-                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
-                                        {{ request()->routeIs('admin.aktivitas.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
-                                        Aktivitas
-                                    </a>
-                                </li>
-                                <li>
                                     <a href="{{ route('admin.absensi.index') }}" 
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
                                         {{ request()->routeIs('admin.absensi.index', 'admin.lembur.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
                                         Absensi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.aktivitas.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
+                                        {{ request()->routeIs('admin.aktivitas.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Aktivitas
                                     </a>
                                 </li>
                                 <li>
@@ -113,33 +113,24 @@
                         <div x-show="open" x-collapse>
                             <ul class="ml-12 mt-2 space-y-1">
                                 <li>
+                                    <a href="{{ route('admin.cuti.index') }}"
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
+                                        {{ request()->routeIs('admin.cuti.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Pengajuan Cuti
+                                        @if(isset($pending_cuti_count) && $pending_cuti_count > 0)
+                                            <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_cuti_count }}</span>
+                                        @endif
+                                    </a>
+                                </li>                                
+                                <li>
                                     <a href="{{ route('admin.cuti.pengaturan') }}"
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
                                         {{ request()->routeIs('admin.cuti.pengaturan') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
                                         Pengaturan Jatah Cuti
                                     </a>
                                 </li>
-                                <li>
-                                    <a href="{{ route('admin.cuti.index') }}"
-                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
-                                        {{ request()->routeIs('admin.cuti.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
-                                        Manajemen Pengajuan
-                                        @if(isset($pending_cuti_count) && $pending_cuti_count > 0)
-                                            <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_cuti_count }}</span>
-                                        @endif
-                                    </a>
-                                </li>
                             </ul>
                         </div>
-                    </li>
-
-                    {{-- Agenda --}}
-                    <li>
-                        <a href="{{ route('admin.agenda.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200 
-                            {{ request()->routeIs('admin.agenda.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
-                            <i class="fas fa-calendar-week text-xl w-8 text-center"></i>
-                            <span class="ml-3 font-semibold">Kelola Agenda</span>
-                        </a>
                     </li>
 
                     {{-- Pengajuan Dana --}}
@@ -148,7 +139,7 @@
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
                             {{ request()->routeIs('admin.pengajuan_dana.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
                             <i class="fas fa-money-bill-wave text-xl w-8 text-center"></i> 
-                            <span class="ml-3 font-semibold flex-1">Kelola Pengajuan Dana</span>
+                            <span class="ml-3 font-semibold flex-1">Kelola Dana</span>
                             @if(isset($pending_dana_count) && $pending_dana_count > 0)
                                 <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{{ $pending_dana_count }}</span>
                             @endif
@@ -177,7 +168,7 @@
                         </div>
                     </li>
 
-                    {{-- Pengajuan Dokumen --}}
+                    {{-- Pengajuan Barang --}}
                     <li>
                         <a href="{{ route('admin.pengajuan_barang.index') }}" 
                             class="flex items-center p-3 rounded-lg transition-colors duration-200 
@@ -191,6 +182,14 @@
                         </a>
                     </li>
 
+                    {{-- Agenda --}}
+                    <li>
+                        <a href="{{ route('admin.agenda.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200 
+                            {{ request()->routeIs('admin.agenda.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            <i class="fas fa-calendar-week text-xl w-8 text-center"></i>
+                            <span class="ml-3 font-semibold">Kelola Agenda</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>

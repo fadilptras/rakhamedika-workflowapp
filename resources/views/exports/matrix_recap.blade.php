@@ -9,7 +9,7 @@
     </tr>
     <tr><td colspan="23"></td></tr> 
 
-    {{-- BARIS 4: MAIN HEADER --}}
+    {{-- BARIS 4: MAIN HEADER (GROUP) --}}
     <tr>
         <th rowspan="2" align="center" valign="center" style="font-weight: bold; border: 1px solid #000000; background-color: #e5e7eb; width: 5px;">NO</th>
         <th rowspan="2" align="center" valign="center" style="font-weight: bold; border: 1px solid #000000; background-color: #e5e7eb; width: 30px;">CLIENT NAME</th>
@@ -22,13 +22,13 @@
         <th colspan="2" align="center" style="font-weight: bold; border: 1px solid #000000; background-color: #d1fae5; color: #064e3b;">SUMMARY</th>
     </tr>
 
-    {{-- BARIS 5: SUB HEADER --}}
+    {{-- BARIS 5: SUB HEADER (SPECIFIC ALIGNMENT) --}}
     <tr>
-        {{-- Details: Center --}}
+        {{-- Details: Area Center --}}
         <th align="center" style="font-weight: bold; border: 1px solid #000000; background-color: #f3f4f6; width: 15px; text-align: center;">AREA</th>
         <th align="center" style="font-weight: bold; border: 1px solid #000000; background-color: #f3f4f6; width: 35px; text-align: left;">PRODUCT / ACTIVITY</th>
 
-        {{-- Income: Sales(R), %(C), Net(R) --}}
+        {{-- Income: Sales (Right), % (Center), Net (Right) --}}
         <th align="center" style="font-weight: bold; border: 1px solid #000000; background-color: #eff6ff; width: 15px; text-align: right;">SALES</th>
         <th align="center" style="font-weight: bold; border: 1px solid #000000; background-color: #eff6ff; width: 8px; text-align: center;">%</th>
         <th align="center" style="font-weight: bold; border: 1px solid #000000; background-color: #dbeafe; width: 15px; text-align: right;">NET BUDGET</th>
@@ -47,6 +47,7 @@
     {{-- BODY DATA --}}
     <tbody>
     @php
+        // Grand Totals Global
         $gtGross = 0; $gtBudget = 0; $gtUsage = 0; $gtRemain = 0;
         $gtMonthly = array_fill(1, 12, 0);
         $rowNumber = 1;
@@ -54,7 +55,7 @@
 
     @foreach($clients as $client)
         @php
-            // 1. Hitung Saldo Awal (Carry Over) - Murni Saldo, dikurangi OUT saja
+            // 1. Hitung Saldo Awal (Carry Over)
             $pastInteractions = $client->interactions->filter(fn($i) => \Carbon\Carbon::parse($i->tanggal_interaksi)->year < $year);
             $clientCarryOver = $client->saldo_awal ?? 0;
             
@@ -70,16 +71,17 @@
                 }
             }
 
-            // Variabel Sub-Total Per Client
+            // Persiapan Variabel Sub-Total Per Client
             $clientSubGross = 0;
             $clientSubNet = 0;
-            $clientSubUsage = 0; // Total usage REAL (yang mengurangi saldo)
+            $clientSubUsage = 0; 
+            $clientSubDisplayUsage = 0; 
             $clientSubMonthly = array_fill(1, 12, 0);
 
             // Filter Data Tahun Ini
             $interactions = $client->interactions->filter(fn($i) => \Carbon\Carbon::parse($i->tanggal_interaksi)->year == $year);
             
-            // Grouping
+            // Grouping Produk
             $groupedProducts = $interactions->groupBy(fn($item) => $item->nama_produk ?: 'General / Lainnya');
             if($groupedProducts->isEmpty() && $interactions->isEmpty()) {
                  $groupedProducts = collect();
@@ -92,6 +94,8 @@
             <td style="border: 1px solid #000000;">{{ $client->nama_user }}</td>
             <td style="border: 1px solid #000000;">{{ $client->nama_perusahaan }}</td>
             <td style="border: 1px solid #000000; text-align: center;">{{ $client->pic ?? '-' }}</td>
+            
+            {{-- AREA: Center --}}
             <td style="border: 1px solid #000000; text-align: center;">{{ $client->area }}</td>
             
             <td style="border: 1px solid #000000; font-weight: bold; color: #4b5563; background-color: #f9fafb;">
@@ -107,6 +111,7 @@
             @endforeach
 
             <td style="border: 1px solid #000000; text-align: right;">-</td>
+            {{-- Remain Saldo Awal: Right --}}
             <td style="border: 1px solid #000000; text-align: right; background-color: #d1fae5; font-weight: bold;">
                 {{ number_format($clientCarryOver, 0, ',', '.') }}
             </td>
@@ -126,7 +131,7 @@
 
             @foreach($subGroups as $subKey => $subItems)
                 @php
-                    // Sales
+                    // Sales / Income
                     $pGross = $subItems->where('jenis_transaksi', 'IN')->sum(fn($s) => $s->nilai_sales > 0 ? $s->nilai_sales : $s->nilai_kontribusi);
                     
                     $pNetBudget = 0; $rates = [];
@@ -139,20 +144,19 @@
                     }
                     $rateText = (count(array_unique($rates)) > 1) ? 'Var' : ((!empty($rates)) ? $rates[0].'%' : '-');
                     
-                    // Usage REAL (Hanya OUT) - Ini yang akan muncul di kolom Usage & Mengurangi Saldo
-                    // Untuk Activity (ENTERTAIN), ini akan bernilai 0
+                    // Usage Tampilan (OUT + ENTERTAIN)
+                    $pDisplayUsage = $subItems->whereIn('jenis_transaksi', ['OUT', 'ENTERTAIN'])->sum('nilai_kontribusi');
+                    
+                    // Usage Real (Hanya OUT)
                     $pRealUsage = $subItems->where('jenis_transaksi', 'OUT')->sum('nilai_kontribusi');
                     
-                    // Usage Display (Untuk info di nama Activity)
-                    $pEntertainCost = $subItems->where('jenis_transaksi', 'ENTERTAIN')->sum('nilai_kontribusi');
-
-                    // Remain: Net - Usage Real (Activity 0, jadi aman)
+                    // Remain
                     $pRemain = $pNetBudget - $pRealUsage;
 
                     // Nama Display
                     if ($isEntertainGroup) {
                         $cleanNote = $subKey ?: 'Activity';
-                        $displayName = $cleanNote . ' (Rp ' . number_format($pEntertainCost, 0, ',', '.') . ')';
+                        $displayName = $cleanNote . ' (Rp ' . number_format($pDisplayUsage, 0, ',', '.') . ')';
                     } else {
                         $displayName = $productName;
                     }
@@ -160,7 +164,8 @@
                     // Akumulasi
                     $clientSubGross += $pGross;
                     $clientSubNet += $pNetBudget;
-                    $clientSubUsage += $pRealUsage; // Hanya mengakumulasi OUT
+                    $clientSubUsage += $pRealUsage;
+                    $clientSubDisplayUsage += $pDisplayUsage;
                 @endphp
 
                 <tr>
@@ -168,32 +173,35 @@
                     <td style="border: 1px solid #000000;">{{ $client->nama_user }}</td>
                     <td style="border: 1px solid #000000;">{{ $client->nama_perusahaan }}</td>
                     <td style="border: 1px solid #000000; text-align: center;">{{ $client->pic ?? '-' }}</td>
+                    
+                    {{-- AREA: Center --}}
                     <td style="border: 1px solid #000000; text-align: center;">{{ $client->area }}</td>
                     
                     <td style="border: 1px solid #000000;">{{ $displayName }}</td>
                     
+                    {{-- SALES: Right --}}
                     <td style="border: 1px solid #000000; text-align: right;">{{ $pGross > 0 ? number_format($pGross, 0, ',', '.') : '-' }}</td>
+                    {{-- KOMISI: Center --}}
                     <td style="border: 1px solid #000000; text-align: center;">{{ $rateText }}</td>
+                    {{-- NET: Right --}}
                     <td style="border: 1px solid #000000; text-align: right; background-color: #eff6ff;">{{ $pNetBudget > 0 ? number_format($pNetBudget, 0, ',', '.') : '-' }}</td>
 
                     @foreach($months as $mIndex => $mName)
                         @php
-                            // Ambil hanya OUT (Real Usage) untuk kolom bulanan
-                            $mUsage = $subItems->where('jenis_transaksi', 'OUT')
+                            $mUsage = $subItems->whereIn('jenis_transaksi', ['OUT', 'ENTERTAIN'])
                                                ->filter(fn($i) => \Carbon\Carbon::parse($i->tanggal_interaksi)->month == $mIndex)
                                                ->sum('nilai_kontribusi');
                             $clientSubMonthly[$mIndex] += $mUsage;
                         @endphp
+                        {{-- MONTHLY USAGE: Right --}}
                         <td style="border: 1px solid #000000; text-align: right; {{ $mUsage > 0 ? 'color: #ef4444;' : '' }}">
-                            {{-- Jika Activity, $mUsage pasti 0, jadi muncul '-' --}}
                             {{ $mUsage > 0 ? number_format($mUsage, 0, ',', '.') : '-' }}
                         </td>
                     @endforeach
 
-                    {{-- TOTAL USAGE: Menampilkan Usage REAL saja --}}
-                    {{-- Jika Activity, $pRealUsage pasti 0, jadi muncul '-' --}}
+                    {{-- TOTAL USAGE: Right --}}
                     <td style="border: 1px solid #000000; text-align: right; background-color: #fee2e2;">
-                        {{ $pRealUsage > 0 ? number_format($pRealUsage, 0, ',', '.') : '-' }}
+                        {{ $pDisplayUsage > 0 ? number_format($pDisplayUsage, 0, ',', '.') : '-' }}
                     </td>
                     
                     {{-- REMAIN: Right --}}
@@ -222,6 +230,7 @@
                 TOTAL
             </td>
             
+            {{-- TOTALS: Right --}}
             <td style="border: 1px solid #000000; background-color: #cbd5e1; font-weight: bold; text-align: right;">{{ number_format($clientSubGross, 0, ',', '.') }}</td>
             <td style="border: 1px solid #000000; background-color: #cbd5e1;"></td>
             <td style="border: 1px solid #000000; background-color: #cbd5e1; font-weight: bold; text-align: right;">{{ number_format($clientSubNet, 0, ',', '.') }}</td>
@@ -232,12 +241,7 @@
                 </td>
             @endforeach
 
-            {{-- TOTAL USAGE CLIENT: Sekarang benar-benar TOTAL dari kolom Usage (hanya OUT) --}}
-            {{-- Tidak tercampur angka Activity --}}
-            <td style="border: 1px solid #000000; background-color: #cbd5e1; font-weight: bold; text-align: right; color: #991b1b;">
-                {{ number_format($clientSubUsage, 0, ',', '.') }}
-            </td>
-            
+            <td style="border: 1px solid #000000; background-color: #cbd5e1; font-weight: bold; text-align: right; color: #991b1b;">{{ number_format($clientSubDisplayUsage, 0, ',', '.') }}</td>
             <td style="border: 1px solid #000000; background-color: #cbd5e1; font-weight: bold; text-align: right; color: #065f46;">{{ number_format($clientTotalRemain, 0, ',', '.') }}</td>
         </tr>
 
@@ -255,6 +259,7 @@
                 GRAND TOTAL KESELURUHAN
             </td>
             
+            {{-- FOOTER VALUES: Right --}}
             <td style="border: 1px solid #000000; font-weight: bold; background-color: #1f2937; color: #ffffff; text-align: right;">{{ number_format($gtGross, 0, ',', '.') }}</td>
             <td style="border: 1px solid #000000; background-color: #1f2937;"></td>
             <td style="border: 1px solid #000000; font-weight: bold; background-color: #1e40af; color: #ffffff; text-align: right;">{{ number_format($gtBudget, 0, ',', '.') }}</td>

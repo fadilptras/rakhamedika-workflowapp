@@ -5,71 +5,97 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Notification; // Tambahan untuk fitur kirim
-use Carbon\Carbon; // Tambahan untuk tanggal
-use App\Models\User; // Tambahan untuk ambil data user
-use App\Notifications\BirthdayNotification; // Tambahan untuk class notifikasi
+use Illuminate\Support\Facades\Notification;
+use Carbon\Carbon;
+use App\Models\User;
+use App\Notifications\BirthdayNotification;
 
 class NotifikasiController extends Controller
 {
     /**
-     * Menampilkan halaman notifikasi dengan filter.
+     * Menampilkan halaman notifikasi dengan filter & auto-delete lawas.
      */
     public function index(Request $request)
     {
         $title = 'Notifikasi';
         $user = Auth::user();
+
+        // === [FITUR BARU] AUTO DELETE > 1 BULAN ===
+        // Menghapus notifikasi yang dibuat lebih dari 1 bulan yang lalu
+        $user->notifications()
+             ->where('created_at', '<', Carbon::now()->subMonth())
+             ->delete();
         
         // Ambil filter tipe dari URL, defaultnya 'semua'
         $filterType = $request->query('type', 'semua');
 
-        // Fungsi helper untuk menentukan tipe notifikasi
+        // === LOGIKA PENGELOMPOKAN (Sesuai Request) ===
         $determineType = function ($notification) {
-            $url = $notification->data['url'] ?? '';
-            if (Str::contains($url, '/pengajuan-dana/')) return 'Pengajuan Dana';
-            if (Str::contains($url, '/agendas')) return 'Agenda';
-            if (Str::contains($url, '/cuti/')) return 'Pengajuan Cuti';
-            if (Str::contains($url, '/pengajuan-dokumen/')) return 'Pengajuan Dokumen';
-            if (Str::contains($url, 'ulang-tahun')) return 'Ulang Tahun'; // Tambahan agar masuk grup
+            $url = strtolower($notification->data['url'] ?? '');
+            $title = strtolower($notification->data['title'] ?? '');
+
+            // 1. Pengajuan Dana
+            if (Str::contains($url, 'dana') || Str::contains($title, 'dana')) {
+                return 'Pengajuan Dana';
+            }
+
+            // 2. Pengajuan Barang
+            if (Str::contains($url, 'barang') || Str::contains($url, 'inventory') || Str::contains($title, 'barang')) {
+                return 'Pengajuan Barang';
+            }
+
+            // 3. Pengajuan Cuti
+            if (Str::contains($url, 'cuti') || Str::contains($title, 'cuti')) {
+                return 'Pengajuan Cuti';
+            }
+
+            // 4. Agenda
+            if (Str::contains($url, 'agenda') || Str::contains($title, 'agenda')) {
+                return 'Agenda';
+            }
+
+            // 5. Lainnya (Ultah, Dokumen, Sistem, dll)
             return 'Lainnya';
         };
 
-        // Ambil notifikasi untuk filter button
-        $allNotificationsForTypes = $user->notifications()->latest()->take(100)->get();
-        $availableTypes = $allNotificationsForTypes->map($determineType)->unique()->sort()->values()->all();
+        // List tombol filter
+        $availableTypes = [
+            'Pengajuan Dana', 
+            'Pengajuan Barang', 
+            'Pengajuan Cuti', 
+            'Agenda', 
+            'Lainnya'
+        ];
 
-        // Query dasar notifikasi
+        // Query notifikasi
         $query = $user->notifications()->latest();
 
         if ($filterType !== 'semua') {
-            // Ambil lebih banyak dulu untuk difilter di collection (karena data['url'] ada di JSON)
             $allNotifications = $query->take(200)->get();
-            $filteredNotifications = $allNotifications->filter(function ($notification) use ($determineType, $filterType) {
+            $notificationsToGroup = $allNotifications->filter(function ($notification) use ($determineType, $filterType) {
                 return $determineType($notification) === $filterType;
-            });
-            $notificationsToGroup = $filteredNotifications->take(50);
+            })->take(50);
         } else {
             $notificationsToGroup = $query->take(50)->get();
         }
         
-        // Tandai terbaca
+        // Tandai terbaca saat dibuka
         $unreadIds = $notificationsToGroup->whereNull('read_at')->pluck('id');
         if ($unreadIds->isNotEmpty()) {
             $user->notifications()->whereIn('id', $unreadIds)->update(['read_at' => now()]);
             // Refresh data
-             $notificationsToGroup = $user->notifications()->whereIn('id', $notificationsToGroup->pluck('id'))->latest()->get();
+            $notificationsToGroup = $user->notifications()->whereIn('id', $notificationsToGroup->pluck('id'))->latest()->get();
         }
 
-        // Kelompokkan
+        // Grouping data
         $groupedNotifications = $notificationsToGroup->groupBy($determineType);
 
-        // Tentukan urutan grup (Tambahkan Ulang Tahun di sini jika mau)
+        // Urutan Tampilan
         $groupOrder = [
-            'Ulang Tahun', // Prioritas paling atas biar kelihatan
             'Pengajuan Dana',
-            'Agenda',
+            'Pengajuan Barang',
             'Pengajuan Cuti',
-            'Pengajuan Dokumen',
+            'Agenda',
             'Lainnya',
         ];
 
@@ -83,18 +109,15 @@ class NotifikasiController extends Controller
     }
 
     /**
-     * Fitur Manual: Kirim Notifikasi Ulang Tahun (Triggered by Admin/Route)
+     * Fitur Manual: Kirim Notifikasi Ulang Tahun
      */
     public function kirimUlangTahun()
     {
-        // Hanya admin yang boleh akses (bisa juga via middleware di route)
-        if (Auth::user()->role !== 'admin') { // Sesuaikan dengan logika role Anda
-            abort(403, 'Hanya admin yang bisa mengirim notifikasi ini.');
+        if (Auth::user()->role !== 'admin') { 
+            abort(403);
         }
 
         $today = Carbon::now();
-
-        // 1. Cari user yang ulang tahun hari ini
         $birthdayUsers = User::whereMonth('tanggal_lahir', $today->month)
                              ->whereDay('tanggal_lahir', $today->day)
                              ->get();
@@ -103,10 +126,7 @@ class NotifikasiController extends Controller
             return redirect()->back()->with('error', 'Tidak ada karyawan yang ulang tahun hari ini.');
         }
 
-        // 2. Ambil semua user aktif untuk dikirimi notifikasi
         $allUsers = User::all();
-
-        // 3. Kirim notifikasi loop
         $count = 0;
         foreach ($birthdayUsers as $birthdayPerson) {
             Notification::send($allUsers, new BirthdayNotification($birthdayPerson));

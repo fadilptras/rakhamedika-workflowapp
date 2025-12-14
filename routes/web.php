@@ -196,6 +196,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/pengaturan', [AdminCutiController::class, 'pengaturanCuti'])->name('pengaturan');
         Route::post('/pengaturan', [AdminCutiController::class, 'updatePengaturanCuti'])->name('updatePengaturan');
         Route::get('/{cuti}', [AdminCutiController::class, 'show'])->name('show');
+        Route::get('/{cuti}/download', [AdminCutiController::class, 'download'])->name('download');
     });
 
     // Pengajuan Dana
@@ -228,15 +229,24 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('aktivitas', [AdminAktivitasController::class, 'index'])->name('aktivitas.index');
 
     Route::controller(AdminCrmController::class)->prefix('crm')->name('crm.')->group(function () {
-            Route::get('/', 'index')->name('index');       // route('admin.crm.index')
-            Route::get('/{client}', 'show')->name('show'); // route('admin.crm.show')
-            Route::put('/client/{client}', 'update')->name('client.update'); // Route Edit Klien
-            Route::delete('/client/{client}', 'destroyClient')->name('client.destroy'); // Route Hapus Klien
-            Route::delete('/interaction/{interaction}', 'destroyInteraction')->name('interaction.destroy'); // Route Hapus Transaksi
-            Route::get('/{client}/export', 'exportClientRecap')->name('client.export'); // Route Export Excel
-            Route::post('/interaction', 'storeInteraction')->name('interaction.store'); // Simpan Sales (IN)
-            Route::post('/interaction/support', 'storeSupport')->name('interaction.support'); // Simpan Support (OUT)
-        });
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        
+        // [BARU] Route Export Matrix
+        Route::get('/matrix/export', 'exportMatrix')->name('matrix.export');
+
+        Route::get('/{client}', 'show')->name('show');
+        Route::get('/client/{client}/edit', 'edit')->name('client.edit');
+        Route::put('/client/{client}', 'update')->name('client.update');
+        Route::delete('/client/{client}', 'destroyClient')->name('client.destroy');
+        
+        Route::post('/interaction', 'storeInteraction')->name('interaction.store');
+        Route::post('/interaction/support', 'storeSupport')->name('interaction.support');
+        Route::post('/interaction/entertain', 'storeEntertain')->name('interaction.entertain');
+        Route::delete('/interaction/{interaction}', 'destroyInteraction')->name('interaction.destroy');
+        
+        Route::get('/{client}/export', 'exportClientRecap')->name('client.export');
+    });
     
     // Pengajuan Barang (Admin)
     Route::prefix('pengajuan-barang')->name('pengajuan_barang.')->group(function() {

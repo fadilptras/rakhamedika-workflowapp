@@ -7,9 +7,13 @@
     <div class="bg-gray-100 font-sans bg-gradient-to-br from-sky-50 to-blue-100 p-0 md:p-0 min-h-screen">
         <div class="max-w-7xl mx-auto space-y-6">
 
+            {{-- TOMBOL KEMBALI --}}
             <div class="mb-4">
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+                <a href="{{ route('dashboard') }}" 
+                class="inline-flex items-center justify-center w-auto h-10 px-4 rounded-lg bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-md hover:shadow-lg hover:brightness-110 transition-all gap-2"
+                title="Kembali ke Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                    <span class="font-medium text-sm">Kembali</span>
                 </a>
             </div>
 

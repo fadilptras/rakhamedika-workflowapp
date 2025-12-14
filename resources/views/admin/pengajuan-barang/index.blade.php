@@ -96,15 +96,11 @@
                         </td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center gap-4">
-                                <a href="{{ route('admin.pengajuan_barang.show', $pengajuan) }}" class="text-zinc-400 hover:text-amber-400" title="Lihat Detail">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2-2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
-                                    </svg>
+                                <a href="{{ route('admin.pengajuan_barang.show', $pengajuan) }}" class="text-indigo-400 hover:text-indigo-300 transition" title="Lihat Detail">
+                                    <i class="fas fa-file text-lg"></i>
                                 </a>
-                                <a href="{{ route('admin.pengajuan_barang.downloadPdf', $pengajuan) }}" class="text-zinc-400 hover:text-blue-400" title="Download PDF">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
+                                <a href="{{ route('admin.pengajuan_barang.downloadPdf', $pengajuan) }}" class="text-red-400 hover:text-red-300 transition" title="Download Formulir PDF">
+                                   <i class="fas fa-file-pdf text-lg"></i>
                                 </a>
                             </div>
                         </td>

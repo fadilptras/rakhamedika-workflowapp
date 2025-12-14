@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon; 
+use Barryvdh\DomPDF\Facade\Pdf; // [BARU] Import PDF
 
 class CutiController extends Controller
 {
@@ -49,6 +50,50 @@ class CutiController extends Controller
     {
         $title = 'Detail Pengajuan Cuti';
         return view('admin.cuti.show', compact('cuti', 'title'));
+    }
+
+    /**
+     * [BARU] Download PDF Cuti untuk Admin
+     */
+    public function download(Cuti $cuti)
+    {
+        // Ambil data approver untuk ditampilkan di PDF (Logic sama dengan user)
+        $approver = $this->getApprover($cuti->user);
+
+        $pdf = Pdf::loadView('pdf.cuti', [
+            'cuti' => $cuti,
+            'approver' => $approver
+        ]);
+        
+        $pdf->setPaper('a4', 'portrait');
+        
+        return $pdf->download('ADMIN_Formulir-Cuti-' . $cuti->user->name . '-' . $cuti->created_at->format('dmY') . '.pdf');
+    }
+
+    /**
+     * [BARU] Helper untuk mendapatkan atasan (sama dengan User Controller)
+     */
+    private function getApprover(User $user): ?User
+    {
+        if ($user->jabatan === 'Direktur') {
+            return null;
+        }
+
+        if (str_starts_with($user->jabatan, 'Kepala')) {
+            return User::where('jabatan', 'Direktur')->first();
+        }
+        
+        if ($user->divisi) {
+            $approver = User::where('divisi', $user->divisi)
+                ->where('is_kepala_divisi', true)
+                ->where('id', '!=', $user->id)
+                ->first();
+            if ($approver) {
+                return $approver;
+            }
+        }
+
+        return User::where('jabatan', 'Direktur')->first();
     }
 
     /**
@@ -108,7 +153,6 @@ class CutiController extends Controller
 
     /**
      * Menampilkan halaman pengaturan jatah cuti untuk admin.
-     * UPDATE: Menambahkan perhitungan sisa cuti.
      */
     public function pengaturanCuti()
     {

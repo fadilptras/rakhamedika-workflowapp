@@ -1,95 +1,181 @@
-<x-layout-users>
-    <x-slot:title>{{ $title }}</x-slot:title>
+<x-layout-users :title="$title">
 
-    {{-- Background gradient dan padding --}}
-    <div class="flex-1 overflow-auto bg-gradient-to-br from-sky-50 to-blue-100 py-0 px-0 md:px-0 min-h-screen">
-        <div class="max-w-4xl mx-auto"> {{-- Max width sedikit dikurangi untuk single list --}}
+    <div class="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 font-sans text-sm pb-20">
+        
+        <div class="max-w-5xl mx-auto pt-0 px-0 md:px-0">
 
-            <div class="mb-8">
-                <h1 class="text-2xl font-bold text-gray-800">Notifikasi Terbaru</h1>
-                <p class="text-sm text-gray-500 mt-1">Gunakan filter untuk melihat notifikasi berdasarkan jenisnya.</p>
+            {{-- TOMBOL KEMBALI --}}
+            <div class="mb-6">
+                <a href="{{ route('dashboard') }}" 
+                class="inline-flex items-center justify-center w-auto h-10 px-4 rounded-lg bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-md hover:shadow-lg hover:brightness-110 transition-all gap-2"
+                title="Kembali ke Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                    <span class="font-medium text-sm">Kembali</span>
+                </a>
+            </div>
+
+            {{-- HEADER STYLE (MENGADOPSI SHOW.BLADE.PHP) --}}
+            <div class="bg-[#001BB7] rounded-3xl shadow-xl shadow-blue-900/20 mb-8 overflow-hidden relative border border-blue-900/10">
+                
+                {{-- Dekorasi Background --}}
+                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl pointer-events-none z-0"></div>
+                <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-400 opacity-20 rounded-full blur-2xl pointer-events-none z-0"></div>
+
+                <div class="p-8 relative z-10 text-white">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-white/30 shadow-sm">
+                                    Pusat Informasi
+                                </span>
+                            </div>
+                            <h1 class="text-3xl font-extrabold tracking-tight text-white drop-shadow-sm mb-2">
+                                Notifikasi Anda
+                            </h1>
+                            <p class="text-blue-100 opacity-90 text-sm max-w-xl leading-relaxed">
+                                Pantau aktivitas terbaru, pengumuman, dan pembaruan sistem di sini.
+                            </p>
+                        </div>
+                        
+                        {{-- Icon Lonceng Besar --}}
+                        <div class="hidden md:block bg-white/10 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
+                            <i class="fas fa-bell text-4xl text-blue-200"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- BAGIAN FILTER --}}
-            <div class="mb-8 bg-white p-4 rounded-lg shadow border border-gray-200">
-                <p class="text-sm font-semibold text-gray-700 mb-3">Filter berdasarkan tipe:</p>
-                <div class="flex flex-wrap gap-2">
-                    {{-- Tombol Semua --}}
-                    <a href="{{ route('notifikasi.index') }}"
-                       class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-150
-                              {{ $filterType === 'semua' ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                        Semua
+            <div class="flex flex-wrap items-center gap-3 mb-6">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wide mr-1">Filter:</span>
+                
+                {{-- Tombol Semua --}}
+                <a href="{{ route('notifikasi.index') }}"
+                   class="px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shadow-sm border
+                          {{ $filterType === 'semua' 
+                             ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-200' 
+                             : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300' }}">
+                    Semua
+                </a>
+
+                {{-- Tombol Tipe Lainnya --}}
+                @foreach ($availableTypes as $type)
+                    <a href="{{ route('notifikasi.index', ['type' => $type]) }}"
+                       class="px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shadow-sm border capitalize
+                              {{ $filterType === $type 
+                                 ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-200' 
+                                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300' }}">
+                        {{ $type }}
                     </a>
-                    {{-- Tombol Tipe Lainnya --}}
-                    @foreach ($availableTypes as $type)
-                        <a href="{{ route('notifikasi.index', ['type' => $type]) }}"
-                           class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-150
-                                  {{ $filterType === $type ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            {{ $type }}
-                        </a>
-                    @endforeach
-                </div>
+                @endforeach
             </div>
-            {{-- AKHIR BAGIAN FILTER --}}
 
-           {{-- [FIX] Container Utama untuk SEMUA Notifikasi --}}
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-
-                {{-- Looping berdasarkan urutan grup (jika filter 'semua') atau hanya satu grup (jika difilter) --}}
+            {{-- CONTAINER LIST NOTIFIKASI --}}
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden relative min-h-[300px]">
+                
                 @forelse ($groupOrder as $groupName)
-                    {{-- Hanya proses grup jika ada notifikasinya (sesuai filter) --}}
                     @if (isset($groupedNotifications[$groupName]) && $groupedNotifications[$groupName]->isNotEmpty())
 
-                        {{-- Tampilkan Header Grup (jika filter 'semua' ATAU hanya ada 1 grup hasil filter) --}}
-                        @if ($filterType === 'semua' || $groupedNotifications->count() === 1)
-                            <div class="p-5 sm:p-6 border-b border-gray-200 bg-gray-50">
-                                <h3 class="text-lg font-bold text-gray-700">{{ $groupName }}</h3>
-                            </div>
-                        @endif
+                        {{-- Header Grup Waktu (Hari Ini, Kemarin, dll) --}}
+                        <div class="px-6 py-3 bg-gray-50/80 border-b border-gray-100 sticky top-0 backdrop-blur-sm z-10 flex items-center">
+                            <i class="far fa-calendar-alt text-gray-400 mr-2 text-xs"></i>
+                            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ $groupName }}</h3>
+                        </div>
 
-                        {{-- Daftar Notifikasi Dalam Grup --}}
-                        <div class="divide-y divide-gray-200">
+                        <div class="divide-y divide-gray-50">
                             @foreach ($groupedNotifications[$groupName] as $notification)
-                                <a href="{{ $notification->data['url'] ?? '#' }}" class="block p-5 sm:p-6 hover:bg-gray-50/70 transition-colors duration-150 relative">
-                                    <div class="flex items-start space-x-4">
-                                        {{-- Ikon utama --}}
-                                        <div class="flex-shrink-0 mt-0.5 {{ $notification->data['color'] ?? 'text-gray-400' }}">
-                                            <i class="{{ $notification->data['icon'] ?? 'fas fa-info-circle' }} text-2xl w-6 text-center"></i>
+                                @php
+                                    $isUnread = !$notification->read_at;
+                                    // Tentukan warna icon background berdasarkan tipe (bisa disesuaikan dengan data notification)
+                                    $iconBg = 'bg-blue-100 text-blue-600';
+                                    if(str_contains(strtolower($notification->data['title'] ?? ''), 'error') || str_contains(strtolower($notification->data['title'] ?? ''), 'gagal')) {
+                                        $iconBg = 'bg-red-100 text-red-600';
+                                    } elseif(str_contains(strtolower($notification->data['title'] ?? ''), 'sukses') || str_contains(strtolower($notification->data['title'] ?? ''), 'berhasil')) {
+                                        $iconBg = 'bg-emerald-100 text-emerald-600';
+                                    } elseif(str_contains(strtolower($notification->data['title'] ?? ''), 'warning') || str_contains(strtolower($notification->data['title'] ?? ''), 'peringatan')) {
+                                        $iconBg = 'bg-orange-100 text-orange-600';
+                                    }
+                                @endphp
+
+                                <a href="{{ $notification->data['url'] ?? '#' }}" class="group block p-5 transition-all duration-200 hover:bg-blue-50/40 relative {{ $isUnread ? 'bg-blue-50/20' : '' }}">
+                                    
+                                    {{-- Indikator Unread (Garis Kiri) --}}
+                                    @if ($isUnread)
+                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r"></div>
+                                    @endif
+
+                                    <div class="flex items-start gap-4">
+                                        {{-- Icon Box --}}
+                                        <div class="flex-shrink-0">
+                                            <div class="w-10 h-10 rounded-xl {{ $iconBg }} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
+                                                <i class="{{ $notification->data['icon'] ?? 'fas fa-info' }} text-lg"></i>
+                                            </div>
                                         </div>
-                                        <div class="flex-1 min-w-0">
-                                            <h4 class="text-base font-semibold text-gray-800">{{ $notification->data['title'] ?? 'Notifikasi' }}</h4>
-                                            <p class="text-sm text-gray-600 mt-1">{{ $notification->data['message'] ?? 'Detail tidak tersedia' }}</p>
+
+                                        {{-- Konten Text --}}
+                                        <div class="flex-1 min-w-0 pt-0.5">
+                                            <div class="flex justify-between items-start gap-4">
+                                                <h4 class="text-sm font-bold text-gray-800 group-hover:text-blue-700 transition-colors leading-tight">
+                                                    {{ $notification->data['title'] ?? 'Notifikasi Baru' }}
+                                                </h4>
+                                                
+                                                {{-- Waktu --}}
+                                                <span class="text-[10px] font-medium text-gray-400 whitespace-nowrap bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                                                    {{ $notification->created_at->format('H:i') }}
+                                                </span>
+                                            </div>
+                                            
+                                            <p class="text-sm text-gray-600 mt-1 line-clamp-2 leading-relaxed">
+                                                {{ $notification->data['message'] ?? '-' }}
+                                            </p>
                                         </div>
-                                        <div class="text-right flex-shrink-0">
-                                            <span class="text-xs text-gray-500">{{ $notification->created_at->isoFormat('D MMM YYYY, HH:mm') }}</span>
-                                            @if (!$notification->read_at)
-                                            <span class="mt-1 inline-block h-2 w-2 bg-blue-500 rounded-full" title="Baru"></span>
-                                            @endif
-                                        </div>
+
+                                        {{-- Indikator Dot Unread (Kanan) --}}
+                                        @if ($isUnread)
+                                            <div class="flex-shrink-0 self-center">
+                                                <span class="block w-2.5 h-2.5 bg-blue-500 rounded-full shadow ring-2 ring-blue-50" title="Belum dibaca"></span>
+                                            </div>
+                                        @endif
                                     </div>
                                 </a>
                             @endforeach
                         </div>
-
-                    @endif {{-- End if check group exists --}}
+                    @endif
                 @empty
-                    {{-- Kondisi ini hanya aktif jika $groupOrder kosong (tidak mungkin terjadi) --}}
+                    {{-- Loop kosong (should not happen based on logic below) --}}
                 @endforelse
 
-                {{-- Tampilan jika tidak ada notifikasi sama sekali ATAU tidak ada hasil filter --}}
+                {{-- STATE KOSONG --}}
                 @if($groupedNotifications->isEmpty())
-                    <div class="text-center p-16 text-gray-500">
-                        <i class="fas fa-bell-slash text-5xl mb-5 text-gray-400"></i>
+                    <div class="flex flex-col items-center justify-center py-16 text-center">
+                        <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                            <i class="fas fa-bell-slash text-3xl text-gray-300"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-700">Tidak ada notifikasi</h3>
+                        <p class="text-sm text-gray-500 mt-1 max-w-xs mx-auto">
+                            @if($filterType !== 'semua')
+                                Tidak ada notifikasi untuk kategori "<span class="font-bold text-gray-600">{{ $filterType }}</span>".
+                            @else
+                                Anda sudah melihat semua pembaruan terbaru.
+                            @endif
+                        </p>
+                        
                         @if($filterType !== 'semua')
-                            <p class="text-lg font-semibold">Tidak ada notifikasi tipe "{{ $filterType }}" untuk ditampilkan.</p>
-                            <a href="{{ route('notifikasi.index') }}" class="mt-4 inline-block text-sm text-blue-600 hover:underline">Tampilkan Semua Notifikasi</a>
-                        @else
-                            <p class="text-lg font-semibold">Tidak ada notifikasi untuk ditampilkan.</p>
+                            <a href="{{ route('notifikasi.index') }}" class="mt-6 px-6 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition shadow-sm">
+                                Reset Filter
+                            </a>
                         @endif
                     </div>
                 @endif
 
-            </div> {{-- End Container Utama --}}
+            </div>
+            
+            {{-- Footer info kecil --}}
+            <div class="mt-6 text-center">
+                <p class="text-xs text-blue-300/80">
+                    Menampilkan notifikasi 30 hari terakhir.
+                </p>
+            </div>
 
         </div>
     </div>
