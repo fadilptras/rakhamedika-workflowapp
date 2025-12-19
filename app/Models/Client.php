@@ -20,6 +20,8 @@ class Client extends Model
         'no_telpon',
         'alamat_user', 
         'tanggal_lahir',
+        'jabatan',
+        'hobby_client',
         
         // Informasi Perusahaan
         'nama_perusahaan',

@@ -127,24 +127,40 @@
         <div class="header">
             <h1>PT RAKHA NUSANTARA MEDIKA</h1>
             <p style="font-weight: bold;">FORMULIR PENGAJUAN DANA</p>
-            <p style="font-size: 10px; font-weight: bold;">ID Pengajuan: DANA-{{ str_pad($pengajuanDana->id, 4, '0', STR_PAD_LEFT) }}</p>
+            <p style="font-size: 10px; font-weight: bold;">ID Pengajuan: {{ str_pad($pengajuanDana->id, 4, '0', STR_PAD_LEFT) }}</p>
         </div>
 
         {{-- I. DETAIL PENGAJUAN --}}
         <div class="section-title">I. DETAIL PENGAJUAN</div>
         <table class="data-table">
-            <tr><td width="25%">Tanggal Pengajuan</td><td>{{ $pengajuanDana->created_at->translatedFormat('l, d F Y') }}</td></tr>
-            <tr><td>Pemohon</td><td>{{ $pengajuanDana->user->name }}</td></tr>
-            <tr><td>Divisi</td><td>{{ $pengajuanDana->divisi }}</td></tr>
-            <tr><td>Jabatan</td><td>{{ $pengajuanDana->user->jabatan ?? '-' }}</td></tr>
-            <tr><td>Judul Pengajuan</td><td>{{ $pengajuanDana->judul_pengajuan }}</td></tr>
+            <tr>
+                <th width="15%">Tanggal</th>
+                <td width="35%">{{ $pengajuanDana->created_at->translatedFormat('l, d F Y') }}</td>
+                <th width="15%">Pemohon</th>
+                <td width="35%">{{ $pengajuanDana->user->name }}</td>
+            </tr>
+            <tr>
+                <th>Divisi</th>
+                <td>{{ $pengajuanDana->divisi }}</td>
+                <th>Jabatan</th>
+                <td>{{ $pengajuanDana->user->jabatan ?? '-' }}</td>
+            </tr>
+            <tr>
+                <th>Judul</th>
+                {{-- colspan="3" agar judul yang panjang bisa memenuhi sisa baris --}}
+                <td colspan="3">{{ $pengajuanDana->judul_pengajuan }}</td>
+            </tr>
         </table>
 
-        {{-- II. INFORMASI REKENING --}}
-        <div class="section-title">II. INFORMASI TRANSFER</div>
+        {{-- II. INFORMASI TRANSFER --}}
+        <div class="section-title">II. INFORMASI BANK</div>
         <table class="data-table">
-            <tr><td width="25%">Bank Tujuan</td><td>{{ $pengajuanDana->nama_bank }}</td></tr>
-            <tr><td>Nomor Rekening</td><td>{{ $pengajuanDana->no_rekening }}</td></tr>
+            <tr>
+                <th width="15%">Bank Tujuan</th>
+                <td width="35%">{{ $pengajuanDana->nama_bank }}</td>
+                <th width="15%">No. Rekening</th>
+                <td width="35%">{{ $pengajuanDana->no_rekening }}</td>
+            </tr>
         </table>
 
         {{-- III. RINCIAN --}}

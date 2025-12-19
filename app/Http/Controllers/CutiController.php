@@ -214,12 +214,30 @@ class CutiController extends Controller
     {
         $this->authorize('view', $cuti);
         
-        // Ambil data approver untuk ditampilkan di PDF
+        // 1. Ambil data approver
         $approver = $this->getApprover($cuti->user);
 
+        // 2. LOGIKA TAMBAHAN: Hitung Sisa Cuti untuk ditampilkan di PDF
+        $user = $cuti->user;
+        $tahunIni = Carbon::now()->year;
+
+        // Ambil cuti yang sudah disetujui tahun ini
+        $cutiDisetujui = Cuti::where('user_id', $user->id)
+            ->where('status', 'disetujui')
+            ->whereYear('tanggal_mulai', $tahunIni)
+            ->get();
+
+        // Hitung yang terpakai
+        $cutiTerpakai = $this->hitungCutiTerpakai($cutiDisetujui);
+        
+        // Hitung sisa (Jatah - Terpakai)
+        $sisaCuti = $user->jatah_cuti - $cutiTerpakai['tahunan'];
+
+        // 3. Kirim variabel $sisaCuti ke view
         $pdf = Pdf::loadView('pdf.cuti', [
             'cuti' => $cuti,
-            'approver' => $approver
+            'approver' => $approver,
+            'sisaCuti' => $sisaCuti
         ]);
         
         $pdf->setPaper('a4', 'portrait');

@@ -207,6 +207,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{pengajuanDana}/download', [AdminPengajuanDanaController::class, 'downloadPDF'])->name('downloadPdf');
         Route::get('/pengaturan/approvers', [AdminPengajuanDanaController::class, 'showSetApprovers'])->name('set_approvers.index');
         Route::post('/pengaturan/approvers', [AdminPengajuanDanaController::class, 'saveSetApprovers'])->name('set_approvers.save');
+        Route::post('/{pengajuanDana}/mark-as-paid', [AdminPengajuanDanaController::class, 'markAsPaid'])
+             ->name('markAsPaid');
     });
 
     // Pengajuan Dokumen

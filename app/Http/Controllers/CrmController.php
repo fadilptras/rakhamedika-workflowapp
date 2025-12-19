@@ -41,6 +41,8 @@ class CrmController extends Controller
             'no_telpon'         => 'nullable|string|max:50',
             'tanggal_lahir'     => 'nullable|date',
             'alamat_user'       => 'nullable|string', 
+            'jabatan'           => 'nullable|string|max:100', 
+            'hobby_client'      => 'nullable|string|max:255', 
 
             // Perusahaan
             'nama_perusahaan'   => 'required|string|max:255',
@@ -103,6 +105,8 @@ class CrmController extends Controller
             'no_telpon'         => 'nullable|string',
             'tanggal_lahir'     => 'nullable|date',
             'alamat_user'       => 'nullable|string',
+            'jabatan'           => 'nullable|string|max:100', 
+            'hobby_client'      => 'nullable|string|max:255', 
 
             'nama_perusahaan'   => 'required|string|max:255',
             'tanggal_berdiri'   => 'nullable|date',

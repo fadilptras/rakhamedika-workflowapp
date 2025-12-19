@@ -41,17 +41,29 @@
         <div class="header">
             <h1>PT RAKHA NUSANTARA MEDIKA</h1>
             <p style="font-weight: bold;">FORMULIR PENGAJUAN BARANG</p>
-            <p style="font-size: 10px; font-weight: bold;">ID Pengajuan: BRG-{{ str_pad($pengajuanBarang->id, 4, '0', STR_PAD_LEFT) }}</p>
+            <p style="font-size: 10px; font-weight: bold;">ID Pengajuan: {{ str_pad($pengajuanBarang->id, 4, '0', STR_PAD_LEFT) }}</p>
         </div>
 
         <div class="content">
+            {{-- I. DETAIL PENGAJUAN --}}
             <div class="section-title">I. DETAIL PENGAJUAN</div>
-            <table class="detail-table">
-                <tr><td>Tanggal Pengajuan</td><td>{{ $pengajuanBarang->created_at->translatedFormat('l, d F Y') }}</td></tr>
-                <tr><td>Pemohon</td><td>{{ $pengajuanBarang->user->name }}</td></tr>
-                <tr><td>Divisi</td><td>{{ $pengajuanBarang->divisi }}</td></tr>
-                <tr><td>Jabatan</td><td>{{ $pengajuanBarang->user->jabatan ?? '-' }}</td></tr>
-                <tr><td>Judul Pengajuan</td><td>{{ $pengajuanBarang->judul_pengajuan }}</td></tr>
+            <table class="data-table">
+                <tr>
+                    <th width="15%">Tanggal</th>
+                    <td width="35%">{{ $pengajuanBarang->created_at->translatedFormat('l, d F Y') }}</td>
+                    <th width="15%">Pemohon</th>
+                    <td width="35%">{{ $pengajuanBarang->user->name }}</td>
+                </tr>
+                <tr>
+                    <th>Divisi</th>
+                    <td>{{ $pengajuanBarang->divisi }}</td>
+                    <th>Jabatan</th>
+                    <td>{{ $pengajuanBarang->user->jabatan ?? '-' }}</td>
+                </tr>
+                <tr>
+                    <th>Judul</th>
+                    <td colspan="3">{{ $pengajuanBarang->judul_pengajuan }}</td>
+                </tr>
             </table>
 
             <div class="section-title">II. RINCIAN BARANG</div>

@@ -85,6 +85,18 @@
                     <i class="fas fa-user mr-2 text-white"></i> Informasi Client
                 </h4>
                 <div class="space-y-3 relative z-10">
+                    
+                    {{-- [BARU] Jabatan (Ditampilkan di atas Email) --}}
+                    @if($client->jabatan)
+                    <div class="flex items-start relative pl-8">
+                        <div class="absolute left-0 top-1 text-blue-300"><i class="fas fa-id-badge"></i></div>
+                        <div>
+                            <p class="text-[10px] text-blue-200 font-bold uppercase mb-0.5">Jabatan</p>
+                            <p class="font-bold text-sm tracking-wide">{{ $client->jabatan }}</p>
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- Email --}}
                     <div class="flex items-start relative pl-8">
                         <div class="absolute left-0 top-1 text-blue-200"><i class="fas fa-envelope"></i></div>
@@ -93,6 +105,7 @@
                             <p class="font-medium text-sm break-all">{{ $client->email ?? '-' }}</p>
                         </div>
                     </div>
+
                     {{-- Telepon --}}
                     <div class="flex items-start relative pl-8">
                         <div class="absolute left-0 top-1 text-green-300"><i class="fab fa-whatsapp text-lg -ml-0.5"></i></div>
@@ -101,23 +114,36 @@
                             <p class="font-medium text-sm">{{ $client->no_telpon ?? '-' }}</p>
                         </div>
                     </div>
-                    {{-- Tgl Lahir (NEW) --}}
-                    <div class="flex items-start relative pl-8">
-                        <div class="absolute left-0 top-1 text-pink-200"><i class="fas fa-birthday-cake"></i></div>
-                        <div>
-                            <p class="text-[10px] text-blue-200 font-bold uppercase mb-0.5">Tanggal Lahir</p>
-                            <div class="font-medium text-sm">
-                                @if($client->tanggal_lahir)
-                                    {{ \Carbon\Carbon::parse($client->tanggal_lahir)->format('d F Y') }}
-                                @else
-                                    <span class="italic opacity-70">-</span>
-                                @endif
+
+                    {{-- Tgl Lahir & Hobi (Digabung agar hemat tempat) --}}
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="flex items-start relative pl-8">
+                            <div class="absolute left-0 top-1 text-pink-200"><i class="fas fa-birthday-cake"></i></div>
+                            <div>
+                                <p class="text-[10px] text-blue-200 font-bold uppercase mb-0.5">Tgl Lahir</p>
+                                <div class="font-medium text-sm">
+                                    @if($client->tanggal_lahir)
+                                        {{ \Carbon\Carbon::parse($client->tanggal_lahir)->format('d M Y') }}
+                                    @else
+                                        <span class="italic opacity-70">-</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {{-- [BARU] Hobi --}}
+                        <div class="flex items-start relative pl-6">
+                            <div class="absolute left-0 top-1 text-yellow-300"><i class="fas fa-star"></i></div>
+                            <div>
+                                <p class="text-[10px] text-blue-200 font-bold uppercase mb-0.5">Hobi</p>
+                                <p class="font-medium text-sm">{{ $client->hobby_client ?? '-' }}</p>
                             </div>
                         </div>
                     </div>
-                    {{-- Alamat Rumah (NEW) --}}
+
+                    {{-- Alamat Rumah --}}
                     <div class="flex items-start relative pl-8">
-                        <div class="absolute left-0 top-1 text-yellow-300"><i class="fas fa-home"></i></div>
+                        <div class="absolute left-0 top-1 text-white/50"><i class="fas fa-home"></i></div>
                         <div>
                             <p class="text-[10px] text-blue-200 font-bold uppercase mb-0.5">Alamat Rumah</p>
                             <p class="text-sm leading-relaxed opacity-90">{{ $client->alamat_user ?? '-' }}</p>
@@ -671,17 +697,24 @@
                         {{-- GRID 3 KOLOM (Landscape) --}}
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch h-full">
 
-                            {{-- KOLOM 1: INFO CLIENT (Style Biru) --}}
+                            {{-- KOLOM 1: INFO CLIENT (Style Biru) - EDIT MODE --}}
                             <div class="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden flex flex-col h-full">
                                 <div class="bg-blue-50/80 px-4 py-3 border-b border-blue-300 flex items-center">
                                     <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded mr-2">1</span>
                                     <h4 class="text-blue-800 text-xs font-bold uppercase tracking-wider">Identitas Personal</h4>
                                 </div>
                                 <div class="p-4 space-y-3 flex-grow">
+                                    {{-- NAMA & JABATAN --}}
                                     <div>
-                                        <label class="block text-[11px] font-bold text-gray-700 mb-1 uppercase">Nama Client / User <span class="text-red-500">*</span></label>
-                                        <input type="text" name="nama_user" value="{{ old('nama_user', $client->nama_user) }}" required class="w-full border-2 border-blue-100 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 font-semibold" placeholder="Nama Lengkap User">
+                                        <label class="block text-[11px] font-bold text-gray-700 mb-1 uppercase">Nama & Jabatan <span class="text-red-500">*</span></label>
+                                        <div class="space-y-2">
+                                            <input type="text" name="nama_user" value="{{ old('nama_user', $client->nama_user) }}" required class="w-full border-2 border-blue-100 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 font-bold" placeholder="Nama Lengkap User">
+                                            {{-- [BARU] Input Jabatan --}}
+                                            <input type="text" name="jabatan" value="{{ old('jabatan', $client->jabatan) }}" class="w-full border-2 border-blue-100 rounded focus:ring-blue-500 focus:border-blue-500 text-xs px-3 py-2" placeholder="Jabatan">
+                                        </div>
                                     </div>
+
+                                    {{-- KONTAK --}}
                                     <div>
                                         <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Kontak Personal</label>
                                         <div class="grid grid-cols-2 gap-2">
@@ -689,13 +722,24 @@
                                             <input type="email" name="email" value="{{ old('email', $client->email) }}" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2" placeholder="Email">
                                         </div>
                                     </div>
-                                    <div>
-                                        <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Tanggal Lahir</label>
-                                        <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', optional($client->tanggal_lahir)->format('Y-m-d')) }}" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2">
+
+                                    {{-- TGL LAHIR & HOBI --}}
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Tanggal Lahir</label>
+                                            <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', optional($client->tanggal_lahir)->format('Y-m-d')) }}" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2">
+                                        </div>
+                                        <div>
+                                            {{-- [BARU] Input Hobi --}}
+                                            <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Hobi / Minat</label>
+                                            <input type="text" name="hobby_client" value="{{ old('hobby_client', $client->hobby_client) }}" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2" placeholder="Hobi">
+                                        </div>
                                     </div>
+
+                                    {{-- ALAMAT --}}
                                     <div class="flex-grow">
                                         <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Alamat Rumah</label>
-                                        <textarea name="alamat_user" rows="3" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2 resize-none" placeholder="Alamat tempat tinggal...">{{ old('alamat_user', $client->alamat_user) }}</textarea>
+                                        <textarea name="alamat_user" rows="2" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2 resize-none" placeholder="Alamat tempat tinggal...">{{ old('alamat_user', $client->alamat_user) }}</textarea>
                                     </div>
                                 </div>
                             </div>

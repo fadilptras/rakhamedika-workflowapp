@@ -9,6 +9,9 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth; 
+use Illuminate\Support\Facades\Notification; 
+use App\Notifications\PengajuanDanaNotification;
 
 class AdminPengajuanDanaController extends Controller
 {
@@ -19,6 +22,29 @@ class AdminPengajuanDanaController extends Controller
     {
         $query = PengajuanDana::with('user')->latest();
 
+        // [BARU] Logika Tabulasi Status
+        // Default tab adalah 'pending' (Diproses) agar admin fokus ke tugas aktif
+        $activeTab = $request->input('tab', 'pending'); 
+
+        switch ($activeTab) {
+            case 'pending':
+                // Menampilkan yang sedang berjalan
+                $query->whereIn('status', ['diajukan', 'diproses_appr_2', 'proses_pembayaran']);
+                break;
+            case 'approved':
+                // Menampilkan yang sudah sukses
+                $query->where('status', 'selesai');
+                break;
+            case 'rejected':
+                // Menampilkan yang gagal/batal
+                $query->whereIn('status', ['ditolak', 'dibatalkan']);
+                break;
+            default:
+                // Jika tab='all', tidak ada filter status (tampilkan semua)
+                break;
+        }
+
+        // --- Filter Lama Tetap Ada ---
         if ($request->filled('karyawan_id')) {
             $query->where('user_id', $request->karyawan_id);
         }
@@ -47,7 +73,8 @@ class AdminPengajuanDanaController extends Controller
             'title' => 'Kelola Pengajuan Dana',
             'pengajuanDanas' => $pengajuanDanas,
             'karyawanList' => $karyawanList, 
-            'divisiList' => $divisiList,   
+            'divisiList' => $divisiList,
+            'activeTab' => $activeTab // [BARU] Kirim info tab aktif ke view
         ]);
     }
 
@@ -79,25 +106,48 @@ class AdminPengajuanDanaController extends Controller
     }
 
     /**
-     * Mengunduh rekap pengajuan dana dalam bentuk PDF (untuk admin).
+     * [UPDATE] Mengunduh rekap PDF sesuai Tab yang dipilih (Pending/Selesai/Ditolak).
      */
     public function downloadRekapPDF(Request $request)
     {
         $query = PengajuanDana::with('user')->latest();
-        $startDate = null; $endDate = null;
-        $karyawanId = $request->input('karyawan_id'); // [FIX] Ambil ID karyawan dari request
-        $divisi = $request->input('divisi');         // [FIX] Ambil nama divisi dari request
+        
+        // [BARU] 1. Terapkan Filter TAB (Status)
+        // Ambil 'tab' dari request, default 'pending' jika tidak ada (sesuai default index)
+        $activeTab = $request->input('tab', 'pending'); 
 
-        // --- Filter Query ---
+        switch ($activeTab) {
+            case 'pending':
+                // Hanya yang sedang berjalan
+                $query->whereIn('status', ['diajukan', 'diproses_appr_2', 'proses_pembayaran']);
+                break;
+            case 'approved':
+                // Hanya yang selesai
+                $query->where('status', 'selesai');
+                break;
+            case 'rejected':
+                // Hanya yang ditolak/batal
+                $query->whereIn('status', ['ditolak', 'dibatalkan']);
+                break;
+            default:
+                // Jika tab='all', ambil semua data (tidak ada where status)
+                break;
+        }
+
+        // 2. Filter Tanggal, Karyawan, Divisi (Logika Lama)
+        $startDate = null; $endDate = null;
+        $karyawanId = $request->input('karyawan_id');
+        $divisi = $request->input('divisi');
+
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $startDate = Carbon::parse($request->start_date)->startOfDay();
             $endDate = Carbon::parse($request->end_date)->endOfDay();
             $query->whereBetween('created_at', [$startDate, $endDate]);
         }
-        if ($karyawanId) { // [FIX] Filter berdasarkan ID jika ada
+        if ($karyawanId) {
             $query->where('user_id', $karyawanId);
         }
-        if ($divisi) { // [FIX] Filter berdasarkan divisi jika ada
+        if ($divisi) {
             $query->whereHas('user', function($q) use ($divisi) {
                 $q->where('divisi', $divisi);
             });
@@ -105,27 +155,27 @@ class AdminPengajuanDanaController extends Controller
         
         $pengajuanDanas = $query->get();
 
-        // --- [FIX] Ambil Nama untuk Tampilan PDF ---
-        $karyawanName = 'Semua Karyawan'; // Default
+        // 3. Persiapan Data Tampilan PDF
+        $karyawanName = 'Semua Karyawan'; 
         if ($karyawanId) {
             $karyawan = User::find($karyawanId);
-            if ($karyawan) {
-                $karyawanName = $karyawan->name;
-            }
+            if ($karyawan) $karyawanName = $karyawan->name;
         }
-        $divisiName = $divisi ?: 'Semua Divisi'; // Gunakan nilai divisi dari request, atau default
+        $divisiName = $divisi ?: 'Semua Divisi';
 
-        // --- Load View PDF ---
-        // [FIX] Tambahkan $karyawanName dan $divisiName ke compact()
-        $pdf = PDF::loadView('admin.pengajuan-dana.pdf_rekap', compact(
+        // [OPTIONAL] Ubah judul file agar admin tau ini rekap apa
+        $fileTag = strtoupper($activeTab); 
+
+        $pdf = Pdf::loadView('admin.pengajuan-dana.pdf_rekap', compact(
             'pengajuanDanas', 
             'startDate', 
             'endDate', 
             'karyawanName', 
-            'divisiName'
+            'divisiName',
+            'activeTab' // Kirim juga tab nya jika ingin ditampilkan di judul PDF
         ));
         
-        $filename = "rekap-pengajuan-dana-" . Carbon::now()->format('Y-m-d') . ".pdf";
+        $filename = "rekap-pengajuan-dana-{$fileTag}-" . Carbon::now()->format('Y-m-d') . ".pdf";
         return $pdf->download($filename);
     }
 
@@ -194,5 +244,44 @@ class AdminPengajuanDanaController extends Controller
             // Log::error('Gagal simpan approver: ' . $e->getMessage());
             return redirect()->route('admin.pengajuan_dana.set_approvers.index')->with('error', 'Terjadi kesalahan. Perubahan dibatalkan.');
         }
+    }
+
+    /**
+     * [UPDATE] Admin mengambil alih proses pembayaran (Bukti Transfer Opsional).
+     */
+    public function markAsPaid(Request $request, PengajuanDana $pengajuanDana)
+    {
+        // Validasi status harus dalam tahap pembayaran
+        if (!in_array($pengajuanDana->status, ['proses_pembayaran', 'diproses_appr_2'])) {
+             return back()->with('error', 'Pengajuan ini tidak dalam status menunggu pembayaran.');
+        }
+
+        $request->validate([
+            'bukti_transfer' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'catatan_admin' => 'nullable|string|max:255',
+        ]);
+
+        // Siapkan data update dasar
+        $updateData = [
+            'status' => 'selesai',           
+            'payment_status' => 'selesai',   
+            'finance_id' => Auth::id(),      
+            'finance_processed_at' => Carbon::now(),
+            'catatan_finance' => $request->catatan_admin ?? 'Selesai',
+        ];
+
+
+        if ($request->hasFile('bukti_transfer')) {
+            $path = $request->file('bukti_transfer')->store('bukti_transfer', 'public');
+            $updateData['bukti_transfer'] = $path;
+        }
+
+        // Lakukan update
+        $pengajuanDana->update($updateData);
+
+        // Kirim notifikasi
+        Notification::send($pengajuanDana->user, new PengajuanDanaNotification($pengajuanDana, 'bukti_transfer'));
+
+        return back()->with('success', 'Pembayaran berhasil diselesaikan oleh Admin.');
     }
 }

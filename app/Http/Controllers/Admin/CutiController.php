@@ -52,24 +52,43 @@ class CutiController extends Controller
         return view('admin.cuti.show', compact('cuti', 'title'));
     }
 
-    /**
-     * [BARU] Download PDF Cuti untuk Admin
+/**
+     * [UPDATE] Download PDF Cuti untuk Admin (Ditambah Data Sisa Cuti)
      */
     public function download(Cuti $cuti)
     {
-        // Ambil data approver untuk ditampilkan di PDF (Logic sama dengan user)
+        // 1. Ambil data approver
         $approver = $this->getApprover($cuti->user);
 
+        // 2. LOGIKA HITUNG SISA CUTI (Mengambil logika dari pengaturanCuti)
+        $user = $cuti->user;
+        $tahunIni = \Carbon\Carbon::now()->year;
+
+        // Hitung total hari cuti yang SUDAH DISETUJUI tahun ini milik user tersebut
+        $cutiTerpakai = Cuti::where('user_id', $user->id)
+            ->where('status', 'disetujui')
+            ->whereYear('tanggal_mulai', $tahunIni)
+            ->get()
+            ->sum(function ($c) {
+                $start = Carbon::parse($c->tanggal_mulai);
+                $end = Carbon::parse($c->tanggal_selesai);
+                return $start->diffInDays($end) + 1; // +1 agar inklusif
+            });
+
+        // Hitung Sisa
+        $sisaCuti = ($user->jatah_cuti ?? 0) - $cutiTerpakai;
+
+        // 3. Kirim ke View (tambahkan 'sisaCuti')
         $pdf = Pdf::loadView('pdf.cuti', [
             'cuti' => $cuti,
-            'approver' => $approver
+            'approver' => $approver,
+            'sisaCuti' => $sisaCuti // <--- Data Baru
         ]);
         
         $pdf->setPaper('a4', 'portrait');
         
         return $pdf->download('ADMIN_Formulir-Cuti-' . $cuti->user->name . '-' . $cuti->created_at->format('dmY') . '.pdf');
     }
-
     /**
      * [BARU] Helper untuk mendapatkan atasan (sama dengan User Controller)
      */

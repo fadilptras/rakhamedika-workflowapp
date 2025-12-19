@@ -10,7 +10,7 @@
         .container { width: 95%; margin: 15px auto; }
         
         /* Header */
-        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #003366; padding-bottom: 10px; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: none; padding-bottom: 10px; }
         .header h1 { margin: 0; font-size: 18px; color: #003366; font-weight: bold; text-transform: uppercase; } 
         .header p { margin: 2px 0; font-size: 11px; }
 
@@ -90,16 +90,33 @@
         <div class="header">
             <h1>PT RAKHA NUSANTARA MEDIKA</h1>
             <p style="font-weight: bold;">FORMULIR PENGAJUAN CUTI</p>
-            <p>ID Pengajuan: CUTI-{{ str_pad($cuti->id, 4, '0', STR_PAD_LEFT) }}</p>
+            <p>ID Pengajuan: {{ str_pad($cuti->id, 4, '0', STR_PAD_LEFT) }}</p>
         </div>
 
         {{-- I. DATA KARYAWAN --}}
+        {{-- I. DATA KARYAWAN --}}
         <div class="section-title">I. DATA KARYAWAN</div>
         <table class="data-table">
-            <tr><th>Nama Lengkap</th><td>{{ $cuti->user->name }}</td></tr>
-            <tr><th>Divisi</th><td>{{ $cuti->user->divisi }}</td></tr>
-            <tr><th>Jabatan</th><td>{{ $cuti->user->jabatan ?? '-' }}</td></tr>
-            <tr><th>Tanggal Pengajuan</th><td>{{ $cuti->created_at->translatedFormat('l, d F Y') }}</td></tr>
+            <tr>
+                <th>Nama Lengkap</th>
+                <td>{{ $cuti->user->name }}</td>
+            </tr>
+            <tr>
+                <th>Divisi</th>
+                <td>{{ $cuti->user->divisi }}</td>
+            </tr>
+            <tr>
+                <th>Jabatan</th>
+                <td>{{ $cuti->user->jabatan ?? '-' }}</td>
+            </tr>
+            <tr>
+                <th>Sisa Cuti Tahunan</th> 
+                <td><strong>{{ $sisaCuti }} Hari</strong></td>
+            </tr>
+            <tr>
+                <th>Tanggal Pengajuan</th>
+                <td>{{ $cuti->created_at->translatedFormat('l, d F Y') }}</td>
+            </tr>
         </table>
 
         {{-- II. DETAIL CUTI --}}

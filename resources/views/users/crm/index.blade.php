@@ -232,10 +232,16 @@
                                 <h4 class="text-blue-800 text-xs font-bold uppercase tracking-wider">Identitas Personal</h4>
                             </div>
                             <div class="p-4 space-y-3 flex-grow">
+                                {{-- NAMA & JABATAN --}}
                                 <div>
-                                    <label class="block text-[11px] font-bold text-gray-700 mb-1 uppercase">Nama Client / User <span class="text-red-500">*</span></label>
-                                    <input type="text" name="nama_user" required class="w-full border-2 border-blue-100 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 font-semibold" placeholder="Nama Lengkap User">
+                                    <label class="block text-[11px] font-bold text-gray-700 mb-1 uppercase">Nama & Jabatan <span class="text-red-500">*</span></label>
+                                    <div class="space-y-2">
+                                        <input type="text" name="nama_user" required class="w-full border-2 border-blue-100 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 font-bold" placeholder="Nama Lengkap User">
+                                        <input type="text" name="jabatan" class="w-full border-2 border-blue-100 rounded focus:ring-blue-500 focus:border-blue-500 text-xs px-3 py-2" placeholder="Jabatan (Ex: Kepala Ruangan / Manager)">
+                                    </div>
                                 </div>
+
+                                {{-- KONTAK --}}
                                 <div>
                                     <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Kontak Personal</label>
                                     <div class="grid grid-cols-2 gap-2">
@@ -243,13 +249,23 @@
                                         <input type="email" name="email" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2" placeholder="Email">
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Tanggal Lahir</label>
-                                    <input type="date" name="tanggal_lahir" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2">
+
+                                {{-- TGL LAHIR & HOBI --}}
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Tanggal Lahir</label>
+                                        <input type="date" name="tanggal_lahir" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Hobi / Minat</label>
+                                        <input type="text" name="hobby_client" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2" placeholder="Ex: Golf, Kopi">
+                                    </div>
                                 </div>
+
+                                {{-- ALAMAT --}}
                                 <div class="flex-grow">
                                     <label class="block text-[11px] font-bold text-gray-500 mb-1 uppercase">Alamat Rumah</label>
-                                    <textarea name="alamat_user" rows="3" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2 resize-none" placeholder="Alamat tempat tinggal..."></textarea>
+                                    <textarea name="alamat_user" rows="2" class="w-full border-2 border-blue-100 rounded text-sm focus:ring-blue-500 px-3 py-2 resize-none" placeholder="Alamat tempat tinggal..."></textarea>
                                 </div>
                             </div>
                         </div>

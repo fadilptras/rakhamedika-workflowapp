@@ -109,10 +109,14 @@ class AdminCrmController extends Controller
 
     /**
      * Simpan Klien Baru (Create)
+     * UPDATE: Sekarang Admin memilih user_id (PIC) manual
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            // Tambahkan Validasi User ID (Wajib Dipilih)
+            'user_id'           => 'required|exists:users,id',
+
             // Client
             'nama_user'         => 'required|string|max:255',
             'email'             => 'nullable|email|max:255',
@@ -142,12 +146,16 @@ class AdminCrmController extends Controller
 
         $data = $validator->validated();
         
-        // Admin membuat klien atas nama dirinya sendiri
-        $data['user_id'] = Auth::id();
-        $data['pic']     = Auth::user()->name; 
+        // Cari data Sales berdasarkan ID yang dipilih admin
+        $salesPerson = User::findOrFail($request->user_id);
+
+        $data['user_id'] = $salesPerson->id;
+        $data['pic']     = $salesPerson->name; // Nama PIC sesuai user yang dipilih
 
         $client = Client::create($data);
-        return redirect()->route('admin.crm.show', $client->id)->with('success', 'Data Klien berhasil dibuat oleh Admin!');
+        
+        return redirect()->route('admin.crm.show', $client->id)
+            ->with('success', 'Data Klien berhasil dibuat untuk Sales: ' . $salesPerson->name);
     }
 
     /**
@@ -172,8 +180,6 @@ class AdminCrmController extends Controller
             'recap'        => $calc['recap'],
             'year'         => $year,
             'yearlyTotals' => $calc['totals'],
-            
-            // [FIXED] Variabel yang sebelumnya hilang
             'startingBalance' => $calc['starting_balance'], 
             'startingLabel'   => $calc['starting_label']
         ]);
@@ -344,7 +350,7 @@ class AdminCrmController extends Controller
     }
 
     /**
-     * Helper Perhitungan Rekap (Private) - [LOGIKA DIPERBAIKI]
+     * Helper Perhitungan Rekap (Private)
      */
     private function calculateRecapData(Client $client, $year)
     {

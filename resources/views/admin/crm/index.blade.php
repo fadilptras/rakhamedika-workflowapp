@@ -227,6 +227,18 @@
                                 <h4 class="text-blue-300 text-xs font-bold uppercase tracking-wider">Identitas Personal</h4>
                             </div>
                             <div class="p-4 space-y-3 flex-grow">
+                                
+                                {{-- DROPDOWN PILIH SALES (PIC) --}}
+                                <div>
+                                    <label class="block text-[11px] font-bold text-zinc-400 mb-1 uppercase">Pilih Sales (PIC) <span class="text-red-500">*</span></label>
+                                    <select name="user_id" required class="w-full bg-zinc-900 border border-zinc-600 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 text-white font-semibold">
+                                        <option value="">-- Pilih Sales Penanggung Jawab --</option>
+                                        @foreach($users as $u)
+                                            <option value="{{ $u->id }}" {{ old('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
                                 <div>
                                     <label class="block text-[11px] font-bold text-zinc-400 mb-1 uppercase">Nama Client / User <span class="text-red-500">*</span></label>
                                     <input type="text" name="nama_user" required value="{{ old('nama_user') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 text-white font-semibold" placeholder="Nama Lengkap User">
