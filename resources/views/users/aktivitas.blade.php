@@ -168,7 +168,7 @@
                                                 <a href="{{ $event->photo_url }}" class="text-xs text-blue-500 hover:underline font-medium">Lihat Foto</a>
                                             @endif
                                             @if($event->latitude && $event->longitude)
-                                                <a href="https://www.google.com/maps?q=${latitude},{{ $event->longitude }}" target="_blank" class="text-xs text-blue-500 hover:underline font-medium">Lihat Lokasi</a>
+                                                <a href="https://www.google.com/maps?q={{ $event->latitude }},{{ $event->longitude }}" target="_blank" class="text-xs text-blue-500 hover:underline font-medium">Lihat Lokasi</a>
                                             @endif
                                         </div>
                                     </div>
@@ -444,7 +444,7 @@
                     let htmlContent = '<div class="space-y-4">';
                     data.forEach(item => {
                         const time = new Date(item.start).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                        const photo = item.extendedProps.photo_url ? `<a href="${item.extendedProps.photo_url}" target="_blank" class="text-blue-500 text-xs">Foto</a>` : '';
+                        const photo = item.extendedProps.photo_url ? `<a href="${item.extendedProps.photo_url}" class="text-blue-500 text-xs">Foto</a>` : '';
                         const loc = (item.extendedProps.latitude) ? `<a href="https://www.google.com/maps?q=${item.extendedProps.latitude},${item.extendedProps.longitude}" target="_blank" class="text-blue-500 text-xs">Lokasi</a>` : '';
                         
                         htmlContent += `

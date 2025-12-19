@@ -86,6 +86,18 @@
                     </h4>
                 </div>
                 <div class="space-y-4 flex-grow">
+                    {{-- [TAMBAHAN] JABATAN --}}
+                    <div>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Jabatan</p>
+                        <p class="text-zinc-200 text-sm font-medium">{{ $client->jabatan ?? '-' }}</p>
+                    </div>
+
+                    {{-- [TAMBAHAN] HOBBY --}}
+                    <div>
+                        <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Hobby / Minat</p>
+                        <p class="text-zinc-200 text-sm font-medium">{{ $client->hobby_client ?? '-' }}</p>
+                    </div>
+
                     <div>
                         <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Email & Telepon</p>
                         <p class="text-zinc-200 text-sm font-medium">{{ $client->email ?? '-' }}</p>
@@ -96,6 +108,7 @@
                             @endif
                         </p>
                     </div>
+                    
                     <div>
                         <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Tanggal Lahir</p>
                         <p class="text-zinc-200 text-sm font-medium">
@@ -510,100 +523,123 @@
     </div>
 
     {{-- MODAL EDIT DATA KLIEN --}}
-    <div id="editClientModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden transition-opacity duration-300">
-        <div class="bg-zinc-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-zinc-700">
-            <div class="bg-zinc-800 px-6 py-4 flex justify-between items-center border-b border-zinc-700 sticky top-0 z-10">
-                <h3 class="text-white font-bold text-lg flex items-center">
-                    <i class="fas fa-user-edit mr-2 text-amber-500"></i> Edit Data Klien (Admin)
-                </h3>
-                <button onclick="toggleModal('editClientModal')" class="text-zinc-400 hover:text-white transition focus:outline-none"><i class="fas fa-times text-lg"></i></button>
-            </div>
-            
-            <div class="p-6">
-                <form action="{{ route('admin.crm.client.update', $client->id) }}" method="POST">
-                    @csrf @method('PUT')
+    <div id="editClientModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        {{-- Backdrop --}}
+        <div class="fixed inset-0 bg-black bg-opacity-80 transition-opacity" onclick="toggleModal('editClientModal')"></div>
+        
+        <div class="flex items-center justify-center min-h-screen p-4 pointer-events-none">
+            <div class="relative bg-zinc-900 w-full max-w-4xl rounded-xl shadow-2xl border border-zinc-700 pointer-events-auto max-h-[90vh] overflow-y-auto">
+                
+                {{-- Header Modal --}}
+                <div class="bg-zinc-800 px-6 py-4 border-b border-zinc-700 flex justify-between items-center sticky top-0 z-10">
+                    <h3 class="text-white font-bold text-lg">
+                        <i class="fas fa-edit mr-2 text-amber-500"></i> Edit Data Klien
+                    </h3>
+                    <button onclick="toggleModal('editClientModal')" class="text-zinc-400 hover:text-white"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                
+                <div class="p-6">
+                    <form action="{{ route('admin.crm.client.update', $client->id) }}" method="POST">
+                        @csrf @method('PUT')
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {{-- Kolom 1 --}}
-                        <div class="space-y-4">
-                            <h4 class="text-amber-500 text-xs font-bold uppercase border-b border-zinc-700 pb-2">Identitas Personal</h4>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Client / Dokter</label>
-                                <input type="text" name="nama_user" value="{{ old('nama_user', $client->nama_user) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" required>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Tanggal Lahir</label>
-                                <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $client->tanggal_lahir ? \Carbon\Carbon::parse($client->tanggal_lahir)->format('Y-m-d') : '') }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm [color-scheme:dark]">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Kontak</label>
-                                <div class="space-y-2">
-                                    <input type="text" name="no_telpon" value="{{ old('no_telpon', $client->no_telpon) }}" placeholder="Telp" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
-                                    <input type="email" name="email" value="{{ old('email', $client->email) }}" placeholder="Email" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            {{-- KOLOM KIRI: PERSONAL --}}
+                            <div class="space-y-4">
+                                <h4 class="text-blue-400 text-xs font-bold uppercase border-b border-zinc-700 pb-2">Identitas Personal</h4>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Lengkap</label>
+                                    <input type="text" name="nama_user" value="{{ old('nama_user', $client->nama_user) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" required>
+                                </div>
+
+                                {{-- [TAMBAHAN] Input Jabatan --}}
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-400 mb-1">Jabatan</label>
+                                    <input type="text" name="jabatan" value="{{ old('jabatan', $client->jabatan) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" placeholder="Contoh: Manager / Direktur">
+                                </div>
+
+                                {{-- [TAMBAHAN] Input Hobby --}}
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-400 mb-1">Hobby / Minat</label>
+                                    <input type="text" name="hobby_client" value="{{ old('hobby_client', $client->hobby_client) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" placeholder="Contoh: Golf, Sepeda">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-zinc-400 mb-1">Tanggal Lahir</label>
+                                        <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $client->tanggal_lahir ? \Carbon\Carbon::parse($client->tanggal_lahir)->format('Y-m-d') : '') }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm [color-scheme:dark]">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-zinc-400 mb-1">No. Telp / WA</label>
+                                        <input type="text" name="no_telpon" value="{{ old('no_telpon', $client->no_telpon) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-400 mb-1">Alamat Rumah</label>
+                                    <textarea name="alamat_user" rows="2" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">{{ old('alamat_user', $client->alamat_user) }}</textarea>
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Alamat Rumah</label>
-                                <textarea name="alamat_user" rows="2" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">{{ old('alamat_user', $client->alamat_user) }}</textarea>
+
+                            {{-- KOLOM KANAN: PERUSAHAAN & BANK --}}
+                            <div class="space-y-4">
+                                <h4 class="text-amber-500 text-xs font-bold uppercase border-b border-zinc-700 pb-2">Data Perusahaan & Bank</h4>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Instansi / RS</label>
+                                    <input type="text" name="nama_perusahaan" value="{{ old('nama_perusahaan', $client->nama_perusahaan) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" required>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-zinc-400 mb-1">Area</label>
+                                        <input type="text" name="area" value="{{ old('area', $client->area) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-zinc-400 mb-1">Tgl Berdiri</label>
+                                        <input type="date" name="tanggal_berdiri" value="{{ old('tanggal_berdiri', $client->tanggal_berdiri ? \Carbon\Carbon::parse($client->tanggal_berdiri)->format('Y-m-d') : '') }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm [color-scheme:dark]">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-400 mb-1">Alamat Kantor</label>
+                                    <textarea name="alamat_perusahaan" rows="2" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">{{ old('alamat_perusahaan', $client->alamat_perusahaan) }}</textarea>
+                                </div>
+
+                                <div class="bg-zinc-800 p-3 rounded border border-zinc-700 mt-2">
+                                    <div class="grid grid-cols-2 gap-3 mb-2">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-zinc-500 uppercase">Nama Bank</label>
+                                            <input type="text" name="bank" value="{{ old('bank', $client->bank) }}" class="w-full bg-zinc-900 border-zinc-600 px-2 py-1 rounded text-white text-xs">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-zinc-500 uppercase">No. Rekening</label>
+                                            <input type="text" name="no_rekening" value="{{ old('no_rekening', $client->no_rekening) }}" class="w-full bg-zinc-900 border-zinc-600 px-2 py-1 rounded text-white text-xs font-mono">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-zinc-500 uppercase">Atas Nama</label>
+                                        <input type="text" name="nama_di_rekening" value="{{ old('nama_di_rekening', $client->nama_di_rekening) }}" class="w-full bg-zinc-900 border-zinc-600 px-2 py-1 rounded text-white text-xs">
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {{-- Kolom 2 --}}
-                        <div class="space-y-4">
-                            <h4 class="text-amber-500 text-xs font-bold uppercase border-b border-zinc-700 pb-2">Data Perusahaan</h4>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Instansi / RS</label>
-                                <input type="text" name="nama_perusahaan" value="{{ old('nama_perusahaan', $client->nama_perusahaan) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" required>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Tanggal Berdiri</label>
-                                <input type="date" name="tanggal_berdiri" value="{{ old('tanggal_berdiri', $client->tanggal_berdiri ? \Carbon\Carbon::parse($client->tanggal_berdiri)->format('Y-m-d') : '') }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm [color-scheme:dark]">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Area</label>
-                                <input type="text" name="area" value="{{ old('area', $client->area) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Alamat Kantor</label>
-                                <textarea name="alamat_perusahaan" rows="2" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">{{ old('alamat_perusahaan', $client->alamat_perusahaan) }}</textarea>
-                            </div>
+                        {{-- Footer Tombol --}}
+                        <div class="flex justify-end gap-3 pt-6 border-t border-zinc-700 mt-4">
+                            <button type="button" onclick="toggleModal('editClientModal')" class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded text-sm transition">Batal</button>
+                            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow text-sm transition">Simpan Perubahan</button>
                         </div>
-
-                        {{-- Kolom 3 --}}
-                        <div class="space-y-4">
-                            <h4 class="text-amber-500 text-xs font-bold uppercase border-b border-zinc-700 pb-2">Data Bank</h4>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Nama Bank</label>
-                                <input type="text" name="bank" value="{{ old('bank', $client->bank) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Nomor Rekening</label>
-                                <input type="text" name="no_rekening" value="{{ old('no_rekening', $client->no_rekening) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm font-mono focus:border-amber-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Atas Nama (A/N)</label>
-                                <input type="text" name="nama_di_rekening" value="{{ old('nama_di_rekening', $client->nama_di_rekening) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-zinc-400 mb-1">Saldo Awal (Rp)</label>
-                                <input type="number" name="saldo_awal" value="{{ old('saldo_awal', $client->saldo_awal) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm font-mono focus:border-amber-500">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end gap-3 pt-6 border-t border-zinc-700 mt-4">
-                        <button type="button" onclick="toggleModal('editClientModal')" class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded text-sm transition">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow text-sm transition">Simpan Perubahan</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- SCRIPT JAVASCRIPT --}}
     <script>
-        function toggleModal(modalId) {
-            const modal = document.getElementById(modalId);
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
             if (modal.classList.contains('hidden')) {
                 modal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden'; 

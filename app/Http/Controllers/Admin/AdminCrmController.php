@@ -109,20 +109,22 @@ class AdminCrmController extends Controller
 
     /**
      * Simpan Klien Baru (Create)
-     * UPDATE: Sekarang Admin memilih user_id (PIC) manual
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            // Tambahkan Validasi User ID (Wajib Dipilih)
             'user_id'           => 'required|exists:users,id',
 
-            // Client
+            // Client Identity
             'nama_user'         => 'required|string|max:255',
             'email'             => 'nullable|email|max:255',
             'no_telpon'         => 'nullable|string|max:50',
             'tanggal_lahir'     => 'nullable|date',
             'alamat_user'       => 'nullable|string', 
+            
+            // [BARU] Jabatan & Hobby
+            'jabatan'           => 'nullable|string|max:100',
+            'hobby_client'      => 'nullable|string|max:255',
 
             // Perusahaan
             'nama_perusahaan'   => 'required|string|max:255',
@@ -146,11 +148,9 @@ class AdminCrmController extends Controller
 
         $data = $validator->validated();
         
-        // Cari data Sales berdasarkan ID yang dipilih admin
         $salesPerson = User::findOrFail($request->user_id);
-
         $data['user_id'] = $salesPerson->id;
-        $data['pic']     = $salesPerson->name; // Nama PIC sesuai user yang dipilih
+        $data['pic']     = $salesPerson->name;
 
         $client = Client::create($data);
         
@@ -165,12 +165,10 @@ class AdminCrmController extends Controller
     {
         $year = $request->input('year', date('Y'));
 
-        // 1. Data Riwayat (Pagination)
         $interactions = $client->interactions()
                                ->orderBy('tanggal_interaksi', 'desc')
                                ->paginate(15); 
 
-        // 2. Hitung Data Rekap
         $calc = $this->calculateRecapData($client, $year);
 
         return view('admin.crm.show', [
@@ -185,9 +183,6 @@ class AdminCrmController extends Controller
         ]);
     }
 
-    /**
-     * Halaman Edit Klien
-     */
     public function edit(Client $client)
     {
         return view('admin.crm.show', ['title' => 'Edit Data Klien', 'client' => $client]);
@@ -205,6 +200,11 @@ class AdminCrmController extends Controller
             'email'           => 'nullable|email',
             'no_telpon'       => 'nullable|string',
             'alamat_user'     => 'nullable|string',
+            
+            // [BARU] Jabatan & Hobby
+            'jabatan'         => 'nullable|string|max:100',
+            'hobby_client'    => 'nullable|string|max:255',
+
             'alamat_perusahaan' => 'nullable|string',
             'bank'            => 'nullable|string',
             'no_rekening'     => 'nullable|string',
@@ -237,7 +237,6 @@ class AdminCrmController extends Controller
             'catatan'           => 'nullable|string',
         ]);
 
-        // Simpan note format lama untuk kompatibilitas
         $noteWithRate = "[Rate:" . $request->komisi . "] " . $request->catatan;
 
         Interaction::create([
@@ -317,27 +316,18 @@ class AdminCrmController extends Controller
         return redirect()->back()->with('success', 'Aktivitas Entertain berhasil dicatat (Saldo aman).');
     }
 
-    /**
-     * Hapus Data Klien
-     */
     public function destroyClient(Client $client)
     {
         $client->delete();
         return redirect()->route('admin.crm.index')->with('success', 'Data klien berhasil dihapus oleh Admin.');
     }
 
-    /**
-     * Hapus Transaksi
-     */
     public function destroyInteraction(Interaction $interaction)
     {
         $interaction->delete();
         return redirect()->back()->with('success', 'Transaksi berhasil dihapus.');
     }
 
-    /**
-     * Export Rekap Per Client
-     */
     public function exportClientRecap(Client $client, Request $request)
     {
         $year = $request->input('year', date('Y'));
@@ -349,19 +339,13 @@ class AdminCrmController extends Controller
         return Excel::download(new ClientAnnualExport($client, $calc['recap'], $year, $calc['totals']), $filename);
     }
 
-    /**
-     * Helper Perhitungan Rekap (Private)
-     */
+    // Helper Perhitungan Rekap (Private)
     private function calculateRecapData(Client $client, $year)
     {
-        // A. Tentukan Label Saldo
         $creationYear = $client->created_at->format('Y');
         $startingLabel = ($year > $creationYear) ? "Saldo Tahun " . ($year - 1) : "Saldo Awal";
-
-        // B. Hitung Nominal Saldo Awal (Carry Forward)
         $startingBalance = $client->saldo_awal ?? 0;
 
-        // Tambahkan semua akumulasi transaksi dari tahun-tahun sebelumnya
         $pastInteractions = $client->interactions()
                                    ->whereYear('tanggal_interaksi', '<', $year)
                                    ->get();
@@ -382,25 +366,20 @@ class AdminCrmController extends Controller
             }
         }
 
-        // C. Hitung Bulanan Tahun Ini
         $yearlyInteractions = $client->interactions()->whereYear('tanggal_interaksi', $year)->get();
         $recap = [];
-        $currentSaldo = $startingBalance; // Start from carry forward
+        $currentSaldo = $startingBalance; 
 
         for ($m = 1; $m <= 12; $m++) {
             $monthlyData = $yearlyInteractions->filter(function ($item) use ($m) {
                 return Carbon::parse($item->tanggal_interaksi)->month == $m;
             });
 
-            // Gross
             $grossSales = $monthlyData->where('jenis_transaksi', 'IN')->sum(function($item){
                 return $item->nilai_sales > 0 ? $item->nilai_sales : $item->nilai_kontribusi;
             });
-            
-            // Out
             $usageOut = $monthlyData->where('jenis_transaksi', 'OUT')->sum('nilai_kontribusi');
             
-            // Net
             $netRevenue = 0;
             $komisiList = [];
 
@@ -414,7 +393,6 @@ class AdminCrmController extends Controller
                 if($rate > 0) $komisiList[] = $rate.'%';
             }
 
-            // Hitung saldo berjalan
             $currentSaldo += ($netRevenue - $usageOut);
 
             $komisiList = array_unique($komisiList);
@@ -435,14 +413,14 @@ class AdminCrmController extends Controller
             'gross_in'  => collect($recap)->sum('gross_in'),
             'net_value' => collect($recap)->sum('net_value'),
             'out'       => collect($recap)->sum('out'),
-            'saldo'     => $currentSaldo // Saldo akhir tahun
+            'saldo'     => $currentSaldo 
         ];
 
         return [
             'recap' => $recap, 
             'totals' => $yearlyTotals,
-            'starting_balance' => $startingBalance, // Kirim Saldo Awal
-            'starting_label' => $startingLabel      // Kirim Label Saldo
+            'starting_balance' => $startingBalance, 
+            'starting_label' => $startingLabel      
         ];
     }
 }

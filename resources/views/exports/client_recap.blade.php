@@ -12,10 +12,10 @@
     <tr>
         <td colspan="2"><b>DATA KLIEN</b></td>
         <td></td>
-        {{-- UPDATE 1: Ubah Header jadi DATA BANK --}}
         <td colspan="3"><b>DATA BANK</b></td>
     </tr>
     
+    {{-- Baris 1: Nama & Bank --}}
     <tr>
         <td><b>Nama Klien</b></td>
         <td>{{ $client->nama_user }}</td>
@@ -24,30 +24,49 @@
         <td colspan="2" align="left">{{ $client->bank ?? '-' }}</td>
     </tr>
 
+    {{-- [BARU] Baris 2: Jabatan & No. Rekening --}}
     <tr>
-        <td><b>Instansi</b></td>
-        <td>{{ $client->nama_perusahaan }}</td>
+        <td><b>Jabatan</b></td>
+        <td>{{ $client->jabatan ?? '-' }}</td>
         <td></td>
         <td><b>No. Rekening</b></td>
         <td colspan="2" align="left" style="mso-number-format:'@';">{{ $client->no_rekening ?? '-' }}</td>
     </tr>
 
-    {{-- UPDATE 2: Tambah A/N (Atas Nama) --}}
+    {{-- Baris 3: Instansi & Atas Nama --}}
     <tr>
-        <td><b>Area</b></td>
-        <td>{{ $client->area ?? '-' }}</td>
+        <td><b>Instansi</b></td>
+        <td>{{ $client->nama_perusahaan }}</td>
         <td></td>
         <td><b>Atas Nama (A/N)</b></td>
         <td colspan="2" align="left">{{ $client->nama_di_rekening ?? '-' }}</td>
     </tr>
 
-    {{-- UPDATE 3: Geser Saldo Awal ke sini --}}
+    {{-- [BARU] Baris 4: Hobby & Saldo Awal --}}
+    <tr>
+        <td><b>Hobby / Minat</b></td>
+        <td>{{ $client->hobby_client ?? '-' }}</td>
+        <td></td>
+        <td><b>Saldo Awal</b></td>
+        <td colspan="2">{{ $client->saldo_awal ?? 0 }}</td>
+    </tr>
+
+    {{-- Baris 5: Area (Kanan Kosong) --}}
+    <tr>
+        <td><b>Area</b></td>
+        <td>{{ $client->area ?? '-' }}</td>
+        <td></td>
+        <td></td>
+        <td colspan="2"></td>
+    </tr>
+
+    {{-- Baris 6: PIC Sales (Kanan Kosong) --}}
     <tr>
         <td><b>PIC Sales</b></td>
         <td>{{ $client->pic }}</td>
         <td></td>
-        <td><b>Saldo Awal</b></td>
-        <td colspan="2">{{ $client->saldo_awal ?? 0 }}</td>
+        <td></td>
+        <td colspan="2"></td>
     </tr>
 
     <tr>
@@ -63,9 +82,11 @@
         <td colspan="5">{{ $client->alamat_user ?? $client->alamat_perusahaan ?? '-' }}</td>
     </tr>
 
-    <tr><td colspan="6"></td></tr> {{-- Spasi Sebelum Tabel --}}
+    <tr>
+        <td colspan="6" style="height: 25px;"></td> 
+    </tr>
 
-    {{-- HEADER TABEL --}}
+    {{-- HEADER TABEL TRANSAKSI --}}
     <tr>
         <th align="center" style="border: 1px solid #000000; background-color: #f3f4f6;">BULAN</th>
         <th align="center" style="border: 1px solid #000000; background-color: #f3f4f6;">SALES (IN)</th>

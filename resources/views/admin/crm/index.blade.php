@@ -37,19 +37,15 @@
         </div>
         
         <div class="flex flex-wrap gap-3 w-full xl:w-auto items-center">
-            
-            {{-- Tombol Export Matrix Excel --}}
             <a href="{{ route('admin.crm.matrix.export', ['year' => request('year', date('Y')), 'user_id' => request('user_id')]) }}" 
                class="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-bold py-2.5 px-4 rounded-lg shadow-lg flex items-center transition-colors border border-emerald-600">
                 <i class="fas fa-file-excel mr-2"></i> Export Matrix
             </a>
 
-            {{-- Tombol Tambah Klien --}}
             <button onclick="toggleModal('createClientModal')" class="bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold py-2.5 px-4 rounded-lg shadow-lg flex items-center transition-colors border border-amber-500/50">
                 <i class="fas fa-plus mr-2"></i> Tambah Klien
             </button>
 
-            {{-- Filter User --}}
             <form action="{{ route('admin.crm.index') }}" method="GET" class="flex items-center gap-2">
                  <select name="user_id" onchange="this.form.submit()" class="bg-zinc-900 border border-zinc-700 text-zinc-300 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5">
                     <option value="">-- Semua Sales --</option>
@@ -63,7 +59,6 @@
 
     {{-- Statistik Cards --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {{-- Card 1 --}}
         <div class="bg-zinc-800 p-6 rounded-xl shadow-lg border border-zinc-700/50 flex flex-col justify-between h-full">
             <div>
                 <p class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Total Klien Aktif</p>
@@ -74,7 +69,6 @@
             </div>
         </div>
 
-        {{-- Card 2 --}}
         <div class="bg-zinc-800 p-6 rounded-xl shadow-lg border border-zinc-700/50 flex flex-col justify-between h-full">
             <div>
                 <p class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Total Nilai Sales (Gross)</p>
@@ -87,7 +81,6 @@
             </div>
         </div>
 
-        {{-- Card 3 --}}
         <div class="bg-zinc-800 p-6 rounded-xl shadow-lg border border-zinc-700/50 flex flex-col justify-between h-full">
             <div>
                 <p class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Total Saldo (Net)</p>
@@ -106,7 +99,6 @@
         <div class="px-6 py-4 border-b border-zinc-700 bg-zinc-800/50 flex justify-between items-center">
             <h3 class="font-bold text-zinc-200">Daftar Klien & Sales</h3>
             
-            {{-- Search Input untuk Admin --}}
             <div class="relative w-64">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
                     <i class="fas fa-search text-xs"></i>
@@ -150,6 +142,8 @@
                     <tr class="hover:bg-zinc-700/30 transition duration-150">
                         <td class="px-6 py-4">
                             <div class="font-bold text-white text-base">{{ $client->nama_user }}</div>
+                            {{-- [BARU] Menampilkan Jabatan --}}
+                            <div class="text-xs text-blue-400 font-medium mb-0.5">{{ $client->jabatan ?? '-' }}</div>
                             <div class="text-xs text-zinc-400 font-medium">{{ $client->nama_perusahaan }}</div>
                         </td>
                         <td class="px-6 py-4">
@@ -204,7 +198,6 @@
         
         <div class="bg-zinc-900 w-full md:max-w-6xl rounded-2xl shadow-2xl overflow-hidden border border-zinc-700 flex flex-col max-h-[90vh]">
             
-            {{-- HEADER MODAL --}}
             <div class="bg-zinc-800 px-6 py-4 border-b border-zinc-700 flex justify-between items-center shadow-md z-10 shrink-0">
                 <h3 class="font-bold text-lg text-white flex items-center">
                     <i class="fas fa-user-plus mr-3 text-amber-500"></i> Input Data Klien Baru (Admin)
@@ -212,7 +205,6 @@
                 <button onclick="toggleModal('createClientModal')" class="text-zinc-400 hover:text-white transition text-2xl font-bold focus:outline-none">&times;</button>
             </div>
             
-            {{-- FORM BODY --}}
             <form action="{{ route('admin.crm.store') }}" method="POST" class="flex flex-col flex-grow overflow-hidden">
                 @csrf
                 
@@ -228,7 +220,6 @@
                             </div>
                             <div class="p-4 space-y-3 flex-grow">
                                 
-                                {{-- DROPDOWN PILIH SALES (PIC) --}}
                                 <div>
                                     <label class="block text-[11px] font-bold text-zinc-400 mb-1 uppercase">Pilih Sales (PIC) <span class="text-red-500">*</span></label>
                                     <select name="user_id" required class="w-full bg-zinc-900 border border-zinc-600 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 text-white font-semibold">
@@ -243,6 +234,13 @@
                                     <label class="block text-[11px] font-bold text-zinc-400 mb-1 uppercase">Nama Client / User <span class="text-red-500">*</span></label>
                                     <input type="text" name="nama_user" required value="{{ old('nama_user') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 text-white font-semibold" placeholder="Nama Lengkap User">
                                 </div>
+
+                                {{-- [BARU] Input Jabatan --}}
+                                <div>
+                                    <label class="block text-[11px] font-bold text-zinc-400 mb-1 uppercase">Jabatan</label>
+                                    <input type="text" name="jabatan" value="{{ old('jabatan') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 text-white" placeholder="Contoh: Direktur / Manager">
+                                </div>
+
                                 <div>
                                     <label class="block text-[11px] font-bold text-zinc-500 mb-1 uppercase">Kontak Personal</label>
                                     <div class="grid grid-cols-2 gap-2">
@@ -250,13 +248,22 @@
                                         <input type="email" name="email" value="{{ old('email') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded text-sm text-white px-3 py-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Email">
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold text-zinc-500 mb-1 uppercase">Tanggal Lahir</label>
-                                    <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded text-sm text-white px-3 py-2 [color-scheme:dark] focus:ring-blue-500 focus:border-blue-500">
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-zinc-500 mb-1 uppercase">Tanggal Lahir</label>
+                                        <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded text-sm text-white px-3 py-2 [color-scheme:dark] focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    {{-- [BARU] Input Hobby --}}
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-zinc-500 mb-1 uppercase">Hobby / Minat</label>
+                                        <input type="text" name="hobby_client" value="{{ old('hobby_client') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded text-sm text-white px-3 py-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: Golf">
+                                    </div>
                                 </div>
+
                                 <div class="flex-grow">
                                     <label class="block text-[11px] font-bold text-zinc-500 mb-1 uppercase">Alamat Rumah</label>
-                                    <textarea name="alamat_user" rows="3" class="w-full bg-zinc-900 border border-zinc-600 rounded text-sm text-white px-3 py-2 resize-none focus:ring-blue-500 focus:border-blue-500" placeholder="Alamat tempat tinggal...">{{ old('alamat_user') }}</textarea>
+                                    <textarea name="alamat_user" rows="2" class="w-full bg-zinc-900 border border-zinc-600 rounded text-sm text-white px-3 py-2 resize-none focus:ring-blue-500 focus:border-blue-500" placeholder="Alamat tempat tinggal...">{{ old('alamat_user') }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -363,9 +370,9 @@
     </script>
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #18181b; } /* Zinc-900 */
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; } /* Zinc-700 */
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #52525b; } /* Zinc-600 */
+        .custom-scrollbar::-webkit-scrollbar-track { background: #18181b; } 
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; } 
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #52525b; }
     </style>
 
 </x-layout-admin>
