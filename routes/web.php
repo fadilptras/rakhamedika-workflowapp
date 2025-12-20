@@ -192,11 +192,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         
     // Cuti
     Route::prefix('cuti')->name('cuti.')->group(function () {
-        Route::get('/', [AdminCutiController::class, 'index'])->name('index');
-        Route::get('/pengaturan', [AdminCutiController::class, 'pengaturanCuti'])->name('pengaturan');
-        Route::post('/pengaturan', [AdminCutiController::class, 'updatePengaturanCuti'])->name('updatePengaturan');
-        Route::get('/{cuti}', [AdminCutiController::class, 'show'])->name('show');
-        Route::get('/{cuti}/download', [AdminCutiController::class, 'download'])->name('download');
+    Route::get('/', [AdminCutiController::class, 'index'])->name('index');
+    Route::get('/rekap-pdf', [AdminCutiController::class, 'downloadRekapPDF'])->name('downloadRekapPdf');
+    Route::get('/pengaturan-pdf', [AdminCutiController::class, 'downloadPengaturanPDF'])->name('downloadPengaturanPDF');
+    Route::get('/pengaturan', [AdminCutiController::class, 'pengaturanCuti'])->name('pengaturan');
+    Route::post('/pengaturan', [AdminCutiController::class, 'updatePengaturanCuti'])->name('updatePengaturan');
+    Route::get('/{cuti}', [AdminCutiController::class, 'show'])->name('show');
+    Route::get('/{cuti}/download', [AdminCutiController::class, 'download'])->name('download');
     });
 
     // Pengajuan Dana

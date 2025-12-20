@@ -2,7 +2,19 @@
     <x-slot:title>Pengaturan Jatah Cuti</x-slot:title>
 
     <div class="p-6">
-        <h1 class="text-2xl font-bold text-white mb-6">Pengaturan Jatah Cuti Karyawan</h1>
+        {{-- [UPDATE] Ubah bagian header ini --}}
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white">Pengaturan Jatah Cuti Karyawan</h1>
+                <p class="text-sm text-zinc-400 mt-1">Atur kuota cuti tahunan dan pantau sisa cuti karyawan.</p>
+            </div>
+            
+            {{-- [BARU] Tombol Download PDF --}}
+            <a href="{{ route('admin.cuti.downloadPengaturanPDF') }}" class="mt-4 md:mt-0 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition flex items-center gap-2">
+                <i class="fas fa-file-pdf"></i>
+                <span>Download Laporan</span>
+            </a>
+        </div>
 
         {{-- Notifikasi Sukses --}}
         @if (session('success'))

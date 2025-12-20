@@ -1,123 +1,176 @@
 <x-layout-admin>
     <x-slot:title>{{ $title }}</x-slot:title>
 
-    <div class="p-6">
-        <h1 class="text-2xl font-bold text-white mb-6">Manajemen Pengajuan Cuti Karyawan</h1>
+    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Manajemen Pengajuan Cuti Karyawan</h1>
+            <p class="text-sm text-zinc-400 mt-1">Pantau cuti yang masuk, disetujui, dan ditolak.</p>
+        </div>
+    </div>
+
+    <div class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700">
+        
+        {{-- [BARU] TAB NAVIGATION --}}
+        <div class="flex border-b border-zinc-700 px-6 mt-4">
+            <a href="{{ route('admin.cuti.index', array_merge(request()->query(), ['tab' => 'pending', 'page' => 1])) }}" 
+               class="px-4 py-3 text-sm font-medium transition-colors border-b-2 {{ $activeTab == 'pending' ? 'border-amber-500 text-amber-500' : 'border-transparent text-zinc-400 hover:text-zinc-200' }}">
+               <i class="fas fa-clock mr-2"></i> Perlu Persetujuan
+            </a>
+            <a href="{{ route('admin.cuti.index', array_merge(request()->query(), ['tab' => 'approved', 'page' => 1])) }}" 
+               class="px-4 py-3 text-sm font-medium transition-colors border-b-2 {{ $activeTab == 'approved' ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-zinc-400 hover:text-zinc-200' }}">
+               <i class="fas fa-check-circle mr-2"></i> Disetujui
+            </a>
+            <a href="{{ route('admin.cuti.index', array_merge(request()->query(), ['tab' => 'rejected', 'page' => 1])) }}" 
+               class="px-4 py-3 text-sm font-medium transition-colors border-b-2 {{ $activeTab == 'rejected' ? 'border-red-500 text-red-500' : 'border-transparent text-zinc-400 hover:text-zinc-200' }}">
+               <i class="fas fa-times-circle mr-2"></i> Ditolak
+            </a>
+            <a href="{{ route('admin.cuti.index', array_merge(request()->query(), ['tab' => 'all', 'page' => 1])) }}" 
+               class="px-4 py-3 text-sm font-medium transition-colors border-b-2 {{ $activeTab == 'all' ? 'border-blue-500 text-blue-500' : 'border-transparent text-zinc-400 hover:text-zinc-200' }}">
+               Semua Data
+            </a>
+        </div>
 
         {{-- Form Filter --}}
-        <div class="my-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
-            <h3 class="text-lg font-semibold text-white mb-4">Filter Data Cuti</h3>
+        <div class="p-6">
             <form action="{{ route('admin.cuti.index') }}" method="GET">
-                <div class="flex flex-wrap items-end gap-4">
+                <input type="hidden" name="tab" value="{{ $activeTab }}">
+                
+                {{-- 
+                    UBAH DISINI: 
+                    Ganti lg:grid-cols-4 menjadi lg:grid-cols-5 
+                    agar kita punya pembagian ruang yang lebih fleksibel.
+                --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    
                     {{-- Filter Karyawan --}}
                     <div>
-                        <label for="user_id" class="block text-sm font-medium text-zinc-300">Karyawan</label>
-                        <select name="user_id" id="user_id" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <label for="user_id" class="block text-sm font-medium text-zinc-400 mb-1">Karyawan</label>
+                        <select name="user_id" id="user_id" class="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             <option value="">Semua Karyawan</option>
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}" @selected(request('user_id') == $user->id)>{{ $user->name }}</option>
                             @endforeach
                         </select>
+                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
                     </div>
 
-                    {{-- Filter Status --}}
+                    {{-- Filter Tanggal Mulai (Lebar otomatis mengecil karena grid dibagi 5) --}}
                     <div>
-                        <label for="status" class="block text-sm font-medium text-zinc-300">Status</label>
-                        <select name="status" id="status" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="">Semua Status</option>
-                            <option value="diajukan" @selected(request('status') == 'diajukan')>Diajukan</option>
-                            <option value="disetujui" @selected(request('status') == 'disetujui')>Disetujui</option>
-                            <option value="ditolak" @selected(request('status') == 'ditolak')>Ditolak</option>
-                        </select>
+                        <label for="tanggal_mulai" class="block text-sm font-medium text-zinc-400 mb-1">Tanggal Mulai</label>
+                        <input type="date" name="tanggal_mulai" id="tanggal_mulai" value="{{ request('tanggal_mulai') }}" class="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm [color-scheme:dark]">
+                    </div>
+                    
+                    {{-- Filter Tanggal Akhir (Lebar otomatis mengecil karena grid dibagi 5) --}}
+                    <div>
+                        <label for="tanggal_akhir" class="block text-sm font-medium text-zinc-400 mb-1">Tanggal Akhir</label>
+                        <input type="date" name="tanggal_akhir" id="tanggal_akhir" value="{{ request('tanggal_akhir') }}" class="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm [color-scheme:dark]">
                     </div>
 
-                    {{-- Filter Tanggal --}}
-                    <div>
-                        <label for="tanggal_mulai" class="block text-sm font-medium text-zinc-300">Tanggal Mulai</label>
-                        <input type="date" name="tanggal_mulai" id="tanggal_mulai" value="{{ request('tanggal_mulai') }}" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label for="tanggal_akhir" class="block text-sm font-medium text-zinc-300">Tanggal Akhir</label>
-                        <input type="date" name="tanggal_akhir" id="tanggal_akhir" value="{{ request('tanggal_akhir') }}" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    </div>
-
-                    {{-- Tombol Filter --}}
-                    <div>
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition">
+                    {{-- Bagian Tombol Filter --}}
+                    {{-- 
+                        TAMBAHKAN: class "lg:col-span-2" 
+                        Ini akan membuat area tombol mengambil jatah 2 kolom, 
+                        memberikan ruang yang cukup agar tombol "Cetak Rekap" tidak turun ke bawah.
+                    --}}
+                    <div class="flex items-end gap-2 lg:col-span-2">
+                        {{-- Tombol Filter --}}
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition">
                             Filter
                         </button>
-                        <a href="{{ route('admin.cuti.index') }}" class="ml-2 px-4 py-2 bg-zinc-600 hover:bg-zinc-500 text-white font-semibold rounded-lg shadow-sm transition">
+                        
+                        {{-- Tombol Reset --}}
+                        <a href="{{ route('admin.cuti.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition text-center">
                             Reset
                         </a>
+
+                        {{-- Tombol Cetak Rekap --}}
+                        <button type="submit" 
+                                formaction="{{ route('admin.cuti.downloadRekapPdf') }}" 
+                                formmethod="GET" 
+                                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center justify-center gap-2 whitespace-nowrap" 
+                                title="Download Rekap PDF">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>Cetak Rekap</span>
+                        </button>
                     </div>
                 </div>
             </form>
         </div>
 
         {{-- Tabel Data --}}
-        <div class="bg-zinc-800 rounded-lg shadow-md overflow-hidden border border-zinc-700">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-zinc-300">
-                    <thead class="bg-zinc-900 text-zinc-400 uppercase text-xs font-semibold">
-                        <tr>
-                            <th class="px-4 py-3">Nama Karyawan</th>
-                            <th class="px-4 py-3">Jenis Cuti</th>
-                            <th class="px-4 py-3">Tanggal</th>
-                            <th class="px-4 py-3">Status</th>
-                            <th class="px-4 py-3 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-700">
-                        @forelse($cutiRequests as $cuti)
-                        <tr class="hover:bg-zinc-700/50 transition">
-                            <td class="px-4 py-3 font-medium text-white">{{ $cuti->user->name }}</td>
-                            <td class="px-4 py-3 capitalize">{{ $cuti->jenis_cuti }}</td>
-                            <td class="px-4 py-3">
-                                {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d M Y') }} 
-                                <span class="text-zinc-500">-</span> 
-                                {{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d M Y') }}
-                                <br>
-                                <span class="text-xs text-zinc-500">
-                                    ({{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($cuti->tanggal_selesai)) + 1 }} hari)
-                                </span>
-                            </td>
-                            <td class="px-4 py-3">
-                                <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs capitalize
-                                    @if($cuti->status == 'disetujui') bg-green-500/10 text-green-400
-                                    @elseif($cuti->status == 'ditolak') bg-red-500/10 text-red-400
-                                    @else bg-yellow-500/10 text-yellow-400 @endif">
-                                    {{ $cuti->status }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <div class="flex items-center justify-center gap-4">
-                                    {{-- Tombol Lihat Detail --}}
-                                    <a href="{{ route('admin.cuti.show', $cuti) }}" class="text-indigo-400 hover:text-indigo-300 transition" title="Lihat Detail">
-                                        <i class="fas fa-file text-lg"></i>
-                                    </a>
+        <div class="relative overflow-x-auto">
+            <table class="w-full text-left text-sm text-zinc-300">
+                <thead class="bg-zinc-700/50 text-zinc-400 uppercase text-xs font-semibold">
+                    <tr>
+                        <th class="px-6 py-3">Nama Karyawan</th>
+                        <th class="px-6 py-3">Jenis Cuti</th>
+                        <th class="px-6 py-3">Tanggal</th>
+                        <th class="px-6 py-3">Status</th>
+                        <th class="px-6 py-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-700">
+                    @forelse($cutiRequests as $cuti)
+                    <tr class="hover:bg-zinc-700/50 transition">
+                        <td class="px-6 py-4 font-medium text-white">{{ $cuti->user->name }}</td>
+                        <td class="px-6 py-4 capitalize">{{ $cuti->jenis_cuti }}</td>
+                        <td class="px-6 py-4">
+                            {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d M Y') }} 
+                            <span class="text-zinc-500">-</span> 
+                            {{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d M Y') }}
+                            <br>
+                            <span class="text-xs text-zinc-500">
+                                ({{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($cuti->tanggal_selesai)) + 1 }} hari)
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 font-semibold leading-tight rounded-full text-xs capitalize
+                                @if($cuti->status == 'disetujui' || $cuti->status == 'diterima') bg-green-500/10 text-green-400
+                                @elseif($cuti->status == 'ditolak') bg-red-500/10 text-red-400
+                                @else bg-yellow-500/10 text-yellow-400 @endif">
+                                {{ $cuti->status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-4">
+                                {{-- Tombol Lihat Detail --}}
+                                <a href="{{ route('admin.cuti.show', $cuti) }}" class="text-indigo-400 hover:text-indigo-300 transition" title="Lihat Detail">
+                                    <i class="fas fa-file text-lg"></i>
+                                </a>
 
-                                    {{-- [BARU] Tombol Download PDF --}}
-                                    <a href="{{ route('admin.cuti.download', $cuti) }}" class="text-red-400 hover:text-red-300 transition" title="Download Formulir PDF">
-                                        <i class="fas fa-file-pdf text-lg"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="text-center py-10 text-zinc-400">
-                                Tidak ada data pengajuan cuti yang cocok dengan filter.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                {{-- Tombol Download PDF --}}
+                                <a href="{{ route('admin.cuti.download', $cuti) }}" class="text-red-400 hover:text-red-300 transition" title="Download Formulir PDF">
+                                    <i class="fas fa-file-pdf text-lg"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="text-center py-10 text-zinc-500">
+                             @if($activeTab == 'pending')
+                                Tidak ada pengajuan cuti yang perlu disetujui.
+                            @elseif($activeTab == 'approved')
+                                Belum ada pengajuan cuti yang disetujui.
+                            @elseif($activeTab == 'rejected')
+                                Belum ada pengajuan cuti yang ditolak.
+                            @else
+                                Tidak ada data untuk ditampilkan.
+                            @endif
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
-            {{-- Pagination Links --}}
-            <div class="mt-6 p-4">
-                {{ $cutiRequests->links() }}
-            </div>
+        {{-- Pagination Links --}}
+        <div class="mt-6 p-4 border-t border-zinc-700">
+            {{ $cutiRequests->links() }}
         </div>
     </div>
 </x-layout-admin>

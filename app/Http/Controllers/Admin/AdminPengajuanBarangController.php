@@ -18,6 +18,27 @@ class AdminPengajuanBarangController extends Controller
     {
         $query = PengajuanBarang::with('user')->latest();
 
+        // [BARU] Logika Tabulasi Status
+        $activeTab = $request->input('tab', 'pending'); 
+
+        switch ($activeTab) {
+            case 'pending':
+                // Menampilkan yang sedang berjalan (Menunggu Atasan atau Diproses Gudang)
+                $query->whereIn('status', ['diajukan', 'diproses']);
+                break;
+            case 'approved':
+                // Menampilkan yang sudah selesai
+                $query->where('status', 'selesai');
+                break;
+            case 'rejected':
+                // Menampilkan yang gagal/batal
+                $query->whereIn('status', ['ditolak', 'dibatalkan']);
+                break;
+            default:
+                // Jika tab='all', tampilkan semua
+                break;
+        }
+
         // Filter Karyawan
         if ($request->filled('karyawan_id')) {
             $query->where('user_id', $request->karyawan_id);
@@ -51,6 +72,7 @@ class AdminPengajuanBarangController extends Controller
             'pengajuanBarangs' => $pengajuanBarangs,
             'karyawanList' => $karyawanList,
             'divisiList' => $divisiList,
+            'activeTab' => $activeTab // Kirim variable tab ke view
         ]);
     }
 
@@ -59,7 +81,6 @@ class AdminPengajuanBarangController extends Controller
      */
     public function show(PengajuanBarang $pengajuanBarang)
     {
-        // Load relasi approver (Atasan & Gudang)
         $pengajuanBarang->load(['user', 'approverAtasan', 'approverGudang']);
 
         return view('admin.pengajuan-barang.show', [
@@ -69,7 +90,7 @@ class AdminPengajuanBarangController extends Controller
     }
 
     /**
-     * Download PDF Satuan (Menggunakan view yang sama dengan User).
+     * Download PDF Satuan.
      */
     public function downloadPDF(PengajuanBarang $pengajuanBarang)
     {
@@ -88,11 +109,26 @@ class AdminPengajuanBarangController extends Controller
     public function downloadRekapPDF(Request $request)
     {
         $query = PengajuanBarang::with('user')->latest();
+        
+        // [BARU] Terapkan logika Tab pada PDF juga
+        $activeTab = $request->input('tab', 'pending'); 
+        switch ($activeTab) {
+            case 'pending':
+                $query->whereIn('status', ['diajukan', 'diproses']);
+                break;
+            case 'approved':
+                $query->where('status', 'selesai');
+                break;
+            case 'rejected':
+                $query->whereIn('status', ['ditolak', 'dibatalkan']);
+                break;
+        }
+
         $startDate = null; $endDate = null;
         $karyawanId = $request->input('karyawan_id');
         $divisi = $request->input('divisi');
 
-        // Filter Query (Sama seperti index)
+        // Filter Query
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $startDate = Carbon::parse($request->start_date)->startOfDay();
             $endDate = Carbon::parse($request->end_date)->endOfDay();
@@ -125,7 +161,7 @@ class AdminPengajuanBarangController extends Controller
             'divisiName'
         ));
         
-        $filename = "rekap-pengajuan-barang-" . Carbon::now()->format('Y-m-d') . ".pdf";
+        $filename = "rekap-pengajuan-barang-" . strtoupper($activeTab) . "-" . Carbon::now()->format('Y-m-d') . ".pdf";
         return $pdf->download($filename);
     }
 }
