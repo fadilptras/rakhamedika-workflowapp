@@ -40,6 +40,20 @@ Route::view('/forgot-password', 'auth.forgot-password')->middleware('guest')->na
 
 // Route untuk Fitur Utama Pengguna (yang sudah login)
 Route::middleware('auth')->group(function () {
+
+    Route::post('/update-fcm-token', function (\Illuminate\Http\Request $request) {
+        // Cek apakah token dikirim
+        if (!$request->has('token')) {
+            return response()->json(['success' => false, 'message' => 'Token kosong'], 400);
+        }
+
+        // Simpan ke database
+        $request->user()->update([
+            'fcm_token' => $request->token
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Token berhasil disimpan']);
+    })->name('fcm.update');
     
     // Dasboard
     Route::get('/dashboard', function () {
@@ -145,6 +159,7 @@ Route::controller(CrmController::class)->group(function () {
             Route::get('/{pengajuanBarang}/download', 'download')->name('download');
             Route::post('/{pengajuanBarang}/cancel', 'cancel')->name('cancel');
         });
+
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -259,4 +274,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{pengajuanBarang}', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'show'])->name('show');
         Route::get('/{pengajuanBarang}/download', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'downloadPDF'])->name('downloadPdf');
     });
+
+    
 });

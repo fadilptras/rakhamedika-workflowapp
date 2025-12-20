@@ -6,6 +6,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use App\Models\Cuti;
+// [BARU] Import Channel Firebase
+use App\Notifications\Channels\FirebaseChannel;
 
 class CutiNotification extends Notification
 {
@@ -18,7 +20,7 @@ class CutiNotification extends Notification
      * Buat instance notifikasi baru.
      *
      * @param \App\Models\Cuti $cuti
-     * @param string $tipe Konteks notifikasi: 'baru', 'disetujui', 'ditolak'
+     * @param string $tipe Konteks notifikasi: 'baru', 'disetujui', 'ditolak', 'dibatalkan'
      * @return void
      */
     public function __construct(Cuti $cuti, string $tipe = 'baru')
@@ -27,11 +29,13 @@ class CutiNotification extends Notification
         $this->tipe = $tipe;
     }
 
+    // [UBAH DISINI] Tambahkan FirebaseChannel agar masuk ke notifikasi HP
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', FirebaseChannel::class];
     }
 
+    // [TETAP] Logika asli kamu tidak diubah
     public function toArray(object $notifiable): array
     {
         $title = '';
@@ -48,6 +52,7 @@ class CutiNotification extends Notification
                 $icon = 'fas fa-check-circle';
                 $color = 'text-green-600';
                 break;
+
             case 'ditolak':
                 $title = 'Pengajuan Cuti Ditolak';
                 $message = "Mohon maaf, pengajuan cuti Anda untuk tanggal $tanggalMulai ditolak.";
@@ -76,6 +81,19 @@ class CutiNotification extends Notification
             'url' => route('cuti.show', $this->cuti->id),
             'icon' => $icon,
             'color' => $color,
+        ];
+    }
+
+    // [BARU] Data untuk Firebase (Popup HP)
+    // Menggunakan data dari toArray agar pesannya konsisten dengan database
+    public function toFirebase($notifiable)
+    {
+        $data = $this->toArray($notifiable);
+
+        return [
+            'title' => $data['title'],
+            'body'  => $data['message'],
+            'url'   => $data['url'] // Mengarah ke halaman detail cuti
         ];
     }
 }

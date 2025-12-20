@@ -26,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'fcm_token',
         'profile_picture',
         'jabatan',
         'tanggal_bergabung',

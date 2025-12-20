@@ -42,19 +42,22 @@
                 --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                     
-                    {{-- Filter Karyawan --}}
                     <div>
                         <label for="user_id" class="block text-sm font-medium text-zinc-400 mb-1">Karyawan</label>
-                        <select name="user_id" id="user_id" class="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="">Semua Karyawan</option>
-                            @foreach($users as $user)
-                                <option value="{{ $user->id }}" @selected(request('user_id') == $user->id)>{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
+                        
+                        <div class="relative">
+                            <select name="user_id" id="user_id" 
+                                    class="w-full appearance-none bg-zinc-700 border border-zinc-600 rounded-lg pl-3 pr-10 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-pointer">
+                                <option value="">Semua Karyawan</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}" @selected(request('user_id') == $user->id)>{{ $user->name }}</option>
+                                @endforeach
+                            </select>
+                            
+                            {{-- Custom Arrow Icon --}}
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </div>
                         </div>
                     </div>
 
