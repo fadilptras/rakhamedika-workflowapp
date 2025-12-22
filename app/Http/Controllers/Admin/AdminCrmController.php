@@ -65,7 +65,10 @@ class AdminCrmController extends Controller
                     $c_usage_total += $item->nilai_kontribusi;
                 }
             }
-            $saldo_klien = $c_net_total - $c_usage_total;
+            
+            // [UPDATED] Menambahkan Saldo Awal ke perhitungan Saldo Net Klien
+            $saldo_klien = ($c->saldo_awal ?? 0) + $c_net_total - $c_usage_total;
+            
             $totalOmset += $c_gross_total;
             $totalNet   += $saldo_klien;
         }
@@ -122,7 +125,7 @@ class AdminCrmController extends Controller
             'tanggal_lahir'     => 'nullable|date',
             'alamat_user'       => 'nullable|string', 
             
-            // [BARU] Jabatan & Hobby
+            // Jabatan & Hobby
             'jabatan'           => 'nullable|string|max:100',
             'hobby_client'      => 'nullable|string|max:255',
 
@@ -201,7 +204,7 @@ class AdminCrmController extends Controller
             'no_telpon'       => 'nullable|string',
             'alamat_user'     => 'nullable|string',
             
-            // [BARU] Jabatan & Hobby
+            // Jabatan & Hobby
             'jabatan'         => 'nullable|string|max:100',
             'hobby_client'    => 'nullable|string|max:255',
 

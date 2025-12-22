@@ -108,23 +108,44 @@
                             </div>
                         </div>
                         <div class="p-6 md:p-8">
-                             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-1" for="pilih-bank">Pilih Bank <span class="text-red-500">*</span></label>
-                                        <select id="pilih-bank" name="nama_bank" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043915] focus:shadow-inner transition-all" required>
-                                            <option value="" disabled selected>Pilih salah satu</option>
-                                            <option value="BCA">BCA</option><option value="BRI">BRI</option><option value="BNI">BNI</option><option value="Mandiri">Mandiri</option><option value="other">Lainnya</option>
-                                        </select>
-                                    </div>
-                                    <div id="bank-lainnya-container" class="hidden">
-                                        <label class="block text-sm font-medium text-slate-700 mb-1" for="input-bank-lainnya">Nama Bank <span class="text-red-500">*</span></label>
-                                        <input type="text" id="input-bank-lainnya" name="nama_bank_lainnya" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:shadow-inner focus:ring-2 focus:ring-[#043915] transition-all" placeholder="Nama bank">
+                            {{-- Ubah Grid menjadi 3 Kolom di layar sedang (md) --}}
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                
+                                {{-- Kolom 1: Bank --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1" for="pilih-bank">Pilih Bank <span class="text-red-500">*</span></label>
+                                    <select id="pilih-bank" name="nama_bank" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043915] focus:shadow-inner transition-all" required>
+                                        <option value="" disabled selected>Pilih Bank</option>
+                                        <option value="BCA">BCA</option>
+                                        <option value="BRI">BRI</option>
+                                        <option value="BNI">BNI</option>
+                                        <option value="Mandiri">Mandiri</option>
+                                        <option value="CIMB Niaga">CIMB Niaga</option>
+                                        <option value="BSI">BSI</option>
+                                        <option value="OCBC NISP">OCBC NISP</option>
+                                        <option value="Permata">Permata</option>
+                                        <option value="Jago">Jago</option>
+                                        <option value="Seabank">Seabank</option>
+                                        <option value="other">Lainnya</option>
+                                    </select>
+                                    
+                                    {{-- Input Bank Lainnya (Hidden by default) --}}
+                                    <div id="bank-lainnya-container" class="hidden mt-3">
+                                        <input type="text" id="input-bank-lainnya" name="nama_bank_lainnya" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:shadow-inner focus:ring-2 focus:ring-[#043915] transition-all" placeholder="Tulis Nama Bank">
                                     </div>
                                 </div>
+
+                                {{-- Kolom 2: Nomor Rekening --}}
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1" for="no-rekening">Nomor Rekening <span class="text-red-500">*</span></label>
-                                    <input type="text" id="no-rekening" name="no_rekening" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:shadow-inner focus:ring-2 focus:ring-[#043915] transition-all" placeholder="Masukkan nomor rekening" required>
+                                    <input type="number" id="no-rekening" name="no_rekening" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:shadow-inner focus:ring-2 focus:ring-[#043915] transition-all" placeholder="Contoh: 1234567890" required>
+                                </div>
+
+                                {{-- Kolom 3: Atas Nama (BARU) --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1" for="nama-rek">Atas Nama (A/N) <span class="text-red-500">*</span></label>
+                                    {{-- Default value diambil dari nama user agar cepat, tapi bisa diedit --}}
+                                    <input type="text" id="nama-rek" name="nama_rek" class="w-full p-3 bg-white border border-slate-300 rounded-lg focus:shadow-inner focus:ring-2 focus:ring-[#043915] transition-all" placeholder="Nama Pemilik Rekening" required>
                                 </div>
                             </div>
                         </div>

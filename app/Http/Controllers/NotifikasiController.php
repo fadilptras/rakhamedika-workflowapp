@@ -135,4 +135,35 @@ class NotifikasiController extends Controller
 
         return redirect()->back()->with('success', "Berhasil mengirim notifikasi ulang tahun untuk $count orang!");
     }
+    
+    /**
+     * Menyimpan FCM Token dari Client (Browser/Device) ke Database
+     */
+    public function updateFcmToken(Request $request)
+    {
+        try {
+            // [FIX] Validasi fcm_token
+            $request->validate([
+                'fcm_token' => 'required|string',
+            ]);
+
+            $user = Auth::user();
+            
+            // [FIX] Mengambil input dengan nama yang benar: fcm_token
+            $user->update([
+                'fcm_token' => $request->fcm_token
+            ]);
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'FCM Token berhasil disimpan.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal menyimpan token: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

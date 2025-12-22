@@ -5,6 +5,7 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use App\Models\PengajuanBarang;
+use App\Notifications\Channels\WhatsAppChannel;
 
 class PengajuanBarangNotification extends Notification
 {
@@ -21,7 +22,36 @@ class PengajuanBarangNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', WhatsAppChannel::class];
+    }
+
+    public function toWhatsApp($notifiable)
+    {
+        $judul = $this->pengajuanBarang->judul_pengajuan;
+        $pemohon = $this->pengajuanBarang->user->name;
+        $link = route('pengajuan_barang.show', $this->pengajuanBarang->id);
+
+        switch ($this->tipe) {
+            case 'disetujui_atasan':
+                $header = "✅ *BARANG: DISETUJUI ATASAN*";
+                $pesan = "Pengajuan barang *'{$judul}'* telah disetujui Atasan dan diteruskan ke Gudang.";
+                break;
+            case 'disetujui_gudang':
+                $header = "📦 *BARANG: DISETUJUI GUDANG*";
+                $pesan = "Pengajuan barang *'{$judul}'* telah disetujui oleh Gudang/Finance. Barang siap diproses/diambil.";
+                break;
+            case 'ditolak':
+                $header = "❌ *PENGAJUAN BARANG DITOLAK*";
+                $pesan = "Pengajuan barang *'{$judul}'* telah ditolak.";
+                break;
+            case 'baru':
+            default:
+                $header = "🆕 *PENGAJUAN BARANG BARU*";
+                $pesan = "Ada pengajuan barang baru dari *{$pemohon}*.\nJudul: {$judul}\n\nMohon segera direview.";
+                break;
+        }
+
+        return ['message' => "{$header}\n\nHalo {$notifiable->name},\n{$pesan}\n\n🔗 Link: {$link}"];
     }
 
     public function toArray(object $notifiable): array

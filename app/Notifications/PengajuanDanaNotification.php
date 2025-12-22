@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use App\Models\PengajuanDana;
+use App\Notifications\Channels\WhatsAppChannel;
 
 class PengajuanDanaNotification extends Notification
 {
@@ -29,7 +30,42 @@ class PengajuanDanaNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', WhatsAppChannel::class];
+    }
+
+    public function toWhatsApp($notifiable)
+    {
+        $judul = $this->pengajuanDana->judul_pengajuan;
+        $pemohon = $this->pengajuanDana->user->name;
+        $nominal = "Rp " . number_format($this->pengajuanDana->total_dana, 0, ',', '.');
+        $link = route('pengajuan_dana.show', $this->pengajuanDana->id);
+
+        switch ($this->tipe) {
+            case 'disetujui_atasan':
+            case 'disetujui_finance':
+                $header = "✅ *PENGAJUAN DANA DISETUJUI*";
+                $pesan = "Pengajuan dana *'{$judul}'* senilai {$nominal} telah disetujui dan sedang diproses ke tahap selanjutnya.";
+                break;
+            case 'ditolak':
+                $header = "❌ *PENGAJUAN DANA DITOLAK*";
+                $pesan = "Mohon maaf, pengajuan dana *'{$judul}'* senilai {$nominal} telah ditolak.";
+                break;
+            case 'bukti_transfer':
+                $header = "💸 *DANA TELAH DITRANSFER*";
+                $pesan = "Dana untuk *'{$judul}'* senilai {$nominal} telah berhasil ditransfer. Silakan cek rekening dan lampirkan bukti jika diminta.";
+                break;
+            case 'dibatalkan':
+                $header = "⚠️ *PENGAJUAN DANA DIBATALKAN*";
+                $pesan = "Pengajuan dana *'{$judul}'* oleh {$pemohon} telah dibatalkan.";
+                break;
+            case 'baru':
+            default:
+                $header = "🆕 *PENGAJUAN DANA BARU*";
+                $pesan = "Ada pengajuan dana baru dari *{$pemohon}*.\nJudul: {$judul}\nNominal: {$nominal}\n\nMohon segera diperiksa.";
+                break;
+        }
+
+        return ['message' => "{$header}\n\nHalo {$notifiable->name},\n{$pesan}\n\n🔗 Link: {$link}"];
     }
 
     /**

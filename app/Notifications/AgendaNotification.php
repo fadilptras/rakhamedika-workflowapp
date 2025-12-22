@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Channels\WhatsAppChannel;
 
 class AgendaNotification extends Notification
 {
@@ -28,15 +29,39 @@ class AgendaNotification extends Notification
         $this->creatorName = $creatorName;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
     public function via($notifiable)
     {
-        return ['database'];
+        return ['database', WhatsAppChannel::class]; 
+    }
+
+
+    public function toWhatsApp($notifiable)
+    {
+        $judul = $this->agenda->title;
+        $waktu = \Carbon\Carbon::parse($this->agenda->start_time)->translatedFormat('l, d F Y H:i');
+        $lokasi = $this->agenda->location ?? 'Online/Tidak ditentukan';
+        $pembuat = $this->creatorName;
+        $link = route('dashboard'); // Atau link detail agenda jika ada
+
+        switch ($this->type) {
+            case 'undangan_baru':
+                $header = "📅 *UNDANGAN AGENDA BARU*";
+                $pesan = "Halo {$notifiable->name},\nAnda diundang oleh *{$pembuat}* untuk menghadiri:\n\n📌 *{$judul}*\n🕒 {$waktu}\n📍 {$lokasi}\n\nMohon kehadirannya.";
+                break;
+            case 'agenda_diperbarui':
+                $header = "✏️ *UPDATE AGENDA*";
+                $pesan = "Halo {$notifiable->name},\nAgenda *{$judul}* telah diperbarui oleh {$pembuat}.\n\nWaktu Baru: {$waktu}\nLokasi: {$lokasi}\n\nSilakan cek detail terbaru.";
+                break;
+            case 'agenda_dibatalkan':
+                $header = "❌ *AGENDA DIBATALKAN*";
+                $pesan = "Halo {$notifiable->name},\nAgenda *{$judul}* yang dijadwalkan pada {$waktu} telah *DIBATALKAN* oleh {$pembuat}.";
+                break;
+            default:
+                $header = "INFO AGENDA";
+                $pesan = "Info mengenai agenda {$judul}.";
+        }
+
+        return ['message' => "{$header}\n\n{$pesan}\n\n🔗 Cek Dashboard: {$link}"];
     }
 
     /**

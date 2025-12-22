@@ -34,7 +34,7 @@
                         </div>
                         <div>
                             <label class="block font-medium text-zinc-400">Informasi Transfer</label>
-                            <p class="text-zinc-200">{{ $pengajuanDana->nama_bank }} - {{ $pengajuanDana->no_rekening }}</p>
+                            <p class="text-zinc-200">{{ $pengajuanDana->nama_bank }} - {{ $pengajuanDana->no_rekening }} - A/N {{ $pengajuanDana->nama_rek }}</p>
                         </div>
                     </div>
                 </div>

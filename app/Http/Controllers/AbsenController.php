@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Carbon\CarbonPeriod;
 use Jenssegers\Agent\Agent;
+use App\Notifications\AbsensiNotification;
 
 class AbsenController extends Controller
 {
@@ -251,7 +252,7 @@ class AbsenController extends Controller
             }
         }
 
-        Absensi::create([
+        $absensi = Absensi::create([
             'user_id'   => Auth::id(),
             'tanggal'   => today()->toDateString(),
             'jam_masuk' => $jamMasuk->toTimeString(),
@@ -261,6 +262,12 @@ class AbsenController extends Controller
             'latitude'  => $request->latitude,
             'longitude' => $request->longitude,
         ]);
+
+        // --- TAMBAHKAN INI: Kirim Notifikasi Masuk ---
+        if ($inputStatus === 'hadir' || $inputStatus === 'terlambat') {
+            $user = Auth::user();
+            $user->notify(new AbsensiNotification($absensi, 'masuk'));
+        }
 
         if ($inputStatus === 'tidak hadir') {
             return redirect()->route('absen')->with('error', 'Absensi masuk Anda melewati batas waktu. Status Anda otomatis menjadi Tidak Hadir.');
@@ -286,7 +293,6 @@ class AbsenController extends Controller
             $pathLampiranKeluar = $request->file('lampiran_keluar')->store('lampiran_absensi_keluar', 'public');
         }
 
-        // --- UPDATE PENTING: SIMPAN TANGGAL KELUAR SAAT KLIK KELUAR ---
         $absensi->update([
             'jam_keluar'        => now()->toTimeString(),
             'tanggal_keluar'    => now()->toDateString(), // Mengisi kolom baru
@@ -294,6 +300,8 @@ class AbsenController extends Controller
             'latitude_keluar'   => $request->latitude_keluar,
             'longitude_keluar'  => $request->longitude_keluar,
         ]);
+
+        $absensi->user->notify(new AbsensiNotification($absensi, 'keluar'));
 
         return redirect()->route('absen')->with('success', 'Absensi keluar berhasil direkam!');
     }
@@ -330,7 +338,7 @@ class AbsenController extends Controller
             $pathLampiranMasuk = $request->file('lampiran_masuk')->store('lampiran_lembur', 'public');
         }
 
-        Lembur::create([
+        $lembur = Lembur::create([
             'user_id'   => $user->id,
             'tanggal'   => $todayString,
             'jam_masuk_lembur' => now()->toTimeString(),
@@ -339,6 +347,8 @@ class AbsenController extends Controller
             'latitude_masuk'   => $request->latitude_masuk,
             'longitude_masuk'  => $request->longitude_masuk,
         ]);
+
+        $user->notify(new AbsensiNotification($lembur, 'lembur_masuk'));
 
         return redirect()->route('absen')->with('success', 'Absensi lembur masuk berhasil direkam!');
     }
@@ -370,6 +380,7 @@ class AbsenController extends Controller
             'latitude_keluar'    => $request->latitude_keluar,
             'longitude_keluar'   => $request->longitude_keluar,
         ]);
+        $lembur->user->notify(new AbsensiNotification($lembur, 'lembur_keluar'));
     
         return redirect()->route('absen')->with('success', 'Absen keluar lembur berhasil direkam. Terima kasih!');
     }

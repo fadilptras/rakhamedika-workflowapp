@@ -132,17 +132,17 @@
                                 $r = $i->komisi ?? 0;
                                 if(!$r && preg_match('/\[Rate:([\d\.]+)\]/', $i->catatan, $m)) $r = floatval($m[1]);
                                 $row_net_val += $gross * ($r/100);
-                            } else {
+                            } elseif ($i->jenis_transaksi == 'OUT') {
                                 $row_usage += $i->nilai_kontribusi;
                             }
                         }
-                        $row_saldo = $row_net_val - $row_usage;
+                        
+                        $row_saldo = ($client->saldo_awal ?? 0) + $row_net_val - $row_usage;
                     @endphp
 
                     <tr class="hover:bg-zinc-700/30 transition duration-150">
                         <td class="px-6 py-4">
                             <div class="font-bold text-white text-base">{{ $client->nama_user }}</div>
-                            {{-- [BARU] Menampilkan Jabatan --}}
                             <div class="text-xs text-blue-400 font-medium mb-0.5">{{ $client->jabatan ?? '-' }}</div>
                             <div class="text-xs text-zinc-400 font-medium">{{ $client->nama_perusahaan }}</div>
                         </td>
@@ -235,7 +235,6 @@
                                     <input type="text" name="nama_user" required value="{{ old('nama_user') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 text-white font-semibold" placeholder="Nama Lengkap User">
                                 </div>
 
-                                {{-- [BARU] Input Jabatan --}}
                                 <div>
                                     <label class="block text-[11px] font-bold text-zinc-400 mb-1 uppercase">Jabatan</label>
                                     <input type="text" name="jabatan" value="{{ old('jabatan') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded focus:ring-blue-500 focus:border-blue-500 text-sm px-3 py-2 text-white" placeholder="Contoh: Direktur / Manager">
@@ -254,7 +253,6 @@
                                         <label class="block text-[11px] font-bold text-zinc-500 mb-1 uppercase">Tanggal Lahir</label>
                                         <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded text-sm text-white px-3 py-2 [color-scheme:dark] focus:ring-blue-500 focus:border-blue-500">
                                     </div>
-                                    {{-- [BARU] Input Hobby --}}
                                     <div>
                                         <label class="block text-[11px] font-bold text-zinc-500 mb-1 uppercase">Hobby / Minat</label>
                                         <input type="text" name="hobby_client" value="{{ old('hobby_client') }}" class="w-full bg-zinc-900 border border-zinc-600 rounded text-sm text-white px-3 py-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: Golf">

@@ -6,6 +6,7 @@
     <title>{{ $title ?? 'Dashboard' }}</title>
     
     <meta name="theme-color" content="#2563eb"> 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96x96.png') }}">
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
@@ -98,7 +99,8 @@
     @stack('modals')
     @stack('scripts')
 
-    {{-- =============== [MULAI] SCRIPT FIREBASE NOTIFIKASI =============== --}}
+    {{-- =============== [MULAI] SCRIPT FIREBASE NOTIFIKASI (DIPERBAIKI) =============== --}}
+    {{-- Menggunakan Versi 8.10.0 (Compat) agar sesuai dengan script import --}}
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
     <script>
@@ -112,62 +114,72 @@
             measurementId: "G-3T6QNML81B"
         };
 
-        // Inisialisasi hanya jika belum ada
+        // Inisialisasi Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
 
         const messaging = firebase.messaging();
 
-        // 1. Minta Izin & Simpan Token
         function initFirebase() {
             Notification.requestPermission().then((permission) => {
                 if (permission === 'granted') {
                     console.log('Notifikasi diizinkan.');
-                    return messaging.getToken({ vapidKey: '' });
+                    
+                    // PENTING: Isi VAPID Key dari Firebase Console > Cloud Messaging > Web Push certs
+                    return messaging.getToken({ 
+                        vapidKey: 'BOK-BCvGay-ZsQG-Gr1XmrHwvMJhwoU8J758XEEkBiLMuk1gva2z21pN03afQYtj7xsCAh-8Dv4j68R89mbwjr0' 
+                    });
                 } else {
                     console.warn('Izin notifikasi ditolak.');
                     return null;
                 }
             }).then((currentToken) => {
                 if (currentToken) {
-                    console.log('Token FCM:', currentToken);
+                    console.log('Token FCM didapat:', currentToken);
                     saveTokenToServer(currentToken);
+                } else {
+                    console.log('Tidak ada token instance ID yang tersedia. Minta izin untuk generate.');
                 }
             }).catch((err) => {
-                console.error('Gagal mengambil token:', err);
+                console.error('Terjadi error saat mengambil token:', err);
             });
         }
 
-        // 2. Fungsi Simpan ke Laravel
         function saveTokenToServer(token) {
-            fetch('/update-fcm-token', {
+            // Mengambil CSRF token dari meta tag
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+            if (!csrfToken) {
+                console.error('CSRF Token tidak ditemukan di meta tag!');
+                return;
+            }
+
+            fetch("{{ route('fcm.update') }}", { // Menggunakan route name agar lebih aman
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}' // Pastikan ini menyala (berwarna ungu/biru di editor)
+                    'X-CSRF-TOKEN': csrfToken
                 },
-                body: JSON.stringify({ token: token }) // Kirim sebagai { "token": "..." }
+                body: JSON.stringify({ fcm_token: token })
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Gagal request ke server');
+                    return response.text().then(text => { throw new Error(text) });
                 }
                 return response.json();
             })
-            .then(data => console.log('Sukses simpan token:', data))
-            .catch(err => console.error('Error saat simpan token:', err));
+            .then(data => console.log('Token berhasil disimpan ke DB:', data))
+            .catch(err => console.error('Gagal simpan token ke server:', err));
         }
 
-        // 3. Handle Pesan saat Web Dibuka (Foreground)
         messaging.onMessage((payload) => {
-            console.log('Pesan Foreground:', payload);
+            console.log('Pesan masuk (Foreground):', payload);
             const { title, body } = payload.notification;
-            // Tampilkan alert atau custom toast
             alert(`🔔 ${title}\n${body}`);
         });
 
-        // Jalankan saat load
         initFirebase();
     </script>
     {{-- =============== [SELESAI] SCRIPT FIREBASE NOTIFIKASI =============== --}}

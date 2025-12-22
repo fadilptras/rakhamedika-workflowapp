@@ -40,20 +40,6 @@ Route::view('/forgot-password', 'auth.forgot-password')->middleware('guest')->na
 
 // Route untuk Fitur Utama Pengguna (yang sudah login)
 Route::middleware('auth')->group(function () {
-
-    Route::post('/update-fcm-token', function (\Illuminate\Http\Request $request) {
-        // Cek apakah token dikirim
-        if (!$request->has('token')) {
-            return response()->json(['success' => false, 'message' => 'Token kosong'], 400);
-        }
-
-        // Simpan ke database
-        $request->user()->update([
-            'fcm_token' => $request->token
-        ]);
-
-        return response()->json(['success' => true, 'message' => 'Token berhasil disimpan']);
-    })->name('fcm.update');
     
     // Dasboard
     Route::get('/dashboard', function () {
@@ -76,9 +62,15 @@ Route::middleware('auth')->group(function () {
     Route::match(['PUT', 'PATCH'], '/cuti/{cuti}/status', [CutiController::class, 'updateStatus'])->name('cuti.updateStatus');
     Route::post('/cuti/{cuti}/cancel', [CutiController::class, 'cancel'])->name('cuti.cancel');
     Route::get('/cuti/{cuti}/download', [CutiController::class, 'download'])->name('cuti.download');
+
+    // Route Approval Cuti (Ini yang mentrigger notifikasi 'disetujui'/'ditolak')
+    Route::post('/cuti/{cuti}/approve', [AdminCutiController::class, 'approve'])->name('cuti.approve');
+    Route::post('/cuti/{cuti}/reject', [AdminCutiController::class, 'reject'])->name('cuti.reject');
     
     // Notifikasi
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
+    Route::post('/update-fcm-token', [NotifikasiController::class, 'updateFcmToken'])
+        ->name('fcm.update');
     
     // Profile
     Route::get('/profile', [ProfileController::class, 'editProfile'])->name('profil.index');

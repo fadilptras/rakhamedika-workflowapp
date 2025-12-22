@@ -27,6 +27,7 @@ class PengajuanDana extends Model
         'rincian_dana',
         'lampiran',
         'status', // 'diajukan', 'diproses_appr_2', 'proses_pembayaran', 'selesai', 'ditolak', 'dibatalkan'
+        'nama_rek',
 
         // Kolom untuk Approver 1 (dari User)
         'approver_1_id',

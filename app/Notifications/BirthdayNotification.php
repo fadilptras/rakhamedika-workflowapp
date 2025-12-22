@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use App\Models\User; // Import Model User
+use App\Notifications\Channels\WhatsAppChannel;
 
 class BirthdayNotification extends Notification
 {
@@ -26,7 +27,17 @@ class BirthdayNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', WhatsAppChannel::class];
+    }
+
+    public function toWhatsApp($notifiable)
+    {
+        $yangUltah = $this->user->name;
+        $jabatan = $this->user->jabatan ?? 'Rekan Kerja';
+
+        return [
+            'message' => "🎂 *HARI INI ADA YANG ULANG TAHUN!* 🥳\n\nHalo {$notifiable->name},\n\nHari ini adalah hari spesial untuk rekan kita:\n\n👤 *{$yangUltah}* ({$jabatan})\n\nJangan lupa berikan ucapan selamat dan doa terbaik untuk beliau ya! 🎉\n\n_Management_"
+        ];
     }
 
     /**

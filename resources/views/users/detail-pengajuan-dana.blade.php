@@ -119,6 +119,15 @@
                                     <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">No. Rek</p>
                                     <p class="font-mono font-bold text-slate-800 text-sm">{{ $pengajuanDana->no_rekening }}</p>
                                 </div>
+                                
+                            </div>
+                            <div class="bg-blue-50/50 rounded-lg border border-blue-100 p-3 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2 overflow-hidden">
+                                    <div class="text-right">
+                                    <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">A/N</p>
+                                    <p class="font-mono font-bold text-slate-800 text-sm">{{ $pengajuanDana->nama_rek }}</p>
+                                </div>
+                                </div>
                             </div>
                         </div>
                     </div>

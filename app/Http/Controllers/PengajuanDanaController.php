@@ -18,7 +18,7 @@ class PengajuanDanaController extends Controller
      */
     public function index(Request $request)
     {
-        // Ambil HANYA pengajuan milik user yang sedang login
+
         $query = Auth::user()->pengajuanDanas()->latest();
 
         // Tambahkan filter status sederhana untuk user
@@ -74,6 +74,7 @@ class PengajuanDanaController extends Controller
             'nama_bank' => 'required_if:nama_bank_lainnya,null|nullable|string|max:255',
             'nama_bank_lainnya' => 'required_if:nama_bank,other|nullable|string|max:255',
             'no_rekening' => 'required|string|max:255',
+            'nama_rek' => 'required|string|max:255',
             'jumlah_dana_total' => 'required|numeric|min:1',
             'rincian_deskripsi.*' => 'required|string|max:1000',
             'rincian_jumlah.*' => 'required|numeric|min:1',
@@ -132,6 +133,7 @@ class PengajuanDanaController extends Controller
             'divisi' => $validatedData['divisi'],
             'nama_bank' => $validatedData['nama_bank'] === 'other' ? $validatedData['nama_bank_lainnya'] : $validatedData['nama_bank'],
             'no_rekening' => $validatedData['no_rekening'],
+            'nama_rek' => $validatedData['nama_rek'],
             'total_dana' => $validatedData['jumlah_dana_total'],
             'rincian_dana' => $rincian,
             'lampiran' => $pathFiles,

@@ -160,6 +160,10 @@
                 <td width="35%">{{ $pengajuanDana->nama_bank }}</td>
                 <th width="15%">No. Rekening</th>
                 <td width="35%">{{ $pengajuanDana->no_rekening }}</td>
+                <tr>
+                    <th>Atas Nama (A/N)</th>
+                    <td colspan="3" style="font-weight: bold;">{{ $pengajuanDana->nama_rek }}</td>
+                </tr>
             </tr>
         </table>
 

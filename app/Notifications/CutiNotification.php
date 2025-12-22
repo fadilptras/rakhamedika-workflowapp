@@ -3,11 +3,13 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use App\Models\Cuti;
-// [BARU] Import Channel Firebase
+// IMPORT WAJIB CHANNEL
 use App\Notifications\Channels\FirebaseChannel;
+use App\Notifications\Channels\WhatsAppChannel;
+use Carbon\Carbon;
+use Kreait\Laravel\Firebase\Messages\FirebaseMessage;
 
 class CutiNotification extends Notification
 {
@@ -16,84 +18,109 @@ class CutiNotification extends Notification
     public $cuti;
     public $tipe;
 
-    /**
-     * Buat instance notifikasi baru.
-     *
-     * @param \App\Models\Cuti $cuti
-     * @param string $tipe Konteks notifikasi: 'baru', 'disetujui', 'ditolak', 'dibatalkan'
-     * @return void
-     */
     public function __construct(Cuti $cuti, string $tipe = 'baru')
     {
         $this->cuti = $cuti;
         $this->tipe = $tipe;
     }
 
-    // [UBAH DISINI] Tambahkan FirebaseChannel agar masuk ke notifikasi HP
-    public function via(object $notifiable): array
+    public function via($notifiable)
     {
-        return ['database', FirebaseChannel::class];
+        return [
+            'database', 
+            // FirebaseChannel::class, 
+            WhatsAppChannel::class
+        ];
     }
 
-    // [TETAP] Logika asli kamu tidak diubah
-    public function toArray(object $notifiable): array
+    public function toWhatsApp($notifiable)
     {
-        $title = '';
-        $message = '';
-        $icon = 'fas fa-envelope';
-        $color = 'text-yellow-500';
-        $pemohon = $this->cuti->user->name;
-        $tanggalMulai = \Carbon\Carbon::parse($this->cuti->tanggal_mulai)->format('d M Y');
+        $pemohon = $this->cuti->user->name ?? 'Karyawan';
+        $tanggal = Carbon::parse($this->cuti->tanggal_mulai)->translatedFormat('d F Y');
+        $link = route('cuti.show', $this->cuti->id);
 
         switch ($this->tipe) {
             case 'disetujui':
-                $title = 'Pengajuan Cuti Disetujui';
-                $message = "Pengajuan cuti Anda untuk tanggal $tanggalMulai telah disetujui. Selamat berlibur!";
-                $icon = 'fas fa-check-circle';
-                $color = 'text-green-600';
+                $header = "✅ *CUTI DISETUJUI*";
+                $pesan = "Halo {$notifiable->name}, pengajuan cuti Anda untuk tanggal *{$tanggal}* telah DISETUJUI.";
                 break;
-
             case 'ditolak':
-                $title = 'Pengajuan Cuti Ditolak';
-                $message = "Mohon maaf, pengajuan cuti Anda untuk tanggal $tanggalMulai ditolak.";
-                $icon = 'fas fa-times-circle';
-                $color = 'text-red-600';
+                $header = "❌ *CUTI DITOLAK*";
+                $pesan = "Halo {$notifiable->name}, pengajuan cuti Anda untuk tanggal *{$tanggal}* DITOLAK.";
                 break;
-
             case 'dibatalkan':
-                $title = 'Pengajuan Cuti Dibatalkan';
-                $message = "$pemohon telah membatalkan pengajuan cutinya untuk tanggal $tanggalMulai.";
-                $icon = 'fas fa-ban';
-                $color = 'text-gray-500';
+                $header = "⚠️ *CUTI DIBATALKAN*";
+                $pesan = "Halo {$notifiable->name}, user *{$pemohon}* telah membatalkan pengajuan cutinya.";
                 break;
-
             case 'baru':
             default:
-                $title = 'Pengajuan Cuti Baru';
-                $message = "$pemohon mengajukan cuti baru mulai tanggal $tanggalMulai. Mohon direview.";
+                $header = "🆕 *PENGAJUAN CUTI BARU*";
+                $pesan = "Halo {$notifiable->name}, ada pengajuan cuti baru dari *{$pemohon}* untuk tanggal *{$tanggal}*.\nMohon segera diperiksa.";
                 break;
         }
 
         return [
-            'id' => $this->cuti->id,
-            'title' => $title,
-            'message' => $message,
-            'url' => route('cuti.show', $this->cuti->id),
-            'icon' => $icon,
-            'color' => $color,
+            'message' => "{$header}\n\n{$pesan}\n\n🔗 *Link:* {$link}\n\n_Sistem Notifikasi_"
         ];
     }
 
-    // [BARU] Data untuk Firebase (Popup HP)
-    // Menggunakan data dari toArray agar pesannya konsisten dengan database
-    public function toFirebase($notifiable)
+    public function toArray($notifiable)
     {
-        $data = $this->toArray($notifiable);
+        $pemohon = $this->cuti->user->name ?? 'Karyawan';
+        $tanggal = Carbon::parse($this->cuti->tanggal_mulai)->translatedFormat('d F Y');
 
-        return [
-            'title' => $data['title'],
-            'body'  => $data['message'],
-            'url'   => $data['url'] // Mengarah ke halaman detail cuti
-        ];
+        switch ($this->tipe) {
+            case 'disetujui':
+                return [
+                    'id' => $this->cuti->id,
+                    'title' => 'Cuti Disetujui',
+                    'message' => "Pengajuan cuti tanggal $tanggal disetujui.",
+                    'icon' => 'fas fa-check-circle',
+                    'color' => 'text-green-600',
+                    'url' => route('cuti.show', $this->cuti->id)
+                ];
+            case 'ditolak':
+                return [
+                    'id' => $this->cuti->id,
+                    'title' => 'Cuti Ditolak',
+                    'message' => "Pengajuan cuti tanggal $tanggal ditolak.",
+                    'icon' => 'fas fa-times-circle',
+                    'color' => 'text-red-600',
+                    'url' => route('cuti.show', $this->cuti->id)
+                ];
+            case 'dibatalkan':
+                return [
+                    'id' => $this->cuti->id,
+                    'title' => 'Cuti Dibatalkan',
+                    'message' => "$pemohon membatalkan cuti.",
+                    'icon' => 'fas fa-ban',
+                    'color' => 'text-gray-500',
+                    'url' => route('cuti.show', $this->cuti->id)
+                ];
+            default:
+                return [
+                    'id' => $this->cuti->id,
+                    'title' => 'Pengajuan Cuti Baru',
+                    'message' => "$pemohon mengajukan cuti tanggal $tanggal.",
+                    'icon' => 'fas fa-envelope',
+                    'color' => 'text-blue-600',
+                    'url' => route('cuti.show', $this->cuti->id)
+                ];
+        }
     }
+
+    // === 3. FORMAT UNTUK FIREBASE (PUSH NOTIF HP) ===
+    // public function toFirebase($notifiable)
+    // {
+    //     $data = $this->toArray($notifiable);
+    //     return (new FirebaseMessage)
+    //         ->withNotification([
+    //             'title' => $data['title'],
+    //             'body' => $data['message'],
+    //         ])
+    //         ->withData([
+    //             'url' => $data['url']
+    //         ])
+    //         ->asMessage();
+    // }
 }
