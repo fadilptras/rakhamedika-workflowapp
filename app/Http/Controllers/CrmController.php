@@ -26,10 +26,33 @@ class CrmController extends Controller
     public function index()
     {
         $query = Client::with('interactions')->orderBy('nama_user', 'asc');
+        
+        // Filter ini sudah otomatis membatasi data:
+        // - Kalau Abdul (User biasa): hanya ambil klien dia.
+        // - Kalau Direktur: ambil semua.
         if (!$this->hasFullAccess()) {
             $query->where('user_id', Auth::id());
         }
-        return view('users.crm.index', ['title' => 'Sistem Informasi Sales (CRM)', 'clients' => $query->get()]);
+
+        $clients = $query->get();
+        $totalAllBalance = 0; // Variabel penampung total
+
+        foreach($clients as $client) {
+            // Hitung saldo per klien
+            $balance = $this->calculateRealTimeBalance($client);
+            
+            // Masukkan ke object client (untuk tabel)
+            $client->current_balance = $balance;
+
+            // Tambahkan ke Total Keseluruhan (untuk Card Dashboard)
+            $totalAllBalance += $balance;
+        }
+
+        return view('users.crm.index', [
+            'title' => 'Sistem Informasi Sales (CRM)', 
+            'clients' => $clients,
+            'totalAllBalance' => $totalAllBalance // Kirim ke view
+        ]);
     }
 
     public function store(Request $request)
@@ -76,6 +99,9 @@ class CrmController extends Controller
 
         $interactions = $client->interactions()->orderBy('tanggal_interaksi', 'desc')->paginate(10); 
 
+        // [PERBAIKAN] Menggunakan fungsi helper agar konsisten
+        $currentBalance = $this->calculateRealTimeBalance($client);
+
         return view('users.crm.show', [
             'title' => 'Detail Sales: ' . $client->nama_user,
             'client' => $client,
@@ -83,10 +109,11 @@ class CrmController extends Controller
             'recap' => $calc['recap'],
             'year' => $year,
             'yearlyTotals' => $calc['totals'],
-
-            // DATA BARU DIKIRIM KE VIEW
             'startingBalance' => $calc['starting_balance'], 
-            'startingLabel'   => $calc['starting_label']
+            'startingLabel'   => $calc['starting_label'],
+            
+            // Kirim variabel baru ke view
+            'currentBalance' => $currentBalance 
         ]);
     }
 
@@ -389,5 +416,32 @@ class CrmController extends Controller
             'starting_balance' => $startingBalance,
             'starting_label' => $startingLabel // Kirim label dinamis
         ];
+    }
+
+    // === [BARU] Helper Saldo Real-time ===
+    private function calculateRealTimeBalance($client)
+    {
+        $balance = $client->saldo_awal ?? 0;
+        // Ambil interactions yang sudah di-load (via Eager Loading)
+        $interactions = $client->interactions; 
+        
+        foreach($interactions as $item) {
+            if ($item->jenis_transaksi == 'OUT') {
+                $balance -= $item->nilai_kontribusi;
+            } 
+            elseif ($item->jenis_transaksi == 'IN') {
+                $rate = $item->komisi ?? 0;
+                if (!$rate && preg_match('/\[Rate:([\d\.]+)\]/', $item->catatan, $matches)) {
+                    $rate = floatval($matches[1]);
+                }
+                $nominal = $item->nilai_sales > 0 ? $item->nilai_sales : $item->nilai_kontribusi;
+                $net = $nominal * ($rate / 100);
+                
+                $balance += $net;
+            }
+            // ENTERTAIN diabaikan (tidak mengurangi saldo)
+        }
+
+        return $balance;
     }
 }

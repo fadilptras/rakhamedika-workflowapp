@@ -14,12 +14,14 @@
 
         {{-- BAGIAN 1: HEADER PROFIL --}}
         <div class="bg-[#001BB7] rounded-2xl shadow-xl shadow-blue-900/10 border border-blue-900/10 mb-6 overflow-hidden relative">
+            {{-- Dekorasi Latar Belakang --}}
             <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-400 opacity-20 rounded-full blur-2xl pointer-events-none"></div>
 
             <div class="p-6 md:p-8 text-white relative z-10">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                    {{-- Kiri: Identitas --}}
+                <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6">
+                    
+                    {{-- Kiri: Identitas Klien --}}
                     <div class="flex-grow space-y-4">
                         <div>
                             <span class="bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-white/30 shadow-sm inline-flex items-center">
@@ -30,7 +32,7 @@
                             {{ $client->nama_user }}
                         </h2>
                         
-                        {{-- Badges --}}
+                        {{-- Badges Info --}}
                         <div class="flex flex-wrap gap-3 text-sm font-medium">
                             <div class="flex items-center bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-sm transition hover:bg-white/20">
                                 <i class="fas fa-map-marker-alt mr-2 text-blue-200"></i> 
@@ -43,20 +45,40 @@
                         </div>
                     </div>
 
-                    {{-- Kanan: Statistik Sales --}}
-                    <div class="flex flex-col items-end gap-3 min-w-[240px]">
-                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 w-full text-right shadow-lg relative overflow-hidden group hover:bg-white/15 transition-all">
-                            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
-                            <p class="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1 relative z-10">Total Sales (Gross)</p>
-                            <div class="text-3xl md:text-4xl font-extrabold text-white drop-shadow-md relative z-10 flex items-start justify-end">
-                                <span class="text-lg opacity-70 font-medium mr-1 mt-1">Rp</span>
-                                <span>{{ number_format($client->interactions->where('jenis_transaksi', 'IN')->sum('nilai_kontribusi'), 0, ',', '.') }}</span>
+                    {{-- Kanan: Statistik & Aksi --}}
+                    <div class="flex flex-col items-end gap-4">
+                        
+                        {{-- Container Kartu Statistik (Flex Row di Desktop, Column di Mobile) --}}
+                        <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                            
+                            {{-- KARTU 1: TOTAL SALES (GROSS) --}}
+                            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 min-w-[220px] text-right shadow-lg relative overflow-hidden group hover:bg-white/15 transition-all flex-1 md:flex-none">
+                                <div class="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                                <p class="text-blue-100 text-[10px] font-bold uppercase tracking-widest mb-1 relative z-10">Total Sales (Gross)</p>
+                                <div class="text-2xl md:text-3xl font-extrabold text-white drop-shadow-md relative z-10 flex items-start justify-end">
+                                    <span class="text-sm opacity-70 font-medium mr-1 mt-1">Rp</span>
+                                    <span>{{ number_format($client->interactions->where('jenis_transaksi', 'IN')->sum('nilai_kontribusi'), 0, ',', '.') }}</span>
+                                </div>
                             </div>
+
+                            {{-- KARTU 2: SISA SALDO (NET) --}}
+                            <div class="bg-emerald-500/20 backdrop-blur-md rounded-2xl p-5 border border-emerald-400/30 min-w-[220px] text-right shadow-lg relative overflow-hidden group hover:bg-emerald-500/30 transition-all flex-1 md:flex-none">
+                                <div class="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                                {{-- Icon Dekorasi --}}
+                                <i class="fas fa-wallet absolute bottom-2 left-3 text-emerald-300/30 text-4xl transform -rotate-12 pointer-events-none"></i>
+                                
+                                <p class="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1 relative z-10">Total Saldo</p>
+                                <div class="text-2xl md:text-3xl font-extrabold text-emerald-50 drop-shadow-md relative z-10 flex items-start justify-end">
+                                    <span class="text-sm opacity-70 font-medium mr-1 mt-1">Rp</span>
+                                    <span>{{ number_format($currentBalance, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+
                         </div>
 
                         {{-- Tombol Aksi --}}
                         @if($client->user_id == Auth::id())
-                            <div class="flex items-center gap-2 mt-2">
+                            <div class="flex items-center gap-2">
                                 <button onclick="toggleModal('editClientModal')" class="group flex items-center text-xs font-semibold text-yellow-200 hover:text-white transition-colors bg-yellow-500/20 hover:bg-yellow-500/80 px-4 py-2 rounded-lg backdrop-blur-sm border border-transparent hover:border-yellow-300/50 shadow-sm cursor-pointer">
                                     <i class="fas fa-edit mr-2 transition-transform group-hover:scale-110"></i> Edit Detail
                                 </button>
@@ -68,7 +90,10 @@
                                 </form>
                             </div>
                         @endif
+
                     </div>
+                    {{-- End Kanan --}}
+
                 </div>
             </div>
         </div>
@@ -194,12 +219,13 @@
             </div>
 
             {{-- KARTU 3: INFO BANK (DARK/EMERALD) --}}
-            <div class="bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 p-5 rounded-2xl shadow-lg border border-gray-700 text-white relative overflow-hidden flex flex-col justify-between group hover:shadow-2xl transition duration-500 h-full">
+            <div class="bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 p-6 rounded-2xl shadow-lg border border-gray-700 text-white relative overflow-hidden flex flex-col h-full group hover:shadow-2xl transition duration-500">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500 opacity-10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none group-hover:opacity-20 transition duration-500"></div>
                 <div class="absolute bottom-0 left-0 w-24 h-24 bg-blue-500 opacity-10 rounded-full -ml-12 -mb-12 blur-2xl pointer-events-none group-hover:opacity-20 transition duration-500"></div>
                 
-                <div class="flex justify-between items-start mb-4 relative z-10 border-b border-gray-700 pb-2">
-                    <h4 class="text-gray-400 text-[11px] font-bold uppercase tracking-widest flex items-center">
+                {{-- HEADER --}}
+                <div class="flex justify-between items-start mb-2 relative z-10 border-b border-gray-700 pb-2">
+                    <h4 class="text-gray-400 text-xs font-bold uppercase tracking-widest flex items-center">
                         <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center mr-3 text-emerald-400">
                             <i class="fas fa-wallet"></i>
                         </span>
@@ -208,25 +234,31 @@
                     <i class="fas fa-wifi text-gray-600 transform rotate-90 text-xl opacity-50"></i>
                 </div>
                 
-                <div class="relative z-10 space-y-4">
-                    <div>
-                        <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Bank & Rekening</p>
+                <div class="relative z-10 flex flex-col h-full">
+                    {{-- INFO BANK --}}
+                    <div class="mt-1">
+                        <p class="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Bank & Rekening</p>
                         <div class="flex flex-col">
-                            <span class="font-bold text-xl tracking-wider text-white mb-1">{{ $client->bank ?? 'BANK -' }}</span>
-                            {{-- Nama di Rekening (NEW) --}}
-                            <p class="text-xs text-gray-400 mb-1">{{ $client->nama_di_rekening ? 'A/n '.$client->nama_di_rekening : '' }}</p>
+                            {{-- Nama Bank (Ukuran Sedang 2xl) --}}
+                            <span class="font-bold text-2xl tracking-wide text-white leading-tight mb-1">{{ $client->bank ?? 'BANK -' }}</span>
                             
-                            <div class="flex items-center gap-2 font-mono text-emerald-400 tracking-widest text-sm bg-white/5 px-3 py-1.5 rounded-lg w-fit border border-white/5">
-                                <i class="fas fa-credit-card text-xs"></i>
-                                <span class="font-semibold">{{ $client->no_rekening ?? '----' }}</span>
+                            {{-- Atas Nama --}}
+                            <p class="text-xs text-gray-400 mb-2">{{ $client->nama_di_rekening ? 'A/n '.$client->nama_di_rekening : '' }}</p>
+                            
+                            {{-- No Rekening (Ukuran Base) --}}
+                            <div class="flex items-center gap-2 font-mono text-emerald-400 tracking-widest text-base bg-white/5 px-3 py-1.5 rounded-lg w-fit border border-white/5 shadow-inner">
+                                <i class="fas fa-credit-card text-xs opacity-70"></i>
+                                <span class="font-bold">{{ $client->no_rekening ?? '----' }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="border-t border-gray-700/50 pt-3">
-                        <p class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Saldo Awal</p>
-                        <p class="text-3xl font-mono font-bold text-emerald-400 tracking-tight text-shadow-sm">
-                            <span class="text-sm text-gray-500 mr-1 font-normal">IDR</span>{{ number_format($client->saldo_awal ?? 0, 0, ',', '.') }}
+                    {{-- SALDO (Ukuran 3xl) --}}
+                    <div class="border-t border-gray-700/50 pt-3 mt-auto">
+                        <p class="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Saldo Awal</p>
+                        <p class="text-3xl font-mono font-bold text-emerald-400 tracking-tight text-shadow-sm flex items-baseline">
+                            <span class="text-sm text-gray-500 mr-2 font-normal">IDR</span>
+                            {{ number_format($client->saldo_awal ?? 0, 0, ',', '.') }}
                         </p>
                     </div>
                 </div>

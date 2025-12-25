@@ -73,15 +73,20 @@
                     </div>
                 </div>
 
-                 {{-- Stat 3: Total Sales Gross (Dikembalikan, menggantikan PIC) --}}
+                 {{-- Stat 3: Total Saldo (NET) --}}
                  <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-4 flex items-center gap-4">
                     <div class="w-12 h-12 rounded-lg bg-emerald-500/80 flex items-center justify-center text-white text-xl shadow-lg">
                         <i class="fas fa-wallet"></i>
                     </div>
                     <div>
-                        <p class="text-blue-200 text-xs font-bold uppercase tracking-wider">Total Sales (Gross)</p>
+                        {{-- Ubah Label --}}
+                        <p class="text-blue-200 text-xs font-bold uppercase tracking-wider">
+                            Total Saldo 
+                        </p>
+                        
+                        {{-- Ubah Value ke variabel baru --}}
                         <p class="text-emerald-300 text-2xl font-mono font-bold">
-                            Rp {{ number_format($clients->sum('total_kontribusi'), 0, ',', '.') }}
+                            Rp {{ number_format($totalAllBalance, 0, ',', '.') }}
                         </p>
                     </div>
                 </div>
@@ -113,7 +118,7 @@
                         <th class="px-6 py-4">Profil Instansi & User</th>
                         <th class="px-6 py-4">Area & PIC</th>
                         <th class="px-6 py-4">Kontak</th>
-                        <th class="px-6 py-4 text-right">Total Kontribusi</th>
+                        <th class="px-6 py-4 text-right">Total Saldo</th>
                         <th class="px-6 py-4 text-center">Opsi</th>
                     </tr>
                 </thead>
@@ -165,7 +170,7 @@
                         {{-- Kolom 4: Sales (Tanpa Teks 'Lifetime Sales') --}}
                         <td class="px-6 py-4 align-middle text-right">
                             <span class="font-mono font-bold text-emerald-600 text-sm">
-                                Rp {{ number_format($client->total_kontribusi, 0, ',', '.') }}
+                                Rp {{ number_format($client->current_balance, 0, ',', '.') }}
                             </span>
                         </td>
 
