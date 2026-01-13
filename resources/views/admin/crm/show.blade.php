@@ -86,18 +86,14 @@
                     </h4>
                 </div>
                 <div class="space-y-4 flex-grow">
-                    {{-- [TAMBAHAN] JABATAN --}}
                     <div>
                         <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Jabatan</p>
                         <p class="text-zinc-200 text-sm font-medium">{{ $client->jabatan ?? '-' }}</p>
                     </div>
-
-                    {{-- [TAMBAHAN] HOBBY --}}
                     <div>
                         <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Hobby / Minat</p>
                         <p class="text-zinc-200 text-sm font-medium">{{ $client->hobby_client ?? '-' }}</p>
                     </div>
-
                     <div>
                         <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Email & Telepon</p>
                         <p class="text-zinc-200 text-sm font-medium">{{ $client->email ?? '-' }}</p>
@@ -108,7 +104,6 @@
                             @endif
                         </p>
                     </div>
-                    
                     <div>
                         <p class="text-[10px] text-zinc-500 uppercase font-bold mb-0.5">Tanggal Lahir</p>
                         <p class="text-zinc-200 text-sm font-medium">
@@ -346,8 +341,27 @@
 
         {{-- [TAB 4] RIWAYAT TRANSAKSI --}}
         <div id="section-history" class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700/50 overflow-hidden">
-             <div class="px-6 py-4 border-b border-zinc-700 bg-zinc-800 flex justify-between items-center">
+             
+             {{-- Header dengan Filter --}}
+             <div class="px-6 py-4 border-b border-zinc-700 bg-zinc-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <h3 class="font-bold text-zinc-200">Data Transaksi</h3>
+
+                {{-- FILTER TAHUN --}}
+                <form action="{{ route('admin.crm.show', $client->id) }}" method="GET" class="flex items-center gap-2">
+                    <input type="hidden" name="tab" value="history"> 
+                    <label class="text-xs font-bold text-zinc-500 uppercase">Filter:</label>
+                    <div class="relative">
+                        <select name="history_year" onchange="this.form.submit()" class="text-xs font-bold bg-zinc-900 border-zinc-700 text-zinc-300 rounded-lg shadow-sm focus:border-amber-500 focus:ring-amber-500 py-1.5 pl-3 pr-8 cursor-pointer appearance-none">
+                            <option value="">Semua Tahun</option>
+                            @for($y = date('Y'); $y >= 2020; $y--)
+                                <option value="{{ $y }}" {{ (request('history_year') == $y) ? 'selected' : '' }}>{{ $y }}</option>
+                            @endfor
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-zinc-500">
+                            <i class="fas fa-chevron-down text-[10px]"></i>
+                        </div>
+                    </div>
+                </form>
             </div>
 
             <div class="overflow-x-auto">
@@ -426,12 +440,32 @@
                             </td>
                             
                             <td class="px-6 py-3 text-center">
-                                <form action="{{ route('admin.crm.interaction.destroy', $item->id) }}" method="POST" onsubmit="return confirm('ADMIN: Hapus transaksi ini?');">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-zinc-600 hover:text-red-500 transition" title="Hapus Transaksi">
-                                        <i class="fas fa-trash-alt"></i>
+                                <div class="flex items-center justify-center gap-2">
+                                    {{-- TOMBOL EDIT --}}
+                                    <button type="button" 
+                                        onclick="openEditTransactionModal({
+                                            id: '{{ $item->id }}',
+                                            jenis: '{{ $item->jenis_transaksi }}',
+                                            tanggal: '{{ $item->tanggal_interaksi }}',
+                                            produk: '{{ addslashes($item->nama_produk) }}',
+                                            nominal: '{{ ($item->jenis_transaksi == 'IN') ? $item->nilai_sales : $item->nilai_kontribusi }}',
+                                            rate: '{{ $rate }}',
+                                            catatan: '{{ addslashes($displayNote) }}',
+                                            lokasi: '{{ addslashes($item->lokasi ?? '') }}',
+                                            peserta: '{{ addslashes($item->peserta ?? '') }}'
+                                        })"
+                                        class="text-zinc-400 hover:text-amber-500 transition" title="Edit Data">
+                                        <i class="fas fa-edit"></i>
                                     </button>
-                                </form>
+
+                                    {{-- TOMBOL HAPUS --}}
+                                    <form action="{{ route('admin.crm.interaction.destroy', $item->id) }}" method="POST" onsubmit="return confirm('ADMIN: Hapus transaksi ini?');">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="text-zinc-600 hover:text-red-500 transition" title="Hapus Transaksi">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @empty
@@ -553,13 +587,13 @@
                                     <input type="text" name="nama_user" value="{{ old('nama_user', $client->nama_user) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" required>
                                 </div>
 
-                                {{-- [TAMBAHAN] Input Jabatan --}}
+                                {{-- Input Jabatan --}}
                                 <div>
                                     <label class="block text-xs font-bold text-zinc-400 mb-1">Jabatan</label>
                                     <input type="text" name="jabatan" value="{{ old('jabatan', $client->jabatan) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" placeholder="Contoh: Manager / Direktur">
                                 </div>
 
-                                {{-- [TAMBAHAN] Input Hobby --}}
+                                {{-- Input Hobby --}}
                                 <div>
                                     <label class="block text-xs font-bold text-zinc-400 mb-1">Hobby / Minat</label>
                                     <input type="text" name="hobby_client" value="{{ old('hobby_client', $client->hobby_client) }}" class="w-full bg-zinc-800 border-zinc-600 px-3 py-2 rounded text-white text-sm focus:border-amber-500" placeholder="Contoh: Golf, Sepeda">
@@ -622,6 +656,15 @@
                                         <label class="block text-[10px] font-bold text-zinc-500 uppercase">Atas Nama</label>
                                         <input type="text" name="nama_di_rekening" value="{{ old('nama_di_rekening', $client->nama_di_rekening) }}" class="w-full bg-zinc-900 border-zinc-600 px-2 py-1 rounded text-white text-xs">
                                     </div>
+
+                                    {{-- [TAMBAHAN] Saldo Awal --}}
+                                    <div class="mt-2">
+                                        <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-1">Saldo Awal</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-2 text-zinc-500 text-xs">Rp</span>
+                                            <input type="number" name="saldo_awal" value="{{ old('saldo_awal', $client->saldo_awal) }}" class="w-full pl-8 bg-zinc-900 border-zinc-600 px-3 py-2 rounded text-white text-sm font-mono focus:border-emerald-500 placeholder-zinc-600" placeholder="0">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -633,6 +676,90 @@
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- MODAL EDIT TRANSAKSI (LANDSCAPE / MELEBAR) --}}
+    <div id="editTransactionModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        {{-- Backdrop --}}
+        <div class="fixed inset-0 bg-black bg-opacity-80 transition-opacity" onclick="toggleModal('editTransactionModal')"></div>
+        
+        <div class="flex items-center justify-center min-h-screen p-4 pointer-events-none">
+            {{-- MAX-W-3XL agar melebar ke samping (Landscape) --}}
+            <div class="relative bg-zinc-900 w-full max-w-3xl rounded-xl shadow-2xl border border-zinc-700 pointer-events-auto">
+                
+                {{-- Header Modal --}}
+                <div id="editTransHeader" class="bg-zinc-800 px-6 py-4 border-b border-zinc-700 flex justify-between items-center rounded-t-xl">
+                    <h3 class="text-white font-bold text-lg flex items-center">
+                        <i class="fas fa-edit mr-3"></i> <span id="modalTitle">Edit Transaksi</span>
+                    </h3>
+                    <button onclick="toggleModal('editTransactionModal')" class="text-zinc-400 hover:text-white transition"><i class="fas fa-times text-lg"></i></button>
+                </div>
+
+                {{-- Form (Grid Layout) --}}
+                <form id="formEditTransaction" action="#" method="POST" class="p-6">
+                    @csrf @method('PUT')
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        {{-- KOLOM KIRI: INFO UTAMA --}}
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1 uppercase">Tanggal</label>
+                                <input type="date" name="tanggal_interaksi" id="edit_tanggal" class="w-full bg-zinc-800 border-2 border-zinc-600 rounded-lg shadow-sm text-white focus:border-amber-500 px-3 py-2 text-sm [color-scheme:dark]" required>
+                            </div>
+
+                            <div id="wrapper_produk">
+                                <label class="block text-xs font-bold text-zinc-400 mb-1 uppercase" id="label_produk">Nama Produk / Keperluan</label>
+                                <input type="text" name="" id="edit_produk" class="w-full bg-zinc-800 border-2 border-zinc-600 rounded-lg shadow-sm text-white focus:border-amber-500 px-3 py-2 text-sm font-bold">
+                            </div>
+
+                            <div id="wrapper_entertain" class="hidden space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-400 mb-1 uppercase">Lokasi / Venue</label>
+                                    <input type="text" name="lokasi" id="edit_lokasi" class="w-full bg-zinc-800 border-2 border-zinc-600 rounded-lg shadow-sm text-white focus:border-purple-500 px-3 py-2 text-sm" placeholder="Lokasi">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-zinc-400 mb-1 uppercase">Partisipan / Klien</label>
+                                    <input type="text" name="peserta" id="edit_peserta" class="w-full bg-zinc-800 border-2 border-zinc-600 rounded-lg shadow-sm text-white focus:border-purple-500 px-3 py-2 text-sm" placeholder="Peserta">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- KOLOM KANAN: NOMINAL & DETAIL --}}
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-400 mb-1 uppercase">Nominal (Rp)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-zinc-500 text-sm">Rp</span>
+                                    <input type="text" name="" id="edit_nominal" onkeyup="formatRupiah(this)" class="w-full pl-9 bg-zinc-800 border-2 border-zinc-600 rounded-lg shadow-sm text-white focus:border-amber-500 px-3 py-2 font-mono font-bold text-lg" required>
+                                </div>
+                            </div>
+
+                            <div id="wrapper_komisi" class="hidden">
+                                <label class="block text-xs font-bold text-zinc-400 mb-1 uppercase">Komisi (%)</label>
+                                <div class="relative">
+                                    <input type="number" name="komisi" id="edit_komisi" step="0.1" max="100" class="w-full bg-zinc-800 border-2 border-zinc-600 rounded-lg shadow-sm text-white focus:border-amber-500 px-3 py-2 text-sm" placeholder="0">
+                                    <span class="absolute right-4 top-2 text-zinc-500 text-sm font-bold">%</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-zinc-600 mb-1 uppercase">Catatan / Keterangan</label>
+                                <textarea name="catatan" id="edit_catatan" rows="3" class="w-full bg-zinc-800 border-2 border-zinc-600 rounded-lg shadow-sm text-white focus:border-amber-500 px-3 py-2 text-sm resize-none"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Tombol Aksi --}}
+                    <div class="pt-6 mt-2 flex justify-end gap-3 border-t border-zinc-700">
+                        <button type="button" onclick="toggleModal('editTransactionModal')" class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg text-sm transition">Batal</button>
+                        <button type="submit" id="btnUpdateTrans" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow-md flex items-center text-sm transition">
+                            <i class="fas fa-save mr-2"></i> Update
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -649,10 +776,107 @@
             }
         }
 
+        function openEditTransactionModal(data) {
+            // Setup URL Action
+            let baseUrl = "{{ url('admin/crm/interaction') }}"; 
+            let form = document.getElementById('formEditTransaction');
+            form.action = baseUrl + "/" + data.id + "/update"; 
+
+            // Isi Data Dasar
+            document.getElementById('edit_tanggal').value = data.tanggal; 
+            document.getElementById('edit_catatan').value = data.catatan;
+            
+            // Format Nominal
+            let nominalVal = parseInt(data.nominal).toLocaleString('id-ID');
+            document.getElementById('edit_nominal').value = nominalVal;
+
+            // Ambil Elemen UI
+            let title = document.getElementById('modalTitle');
+            let btn = document.getElementById('btnUpdateTrans');
+            
+            let wrapperProduk = document.getElementById('wrapper_produk'); 
+            let labelProduk = document.getElementById('label_produk');
+            let inputProduk = document.getElementById('edit_produk');
+            
+            let wrapperEntertain = document.getElementById('wrapper_entertain'); 
+            let inputLokasi = document.getElementById('edit_lokasi');
+            let inputPeserta = document.getElementById('edit_peserta');
+
+            let inputNominal = document.getElementById('edit_nominal');
+            let wrapperKomisi = document.getElementById('wrapper_komisi');
+            let inputKomisi = document.getElementById('edit_komisi');
+
+            // Reset Tampilan Default
+            wrapperProduk.classList.remove('hidden');
+            wrapperEntertain.classList.add('hidden');
+            wrapperKomisi.classList.add('hidden');
+            inputKomisi.removeAttribute('required');
+            inputProduk.setAttribute('required', 'required');
+
+            // === LOGIKA TAMPILAN BERDASARKAN JENIS ===
+            
+            if (data.jenis === 'IN') {
+                // SALES (EMERALD STYLE)
+                styleModal('emerald', 'Edit Penjualan (Sales)');
+                
+                labelProduk.innerText = "Nama Produk";
+                inputProduk.name = "nama_produk";
+                inputProduk.value = data.produk; 
+                
+                inputNominal.name = "nilai_sales"; 
+                
+                wrapperKomisi.classList.remove('hidden');
+                inputKomisi.value = data.rate || 0;
+                inputKomisi.setAttribute('required', 'required');
+
+            } else if (data.jenis === 'OUT') {
+                // SUPPORT (RED STYLE)
+                styleModal('red', 'Edit Pengeluaran (Support)');
+
+                labelProduk.innerText = "Keperluan Support";
+                inputProduk.name = "keperluan";
+                // Bersihkan prefix 'USAGE : '
+                inputProduk.value = data.produk.replace('USAGE : ', '');
+
+                inputNominal.name = "nominal"; 
+            
+            } else if (data.jenis === 'ENTERTAIN') {
+                // ENTERTAIN (PURPLE STYLE)
+                styleModal('purple', 'Edit Aktivitas (Entertain)');
+
+                // Sembunyikan Input Produk
+                wrapperProduk.classList.add('hidden');
+                inputProduk.removeAttribute('required');
+
+                // Tampilkan Input Lokasi & Peserta
+                wrapperEntertain.classList.remove('hidden');
+                inputLokasi.value = data.lokasi;
+                inputPeserta.value = data.peserta;
+
+                inputNominal.name = "nominal"; 
+            }
+
+            // Helper Function Ganti Warna
+            function styleModal(color, textTitle) {
+                title.innerText = textTitle;
+                // Ubah warna focus ring input nominal sesuai tipe
+                inputNominal.className = `w-full pl-9 bg-zinc-800 border-2 border-zinc-600 rounded-lg shadow-sm text-white focus:border-${color}-500 px-3 py-2 font-mono font-bold text-lg`;
+                // Ubah warna tombol
+                btn.className = `px-4 py-2 bg-${color}-600 hover:bg-${color}-700 text-white font-bold rounded-lg shadow-md flex items-center text-sm transition`;
+            }
+
+            // Buka Modal
+            toggleModal('editTransactionModal');
+        }
+
         window.onclick = function(event) {
             const modal = document.getElementById('editClientModal');
+            const modalTrans = document.getElementById('editTransactionModal');
             if (event.target == modal) {
                 toggleModal('editClientModal');
+            }
+            if (event.target == modalTrans) {
+                toggleModal('editTransactionModal');
             }
         }
 
@@ -693,29 +917,36 @@
         }
         
         // Format Rupiah Input
-        const formatRupiah = (angka, prefix) => {
-            let number_string = angka.replace(/[^,\d]/g, '').toString(),
-                split = number_string.split(','),
-                sisa = split[0].length % 3,
-                rupiah = split[0].substr(0, sisa),
-                ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-            if (ribuan) {
-                separator = sisa ? '.' : '';
-                rupiah += separator + ribuan.join('.');
+        const formatRupiah = (input) => {
+            let value = input.value.replace(/[^0-9]/g, '');
+            if (value) {
+                value = parseInt(value, 10).toLocaleString('id-ID');
             }
-            rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-            return prefix == undefined ? rupiah : (rupiah ? rupiah : '');
+            input.value = value;
         };
 
+        // Event Listener untuk input format Rupiah
         ['inputSales', 'inputSupport', 'inputEntertain'].forEach(id => {
             const el = document.getElementById(id);
             if(el) {
                 el.addEventListener('keyup', function(e){
-                    this.value = formatRupiah(this.value);
+                    formatRupiah(this);
                 });
             }
         });
 
-        document.addEventListener("DOMContentLoaded", () => switchTab('history'));
+        // TABS PERSISTENCE
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Logika Tab Persistence
+        if(urlParams.has('year') || urlParams.get('tab') === 'recap') {
+            switchTab('recap');
+        } 
+        else if (urlParams.has('history_year') || urlParams.get('tab') === 'history') { 
+            switchTab('history');
+        } 
+        else {
+            document.addEventListener("DOMContentLoaded", () => switchTab(localStorage.getItem('activeTab') || 'history'));
+        }
     </script>
 </x-layout-admin>

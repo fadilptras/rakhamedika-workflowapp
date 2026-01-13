@@ -19,7 +19,10 @@ class CrmController extends Controller
     {
         $user = Auth::user();
         if ($user->jabatan === 'Direktur') return true;
-        if ($user->is_kepala_divisi && in_array($user->divisi, ['Marketing dan Operasional'])) return true;
+        
+        // Cek Divisi: Marketing, Operasional, atau gabungannya
+        if ($user->is_kepala_divisi && in_array($user->divisi, ['Marketing', 'Operasional', 'Marketing dan Operasional'])) return true;
+        
         return false;
     }
 
@@ -27,38 +30,29 @@ class CrmController extends Controller
     {
         $query = Client::with('interactions')->orderBy('nama_user', 'asc');
         
-        // Filter ini sudah otomatis membatasi data:
-        // - Kalau Abdul (User biasa): hanya ambil klien dia.
-        // - Kalau Direktur: ambil semua.
         if (!$this->hasFullAccess()) {
             $query->where('user_id', Auth::id());
         }
 
         $clients = $query->get();
-        $totalAllBalance = 0; // Variabel penampung total
+        $totalAllBalance = 0;
 
         foreach($clients as $client) {
-            // Hitung saldo per klien
             $balance = $this->calculateRealTimeBalance($client);
-            
-            // Masukkan ke object client (untuk tabel)
             $client->current_balance = $balance;
-
-            // Tambahkan ke Total Keseluruhan (untuk Card Dashboard)
             $totalAllBalance += $balance;
         }
 
         return view('users.crm.index', [
             'title' => 'Sistem Informasi Sales (CRM)', 
             'clients' => $clients,
-            'totalAllBalance' => $totalAllBalance // Kirim ke view
+            'totalAllBalance' => $totalAllBalance
         ]);
     }
 
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            // Client
             'nama_user'         => 'required|string|max:255',
             'email'             => 'nullable|email|max:255',
             'no_telpon'         => 'nullable|string|max:50',
@@ -66,14 +60,10 @@ class CrmController extends Controller
             'alamat_user'       => 'nullable|string', 
             'jabatan'           => 'nullable|string|max:100', 
             'hobby_client'      => 'nullable|string|max:255', 
-
-            // Perusahaan
             'nama_perusahaan'   => 'required|string|max:255',
             'tanggal_berdiri'   => 'nullable|date',
             'area'              => 'nullable|string|max:100',
             'alamat_perusahaan' => 'nullable|string', 
-
-            // Bank
             'bank'              => 'nullable|string|max:50',
             'no_rekening'       => 'nullable|string|max:50',
             'nama_di_rekening'  => 'nullable|string|max:100',   
@@ -92,28 +82,51 @@ class CrmController extends Controller
 
     public function show(Client $client, Request $request)
     {
-        if ($client->user_id !== Auth::id() && !$this->hasFullAccess()) abort(403, 'Akses Ditolak.');
+        // 1. Cek Akses Halaman
+        $hasAccess = $this->hasFullAccess();
+        if ($client->user_id !== Auth::id() && !$hasAccess) abort(403, 'Akses Ditolak.');
 
+        // 2. Tentukan Hak Edit (Owner atau Boss)
+        $canEdit = ($client->user_id === Auth::id()) || $hasAccess;
+
+        // 3. Data Rekap
         $year = $request->input('year', date('Y'));
         $calc = $this->calculateRecapData($client, $year);
 
-        $interactions = $client->interactions()->orderBy('tanggal_interaksi', 'desc')->paginate(10); 
+        // 4. Data History
+        $historyYear = $request->input('history_year');
+        $interactionQuery = $client->interactions()->orderBy('tanggal_interaksi', 'desc');
+        if ($historyYear) {
+            $interactionQuery->whereYear('tanggal_interaksi', $historyYear);
+        }
+        $interactions = $interactionQuery->paginate(10)->withQueryString(); 
 
-        // [PERBAIKAN] Menggunakan fungsi helper agar konsisten
+        // 5. Data Activity
+        $activityYear = $request->input('activity_year');
+        $activityQuery = $client->interactions()
+                                ->where('jenis_transaksi', 'ENTERTAIN')
+                                ->orderBy('tanggal_interaksi', 'desc');
+        if ($activityYear) {
+            $activityQuery->whereYear('tanggal_interaksi', $activityYear);
+        }
+        $activities = $activityQuery->get();
+
         $currentBalance = $this->calculateRealTimeBalance($client);
 
         return view('users.crm.show', [
             'title' => 'Detail Sales: ' . $client->nama_user,
             'client' => $client,
             'interactions' => $interactions,
+            'activities' => $activities,
             'recap' => $calc['recap'],
             'year' => $year,
             'yearlyTotals' => $calc['totals'],
             'startingBalance' => $calc['starting_balance'], 
             'startingLabel'   => $calc['starting_label'],
-            
-            // Kirim variabel baru ke view
-            'currentBalance' => $currentBalance 
+            'currentBalance' => $currentBalance,
+            'historyYear' => $historyYear,
+            'activityYear' => $activityYear,
+            'canEdit' => $canEdit // <--- Kirim variabel ini ke View
         ]);
     }
 
@@ -134,12 +147,10 @@ class CrmController extends Controller
             'alamat_user'       => 'nullable|string',
             'jabatan'           => 'nullable|string|max:100', 
             'hobby_client'      => 'nullable|string|max:255', 
-
             'nama_perusahaan'   => 'required|string|max:255',
             'tanggal_berdiri'   => 'nullable|date',
             'area'              => 'nullable|string',
             'alamat_perusahaan' => 'nullable|string',
-
             'bank'              => 'nullable|string',
             'no_rekening'       => 'nullable|string',
             'nama_di_rekening'  => 'nullable|string',
@@ -149,16 +160,77 @@ class CrmController extends Controller
         return redirect()->route('crm.show', $client->id)->with('success', 'Data klien berhasil diperbarui!');
     }
 
-    // Simpan Sales (IN)
+    public function updateInteraction(Request $request, Interaction $interaction)
+    {
+        if ($interaction->client->user_id !== Auth::id() && !$this->hasFullAccess()) abort(403);
+
+        $inputNominal = $request->input('nilai_sales') ?? $request->input('nominal');
+        $cleanNominal = str_replace('.', '', $inputNominal);
+
+        if ($interaction->jenis_transaksi == 'IN') {
+            $request->merge(['nilai_sales' => $cleanNominal]);
+            $request->validate([
+                'nama_produk'       => 'required|string|max:255',
+                'nilai_sales'       => 'required|numeric|min:0',
+                'komisi'            => 'required|numeric|min:0|max:100',
+                'tanggal_interaksi' => 'required|date',
+                'catatan'           => 'nullable|string',
+            ]);
+
+            $interaction->update([
+                'nama_produk'       => $request->nama_produk,
+                'tanggal_interaksi' => $request->tanggal_interaksi,
+                'nilai_sales'       => $request->nilai_sales,
+                'nilai_kontribusi'  => $request->nilai_sales,
+                'komisi'            => $request->komisi,
+                'catatan'           => "[Rate:" . $request->komisi . "] " . $request->catatan,
+            ]);
+
+        } elseif ($interaction->jenis_transaksi == 'OUT') {
+            $request->merge(['nominal' => $cleanNominal]);
+            $request->validate([
+                'keperluan'         => 'required|string|max:255',
+                'nominal'           => 'required|numeric|min:0',
+                'tanggal_interaksi' => 'required|date',
+                'catatan'           => 'nullable|string',
+            ]);
+
+            $interaction->update([
+                'nama_produk'       => 'USAGE : ' . $request->keperluan,
+                'tanggal_interaksi' => $request->tanggal_interaksi,
+                'nilai_sales'       => 0,
+                'nilai_kontribusi'  => $request->nominal,
+                'catatan'           => $request->catatan,
+            ]);
+
+        } elseif ($interaction->jenis_transaksi == 'ENTERTAIN') {
+            $request->merge(['nominal' => $cleanNominal]);
+            $request->validate([
+                'nominal'           => 'required|numeric|min:0',
+                'tanggal_interaksi' => 'required|date',
+                'catatan'           => 'required|string',
+                'lokasi'            => 'nullable|string|max:255',
+                'peserta'           => 'nullable|string|max:255',
+            ]);
+
+            $interaction->update([
+                'tanggal_interaksi' => $request->tanggal_interaksi,
+                'nilai_sales'       => 0,
+                'nilai_kontribusi'  => $request->nominal,
+                'catatan'           => $request->catatan,
+                'lokasi'            => $request->lokasi,
+                'peserta'           => $request->peserta,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Data transaksi berhasil diperbarui!');
+    }
+
     public function storeInteraction(Request $request)
     {
         $client = Client::findOrFail($request->client_id);
         if ($client->user_id !== Auth::id() && !$this->hasFullAccess()) abort(403);
-
-        $request->merge([
-            'nilai_sales' => str_replace('.', '', $request->nilai_sales),
-        ]);
-
+        $request->merge(['nilai_sales' => str_replace('.', '', $request->nilai_sales)]);
         $request->validate([
             'client_id' => 'required|exists:clients,id', 
             'nama_produk' => 'required|string|max:255',
@@ -167,74 +239,50 @@ class CrmController extends Controller
             'tanggal_interaksi' => 'required|date', 
             'catatan' => 'nullable|string',
         ]);
-
         Interaction::create([
-            'client_id' => $request->client_id, 'jenis_transaksi' => 'IN', 
+            'user_id' => Auth::id(), 'client_id' => $request->client_id, 'jenis_transaksi' => 'IN', 
             'nama_produk' => $request->nama_produk, 'tanggal_interaksi' => $request->tanggal_interaksi,
             'nilai_sales' => $request->nilai_sales, 'nilai_kontribusi' => $request->nilai_sales,
             'komisi' => $request->komisi, 'catatan' => "[Rate:" . $request->komisi . "] " . $request->catatan,
         ]);
-
         return redirect()->back()->with('success', 'Transaksi sales berhasil ditambahkan!');
     }
 
-    // Simpan Support (OUT) - MENGURANGI SALDO
     public function storeSupport(Request $request)
     {
         $client = Client::findOrFail($request->client_id);
         if ($client->user_id !== Auth::id() && !$this->hasFullAccess()) abort(403);
-
-        $request->merge([
-            'nominal' => str_replace('.', '', $request->nominal),
-        ]);
-
+        $request->merge(['nominal' => str_replace('.', '', $request->nominal)]);
         $request->validate([
             'client_id' => 'required|exists:clients,id', 'keperluan' => 'required|string|max:255',
             'nominal' => 'required|numeric|min:0', 'tanggal_interaksi' => 'required|date',
             'catatan' => 'nullable|string',
         ]);
-
         Interaction::create([
-            'client_id' => $request->client_id, 'jenis_transaksi' => 'OUT', 
+            'user_id'=> Auth::id(), 'client_id' => $request->client_id, 'jenis_transaksi' => 'OUT', 
             'nama_produk' => 'USAGE : ' . $request->keperluan, 'tanggal_interaksi' => $request->tanggal_interaksi,
             'nilai_sales' => 0, 'nilai_kontribusi' => $request->nominal, 'catatan' => $request->catatan,
         ]);
-
         return redirect()->back()->with('success', 'Dana support berhasil dicatat!');
     }
 
-    // === [BARU] Simpan Entertain (TIDAK MENGURANGI SALDO) ===
     public function storeEntertain(Request $request)
     {
         $client = Client::findOrFail($request->client_id);
         if ($client->user_id !== Auth::id() && !$this->hasFullAccess()) abort(403);
-
-        $request->merge([
-            'nominal' => str_replace('.', '', $request->nominal),
-        ]);
-
+        $request->merge(['nominal' => str_replace('.', '', $request->nominal)]);
         $request->validate([
-            'client_id'         => 'required|exists:clients,id',
-            'tanggal_interaksi' => 'required|date',
-            'catatan'           => 'required|string', 
-            'nominal'           => 'required|numeric|min:0',
-            'lokasi'            => 'nullable|string|max:255',
-            'peserta'           => 'nullable|string|max:255',
+            'client_id' => 'required|exists:clients,id', 'tanggal_interaksi' => 'required|date',
+            'catatan' => 'required|string', 'nominal' => 'required|numeric|min:0',
+            'lokasi' => 'nullable|string|max:255', 'peserta' => 'nullable|string|max:255',
         ]);
-
         Interaction::create([
-            'client_id'         => $request->client_id,
-            'jenis_transaksi'   => 'ENTERTAIN', 
-            'nama_produk'       => 'Activity / Entertain',
-            'tanggal_interaksi' => $request->tanggal_interaksi,
-            'nilai_sales'       => 0, 
-            'nilai_kontribusi'  => $request->nominal, 
-            'catatan'           => $request->catatan,
-            'lokasi'            => $request->lokasi,
-            'peserta'           => $request->peserta,
+            'user_id' => Auth::id(), 'client_id' => $request->client_id, 'jenis_transaksi' => 'ENTERTAIN', 
+            'nama_produk' => 'Activity / Entertain', 'tanggal_interaksi' => $request->tanggal_interaksi,
+            'nilai_sales' => 0, 'nilai_kontribusi' => $request->nominal, 'catatan' => $request->catatan,
+            'lokasi' => $request->lokasi, 'peserta' => $request->peserta,
         ]);
-
-        return redirect()->back()->with('success', 'Aktivitas berhasil dicatat (Saldo aman).');
+        return redirect()->back()->with('success', 'Aktivitas berhasil dicatat.');
     }
 
     public function destroyClient(Client $client)
@@ -254,13 +302,10 @@ class CrmController extends Controller
     public function matrix(Request $request)
     {
         $year = $request->input('year', date('Y'));
-        
-        // PERBAIKAN: Hapus constraint ->whereYear(...) agar kita bisa hitung saldo masa lalu
         $query = Client::with('interactions')->orderBy('nama_user', 'asc');
-
         if (!$this->hasFullAccess()) $query->where('user_id', Auth::id());
-
         $clients = $query->get();
+        
         $months = [];
         for($m=1; $m<=12; $m++) $months[$m] = Carbon::create()->month($m)->translatedFormat('F');
 
@@ -270,12 +315,10 @@ class CrmController extends Controller
         foreach($months as $m => $name) {
             $sumMonth = 0;
             foreach($clients as $c) {
-                // PERBAIKAN: Filter data harus spesifik BULAN dan TAHUN karena kita meload semua data
                 $monthlyData = $c->interactions->filter(function($i) use ($m, $year){ 
                     return Carbon::parse($i->tanggal_interaksi)->month == $m 
                         && Carbon::parse($i->tanggal_interaksi)->year == $year; 
                 });
-                
                 $income = 0;
                 foreach($monthlyData->where('jenis_transaksi', 'IN') as $sale) {
                     $r = $sale->komisi ?? 0;
@@ -299,23 +342,12 @@ class CrmController extends Controller
     public function exportMatrix(Request $request)
     {
         $year = $request->input('year', date('Y'));
-
-        // PERBAIKAN: Hapus constraint ->whereYear(...) sama seperti method matrix
         $query = Client::with('interactions')->orderBy('nama_user', 'asc');
-
-        if (!$this->hasFullAccess()) {
-            $query->where('user_id', Auth::id());
-        }
-
+        if (!$this->hasFullAccess()) $query->where('user_id', Auth::id());
         $clients = $query->get();
-
         $months = [];
-        for($m=1; $m<=12; $m++) {
-            $months[$m] = Carbon::create()->month($m)->translatedFormat('F');
-        }
-
-        $filename = 'Laporan_Matrix_Sales_' . $year . '.xlsx';
-        return Excel::download(new MatrixAnnualExport($clients, $months, $year), $filename);
+        for($m=1; $m<=12; $m++) $months[$m] = Carbon::create()->month($m)->translatedFormat('F');
+        return Excel::download(new MatrixAnnualExport($clients, $months, $year), 'Laporan_Matrix_Sales_' . $year . '.xlsx');
     }
     
     public function exportClientRecap(Client $client, Request $request)
@@ -323,125 +355,69 @@ class CrmController extends Controller
         if ($client->user_id !== Auth::id() && !$this->hasFullAccess()) abort(403);
         $year = $request->input('year', date('Y'));
         $calc = $this->calculateRecapData($client, $year);
-        $filename = 'Rekap_Sales_' . preg_replace('/[^A-Za-z0-9\-]/', '_', $client->nama_user) . '_' . $year . '.xlsx';
-        return Excel::download(new ClientAnnualExport($client, $calc['recap'], $year, $calc['totals']), $filename);
+        return Excel::download(new ClientAnnualExport($client, $calc['recap'], $year, $calc['totals']), 'Rekap_' . $client->nama_user . '_' . $year . '.xlsx');
     }
 
-    // === HELPER PERHITUNGAN REKAP ===
     private function calculateRecapData(Client $client, $year)
     {
-        // A. Tentukan Label Saldo
-        // Jika tahun yg dipilih > tahun pembuatan klien, labelnya "Saldo [Tahun Lalu]"
-        // Jika sama atau kurang, labelnya "Saldo Awal"
         $creationYear = $client->created_at->format('Y');
-        if ($year > $creationYear) {
-            $startingLabel = "Saldo Tahun " . ($year - 1);
-        } else {
-            $startingLabel = "Saldo Awal";
-        }
-
-        // B. Hitung Nominal Saldo Awal (Carry Forward)
+        $startingLabel = ($year > $creationYear) ? "Saldo Tahun " . ($year - 1) : "Saldo Awal";
         $startingBalance = $client->saldo_awal ?? 0;
 
-        // Tambahkan semua akumulasi transaksi dari tahun-tahun sebelumnya
-        $pastInteractions = $client->interactions()
-                                   ->whereYear('tanggal_interaksi', '<', $year)
-                                   ->get();
-
+        $pastInteractions = $client->interactions()->whereYear('tanggal_interaksi', '<', $year)->get();
         foreach($pastInteractions as $item) {
             if ($item->jenis_transaksi == 'OUT') {
                 $startingBalance -= $item->nilai_kontribusi;
-            } 
-            elseif ($item->jenis_transaksi == 'IN') {
+            } elseif ($item->jenis_transaksi == 'IN') {
                  $rate = $item->komisi ?? 0;
-                 if (!$rate && preg_match('/\[Rate:([\d\.]+)\]/', $item->catatan, $matches)) {
-                     $rate = floatval($matches[1]);
-                 }
+                 if (!$rate && preg_match('/\[Rate:([\d\.]+)\]/', $item->catatan, $matches)) $rate = floatval($matches[1]);
                  $nominal = $item->nilai_sales > 0 ? $item->nilai_sales : $item->nilai_kontribusi;
-                 $net = $nominal * ($rate / 100);
-                 
-                 $startingBalance += $net;
+                 $startingBalance += $nominal * ($rate / 100);
             }
         }
 
-        // C. Hitung Bulanan Tahun Ini
         $yearlyInteractions = $client->interactions()->whereYear('tanggal_interaksi', $year)->get();
         $recap = [];
         $currentSaldo = $startingBalance; 
 
         for ($m = 1; $m <= 12; $m++) {
             $monthlyData = $yearlyInteractions->filter(fn($item) => Carbon::parse($item->tanggal_interaksi)->month == $m);
-
-            // Gross
             $grossSales = $monthlyData->where('jenis_transaksi', 'IN')->sum(fn($item) => $item->nilai_sales > 0 ? $item->nilai_sales : $item->nilai_kontribusi);
-            // Out
             $usageOut = $monthlyData->where('jenis_transaksi', 'OUT')->sum('nilai_kontribusi');
-            // Net
-            $netRevenue = 0;
-            $komisiList = [];
+            
+            $netRevenue = 0; $komisiList = [];
             foreach($monthlyData->where('jenis_transaksi', 'IN') as $sale) {
                 $rate = $sale->komisi ?? 0;
                 if (!$rate && preg_match('/\[Rate:([\d\.]+)\]/', $sale->catatan, $matches)) $rate = floatval($matches[1]);
-                $nominal = $sale->nilai_sales > 0 ? $sale->nilai_sales : $sale->nilai_kontribusi;
-                $netRevenue += $nominal * ($rate / 100);
+                $netRevenue += ($sale->nilai_sales > 0 ? $sale->nilai_sales : $sale->nilai_kontribusi) * ($rate / 100);
                 if($rate > 0) $komisiList[] = $rate.'%';
             }
-            
             $currentSaldo += ($netRevenue - $usageOut);
+            $komisiText = empty($komisiList) ? (empty($komisiList) && $grossSales > 0 ? 'Var' : '-') : implode(', ', array_unique($komisiList));
             
-            $komisiList = array_unique($komisiList);
-            $komisiText = empty($komisiList) ? '-' : implode(', ', $komisiList);
-            if(empty($komisiList) && $grossSales > 0) $komisiText = 'Var'; 
-
-            $recap[] = [
-                'month_name' => Carbon::create()->month($m)->translatedFormat('F'),
-                'komisi_text'=> $komisiText, 
-                'gross_in' => $grossSales,
-                'net_value'  => $netRevenue, 
-                'out' => $usageOut, 
-                'saldo' => $currentSaldo
-            ];
+            $recap[] = ['month_name' => Carbon::create()->month($m)->translatedFormat('F'), 'komisi_text'=> $komisiText, 'gross_in' => $grossSales, 'net_value'  => $netRevenue, 'out' => $usageOut, 'saldo' => $currentSaldo];
         }
-
-        $yearlyTotals = [
-            'gross_in' => collect($recap)->sum('gross_in'), 
-            'net_value' => collect($recap)->sum('net_value'),
-            'out' => collect($recap)->sum('out'), 
-            'saldo' => $currentSaldo
-        ];
 
         return [
             'recap' => $recap, 
-            'totals' => $yearlyTotals, 
+            'totals' => ['gross_in' => collect($recap)->sum('gross_in'), 'net_value' => collect($recap)->sum('net_value'), 'out' => collect($recap)->sum('out'), 'saldo' => $currentSaldo], 
             'starting_balance' => $startingBalance,
-            'starting_label' => $startingLabel // Kirim label dinamis
+            'starting_label' => $startingLabel
         ];
     }
 
-    // === [BARU] Helper Saldo Real-time ===
     private function calculateRealTimeBalance($client)
     {
         $balance = $client->saldo_awal ?? 0;
-        // Ambil interactions yang sudah di-load (via Eager Loading)
-        $interactions = $client->interactions; 
-        
-        foreach($interactions as $item) {
+        foreach($client->interactions as $item) {
             if ($item->jenis_transaksi == 'OUT') {
                 $balance -= $item->nilai_kontribusi;
-            } 
-            elseif ($item->jenis_transaksi == 'IN') {
+            } elseif ($item->jenis_transaksi == 'IN') {
                 $rate = $item->komisi ?? 0;
-                if (!$rate && preg_match('/\[Rate:([\d\.]+)\]/', $item->catatan, $matches)) {
-                    $rate = floatval($matches[1]);
-                }
-                $nominal = $item->nilai_sales > 0 ? $item->nilai_sales : $item->nilai_kontribusi;
-                $net = $nominal * ($rate / 100);
-                
-                $balance += $net;
+                if (!$rate && preg_match('/\[Rate:([\d\.]+)\]/', $item->catatan, $matches)) $rate = floatval($matches[1]);
+                $balance += ($item->nilai_sales > 0 ? $item->nilai_sales : $item->nilai_kontribusi) * ($rate / 100);
             }
-            // ENTERTAIN diabaikan (tidak mengurangi saldo)
         }
-
         return $balance;
     }
 }

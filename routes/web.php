@@ -121,6 +121,8 @@ Route::controller(CrmController::class)->group(function () {
     Route::get('/crm/client/{client}/edit', [CrmController::class, 'edit'])->name('crm.client.edit');
     Route::put('/crm/client/{client}', [CrmController::class, 'update'])->name('crm.client.update');
     Route::post('/crm/interaction/entertain', 'storeEntertain')->name('crm.interaction.entertain');
+    Route::put('/crm/interaction/{interaction}/update', [CrmController::class, 'updateInteraction'])
+    ->name('crm.interaction.update');
 });
 
     Route::resource('aktivitas', AktivitasController::class)
@@ -243,18 +245,27 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
         
-        // [BARU] Route Export Matrix
+        // Export Matrix
         Route::get('/matrix/export', 'exportMatrix')->name('matrix.export');
 
+        // Client Management
         Route::get('/{client}', 'show')->name('show');
         Route::get('/client/{client}/edit', 'edit')->name('client.edit');
         Route::put('/client/{client}', 'update')->name('client.update');
         Route::delete('/client/{client}', 'destroyClient')->name('client.destroy');
         
+        // Interaction Store
         Route::post('/interaction', 'storeInteraction')->name('interaction.store');
         Route::post('/interaction/support', 'storeSupport')->name('interaction.support');
         Route::post('/interaction/entertain', 'storeEntertain')->name('interaction.entertain');
+        
+        // Interaction Delete & Update
         Route::delete('/interaction/{interaction}', 'destroyInteraction')->name('interaction.destroy');
+        
+        // [PERBAIKAN ROUTE UPDATE]
+        // Menghapus '/crm' di awal karena sudah ada prefix
+        // Menggunakan string method 'updateInteraction' bukan array
+        Route::put('/interaction/{interaction}/update', 'updateInteraction')->name('interaction.update');
         
         Route::get('/{client}/export', 'exportClientRecap')->name('client.export');
     });

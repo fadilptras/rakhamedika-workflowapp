@@ -89,7 +89,7 @@
                 </h3>
             </div>
             <div class="mt-4 flex items-center text-xs text-blue-400 font-bold">
-                <i class="fas fa-wallet mr-1"></i> Pendapatan Bersih - Usage
+                <i class="fas fa-wallet mr-1"></i> Saldo - Usage
             </div>
         </div>
     </div>

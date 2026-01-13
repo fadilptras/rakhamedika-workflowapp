@@ -100,40 +100,72 @@ class UserController extends Controller
         $user = User::findOrFail($request->user_id);
 
         $validated = $request->validate([
+            // --- Akun Dasar ---
             'name'              => ['required', 'string', 'max:255'],
             'email'             => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'role'              => ['required', Rule::in(['admin', 'user'])],
             'password'          => ['nullable', 'string', 'min:8'],
+            
+            // --- Pekerjaan & Divisi ---
             'jabatan'           => 'nullable|string|max:255',
-            'tanggal_bergabung' => 'nullable|date',
-            // 'profile_picture'   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Dihapus jika tidak ada
             'divisi'            => 'nullable|string|max:255',
-            'user_id'           => 'required|exists:users,id' // Validasi user_id
+            'tanggal_bergabung' => 'nullable|date',
+            'nip'               => 'nullable|string|max:50',
+            'status_karyawan'   => 'nullable|string|max:50',
+            'lokasi_kerja'      => 'nullable|string|max:255',
+            'tanggal_mulai_kontrak' => 'nullable|date',
+            'tanggal_akhir_kontrak' => 'nullable|date',
+
+            // --- Data Pribadi ---
+            'nik'               => 'nullable|string|max:20',
+            'nomor_telepon'     => 'nullable|string|max:20',
+            'tempat_lahir'      => 'nullable|string|max:100',
+            'tanggal_lahir'     => 'nullable|date',
+            'jenis_kelamin'     => 'nullable|in:Laki-laki,Perempuan',
+            'agama'             => 'nullable|string|max:50',
+            'status_pernikahan' => 'nullable|string|max:50',
+            'golongan_darah'    => 'nullable|string|max:5',
+            'alamat_ktp'        => 'nullable|string',
+            'alamat_domisili'   => 'nullable|string',
+
+            // --- Administrasi & Bank ---
+            'npwp'                  => 'nullable|string|max:50',
+            'ptkp'                  => 'nullable|string|max:10',
+            'bpjs_kesehatan'        => 'nullable|string|max:50',
+            'bpjs_ketenagakerjaan'  => 'nullable|string|max:50',
+            'nama_bank'             => 'nullable|string|max:100',
+            'nomor_rekening'        => 'nullable|string|max:50',
+            'pemilik_rekening'      => 'nullable|string|max:100',
+
+            // --- Kontak Darurat ---
+            'kontak_darurat_nama'     => 'nullable|string|max:100',
+            'kontak_darurat_nomor'    => 'nullable|string|max:20',
+            'kontak_darurat_hubungan' => 'nullable|string|max:50',
+
+            'user_id'           => 'required|exists:users,id' 
         ]);
 
         DB::transaction(function () use ($request, $validated, $user) {
+            // Logika Password
             if ($request->filled('password')) {
                 $validated['password'] = Hash::make($validated['password']);
             } else {
-                unset($validated['password']); // Jangan update password jika kosong
+                unset($validated['password']);
             }
 
-            // Hapus logika update foto jika tidak ada
-            // if ($request->hasFile('profile_picture')) { ... }
-
-            // Jangan hapus tanggal bergabung jika kosong, biarkan nilai lama
+            // Logika Tanggal Bergabung (Biarkan lama jika kosong)
             if (empty($validated['tanggal_bergabung'])) {
                  unset($validated['tanggal_bergabung']);
             }
 
-            // Hapus user_id dari data yang akan diupdate
-            unset($validated['user_id']);
+            unset($validated['user_id']); // Hapus ID dari array data
 
+            // Update semua data sekaligus
             $user->update($validated);
         });
 
         $redirectRoute = $request->role === 'admin' ? 'admin.admins.index' : 'admin.employees.index';
-        return redirect()->route($redirectRoute)->with('success', 'Akun berhasil diupdate.');
+        return redirect()->route($redirectRoute)->with('success', 'Data profil karyawan berhasil diperbarui secara lengkap.');
     }
 
 

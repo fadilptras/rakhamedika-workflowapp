@@ -21,21 +21,16 @@ class AdminCrmController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Ambil Filter Sales Person
         $userId = $request->input('user_id');
-
-        // 2. Query Data Klien dengan Relasi
         $query = Client::with(['user', 'interactions']);
 
-        // Filter jika ada user dipilih
         if ($userId) {
             $query->where('user_id', $userId);
         }
 
-        // 3. Ambil data dengan Pagination
         $clients = $query->orderBy('updated_at', 'desc')->paginate(15);
 
-        // 4. Hitung Statistik Global (Tanpa Pagination)
+        // Hitung Statistik Global
         $statsQuery = clone $query; 
         $statsQuery->getQuery()->orders = null;
         $statsQuery->getQuery()->limit = null;
@@ -66,9 +61,7 @@ class AdminCrmController extends Controller
                 }
             }
             
-            // [UPDATED] Menambahkan Saldo Awal ke perhitungan Saldo Net Klien
             $saldo_klien = ($c->saldo_awal ?? 0) + $c_net_total - $c_usage_total;
-            
             $totalOmset += $c_gross_total;
             $totalNet   += $saldo_klien;
         }
@@ -85,9 +78,6 @@ class AdminCrmController extends Controller
         ]);
     }
 
-    /**
-     * Export Matrix Sales Tahunan (Excel)
-     */
     public function exportMatrix(Request $request)
     {
         $year = $request->input('year', date('Y'));
@@ -110,32 +100,21 @@ class AdminCrmController extends Controller
         return Excel::download(new MatrixAnnualExport($clients, $months, $year), $filename);
     }
 
-    /**
-     * Simpan Klien Baru (Create)
-     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'user_id'           => 'required|exists:users,id',
-
-            // Client Identity
             'nama_user'         => 'required|string|max:255',
             'email'             => 'nullable|email|max:255',
             'no_telpon'         => 'nullable|string|max:50',
             'tanggal_lahir'     => 'nullable|date',
             'alamat_user'       => 'nullable|string', 
-            
-            // Jabatan & Hobby
             'jabatan'           => 'nullable|string|max:100',
             'hobby_client'      => 'nullable|string|max:255',
-
-            // Perusahaan
             'nama_perusahaan'   => 'required|string|max:255',
             'tanggal_berdiri'   => 'nullable|date',
             'area'              => 'nullable|string|max:100',
             'alamat_perusahaan' => 'nullable|string', 
-
-            // Bank
             'bank'              => 'nullable|string|max:50',
             'no_rekening'       => 'nullable|string|max:50',
             'nama_di_rekening'  => 'nullable|string|max:100',   
@@ -161,16 +140,18 @@ class AdminCrmController extends Controller
             ->with('success', 'Data Klien berhasil dibuat untuk Sales: ' . $salesPerson->name);
     }
 
-    /**
-     * Halaman Detail Klien (Show)
-     */
     public function show(Client $client, Request $request)
     {
         $year = $request->input('year', date('Y'));
+        $historyYear = $request->input('history_year');
 
-        $interactions = $client->interactions()
-                               ->orderBy('tanggal_interaksi', 'desc')
-                               ->paginate(15); 
+        $queryInteractions = $client->interactions()->orderBy('tanggal_interaksi', 'desc');
+
+        if ($historyYear) {
+            $queryInteractions->whereYear('tanggal_interaksi', $historyYear);
+        }
+
+        $interactions = $queryInteractions->paginate(15)->withQueryString(); 
 
         $calc = $this->calculateRecapData($client, $year);
 
@@ -182,7 +163,8 @@ class AdminCrmController extends Controller
             'year'         => $year,
             'yearlyTotals' => $calc['totals'],
             'startingBalance' => $calc['starting_balance'], 
-            'startingLabel'   => $calc['starting_label']
+            'startingLabel'   => $calc['starting_label'],
+            'historyYear'     => $historyYear
         ]);
     }
 
@@ -191,9 +173,6 @@ class AdminCrmController extends Controller
         return view('admin.crm.show', ['title' => 'Edit Data Klien', 'client' => $client]);
     }
 
-    /**
-     * Update Data Klien
-     */
     public function update(Request $request, Client $client)
     {
         $validated = $request->validate([
@@ -203,11 +182,8 @@ class AdminCrmController extends Controller
             'email'           => 'nullable|email',
             'no_telpon'       => 'nullable|string',
             'alamat_user'     => 'nullable|string',
-            
-            // Jabatan & Hobby
             'jabatan'         => 'nullable|string|max:100',
             'hobby_client'    => 'nullable|string|max:255',
-
             'alamat_perusahaan' => 'nullable|string',
             'bank'            => 'nullable|string',
             'no_rekening'     => 'nullable|string',
@@ -243,6 +219,7 @@ class AdminCrmController extends Controller
         $noteWithRate = "[Rate:" . $request->komisi . "] " . $request->catatan;
 
         Interaction::create([
+            'user_id'           => Auth::id(), // [PERBAIKAN] Tambahkan ID Admin
             'client_id'         => $request->client_id,
             'jenis_transaksi'   => 'IN', 
             'nama_produk'       => $request->nama_produk,
@@ -274,6 +251,7 @@ class AdminCrmController extends Controller
         ]);
 
         Interaction::create([
+            'user_id'           => Auth::id(), // [PERBAIKAN] Tambahkan ID Admin
             'client_id'         => $request->client_id,
             'jenis_transaksi'   => 'OUT', 
             'nama_produk'       => 'USAGE : ' . $request->keperluan,
@@ -305,6 +283,7 @@ class AdminCrmController extends Controller
         ]);
 
         Interaction::create([
+            'user_id'           => Auth::id(), // [PERBAIKAN] Tambahkan ID Admin
             'client_id'         => $request->client_id,
             'jenis_transaksi'   => 'ENTERTAIN', 
             'nama_produk'       => 'Activity / Entertain',
@@ -342,7 +321,6 @@ class AdminCrmController extends Controller
         return Excel::download(new ClientAnnualExport($client, $calc['recap'], $year, $calc['totals']), $filename);
     }
 
-    // Helper Perhitungan Rekap (Private)
     private function calculateRecapData(Client $client, $year)
     {
         $creationYear = $client->created_at->format('Y');
@@ -421,9 +399,73 @@ class AdminCrmController extends Controller
 
         return [
             'recap' => $recap, 
-            'totals' => $yearlyTotals,
+            'totals' => $yearlyTotals, 
             'starting_balance' => $startingBalance, 
             'starting_label' => $startingLabel      
         ];
+    }
+
+    public function updateInteraction(Request $request, Interaction $interaction)
+    {
+        $inputNominal = $request->input('nilai_sales') ?? $request->input('nominal');
+        $cleanNominal = str_replace('.', '', $inputNominal);
+
+        if ($interaction->jenis_transaksi == 'IN') {
+            $request->merge(['nilai_sales' => $cleanNominal]);
+            $request->validate([
+                'nama_produk'       => 'required|string|max:255',
+                'nilai_sales'       => 'required|numeric|min:0',
+                'komisi'            => 'required|numeric|min:0|max:100',
+                'tanggal_interaksi' => 'required|date',
+                'catatan'           => 'nullable|string',
+            ]);
+
+            $interaction->update([
+                'nama_produk'       => $request->nama_produk,
+                'tanggal_interaksi' => $request->tanggal_interaksi,
+                'nilai_sales'       => $request->nilai_sales,
+                'nilai_kontribusi'  => $request->nilai_sales,
+                'komisi'            => $request->komisi,
+                'catatan'           => "[Rate:" . $request->komisi . "] " . $request->catatan,
+            ]);
+
+        } elseif ($interaction->jenis_transaksi == 'OUT') {
+            $request->merge(['nominal' => $cleanNominal]);
+            $request->validate([
+                'keperluan'         => 'required|string|max:255',
+                'nominal'           => 'required|numeric|min:0',
+                'tanggal_interaksi' => 'required|date',
+                'catatan'           => 'nullable|string',
+            ]);
+
+            $interaction->update([
+                'nama_produk'       => 'USAGE : ' . $request->keperluan,
+                'tanggal_interaksi' => $request->tanggal_interaksi,
+                'nilai_sales'       => 0,
+                'nilai_kontribusi'  => $request->nominal,
+                'catatan'           => $request->catatan,
+            ]);
+
+        } elseif ($interaction->jenis_transaksi == 'ENTERTAIN') {
+            $request->merge(['nominal' => $cleanNominal]);
+            $request->validate([
+                'nominal'           => 'required|numeric|min:0',
+                'tanggal_interaksi' => 'required|date',
+                'catatan'           => 'required|string',
+                'lokasi'            => 'nullable|string|max:255',
+                'peserta'           => 'nullable|string|max:255',
+            ]);
+
+            $interaction->update([
+                'tanggal_interaksi' => $request->tanggal_interaksi,
+                'nilai_sales'       => 0,
+                'nilai_kontribusi'  => $request->nominal,
+                'catatan'           => $request->catatan,
+                'lokasi'            => $request->lokasi,
+                'peserta'           => $request->peserta,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Data transaksi berhasil diperbarui Admin.');
     }
 }
