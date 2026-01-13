@@ -1,61 +1,80 @@
 <x-layout-admin>
-<x-slot:title>Aktivitas Karyawan</x-slot:title>
+    <x-slot:title>Aktivitas Karyawan</x-slot:title>
 
-{{-- HEADER --}}
-<div class="flex justify-between items-center mb-6 flex-wrap gap-4">
-    <h1 class="text-2xl font-bold text-white">Aktivitas Harian Karyawan</h1>
-    {{-- Anda bisa tambahkan tombol download PDF di sini nanti jika perlu --}}
-</div>
+    {{-- HEADER --}}
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white">Aktivitas Harian Karyawan</h1>
+    </div>
 
-{{-- FILTER --}}
-<div class="my-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
-    <form method="GET" action="{{ route('admin.aktivitas.index') }}" id="filter-form">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 items-end">
-            
-            {{-- Filter Tanggal --}}
-            <div>
-                <label for="tanggal" class="block text-sm font-medium text-zinc-300">Tanggal</label>
-                <input type="date" name="tanggal" id="tanggal" 
-                       value="{{ $filters['tanggal'] ?? now()->toDateString() }}" 
-                       class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+    {{-- FILTER & ACTIONS --}}
+    <div class="my-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
+        <form method="GET" action="{{ route('admin.aktivitas.index') }}" id="filter-form">
+            <div class="flex flex-wrap items-end gap-4">
+                
+                {{-- Filter Tanggal --}}
+                <div class="w-full sm:w-auto">
+                    <label for="tanggal" class="block text-sm font-medium text-zinc-300">Tanggal</label>
+                    <input type="date" name="tanggal" id="tanggal" 
+                           value="{{ $tanggal }}" 
+                           class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+
+                {{-- Filter Divisi --}}
+                <div class="w-full sm:w-auto">
+                    <label for="divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
+                    <select name="divisi" id="divisi" 
+                            class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm min-w-[150px]">
+                        <option value="">Semua Divisi</option>
+                        @foreach ($divisions as $d)
+                            <option value="{{ $d }}" {{ $divisi == $d ? 'selected' : '' }}>{{ $d }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Filter Karyawan (User) --}}
+                <div class="w-full sm:w-auto">
+                    <label for="user_id" class="block text-sm font-medium text-zinc-300">Karyawan</label>
+                    <select name="user_id" id="user_id" 
+                            class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm min-w-[200px]">
+                        <option value="">Semua Karyawan</option>
+                        @foreach ($users as $user)
+                            <option value="{{ $user->id }}" {{ $userId == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- ACTION BUTTONS (Filter, Reset, PDF) --}}
+                <div class="flex items-end gap-2">
+                    {{-- Tombol Filter --}}
+                    <button type="submit" 
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
+                        <i class="fas fa-filter mr-2"></i> Filter
+                    </button>
+
+                    {{-- Tombol Reset (Sekarang pakai Text + Icon) --}}
+                    <a href="{{ route('admin.aktivitas.index') }}" 
+                       class="bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors">
+                       Reset
+                    </a>
+
+                    {{-- Divider Kecil --}}
+                    <div class="w-px h-8 bg-zinc-600 mx-1 hidden sm:block"></div>
+
+                    {{-- Tombol Download PDF (Pindah kesini biar rapi) --}}
+                    <a href="{{ route('admin.aktivitas.downloadPdf', request()->query()) }}" 
+                       class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105" 
+                       title="Download PDF">
+                        <i class="fas fa-file-pdf mr-2"></i> PDF
+                    </a>
+                </div>
+
             </div>
+        </form>
+    </div>
 
-            {{-- Filter Divisi --}}
-            <div>
-                <label for="divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
-                <select name="divisi" id="divisi" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <option value="">Semua Divisi</option>
-                    @foreach($divisions as $d)
-                        <option value="{{ $d }}" @selected(isset($filters['divisi']) && $filters['divisi'] == $d)>{{ $d }}</option>
-                    @endforeach
-                </select>
-            </div>
-            
-            {{-- Filter Karyawan --}}
-            <div>
-                <label for="user_id" class="block text-sm font-medium text-zinc-300">Karyawan</label>
-                <select name="user_id" id="user_id" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                    <option value="">Semua Karyawan</option>
-                    @foreach($users as $user)
-                        <option value="{{ $user->id }}" @selected(isset($filters['user_id']) && $filters['user_id'] == $user->id)>{{ $user->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Tombol Filter & Reset --}}
-            <div class="flex items-end justify-start gap-2">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
-                    <i class="fas fa-filter mr-2"></i> Filter
-                </button>
-                <a href="{{ route('admin.aktivitas.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors">
-                    Reset
-                </a>
-            </div>
-        </div>
-    </form>
-</div>
-
-{{-- TABEL DATA --}}
+    {{-- TABEL DATA --}}
 <div class="overflow-x-auto bg-zinc-800 rounded-lg shadow-lg border border-zinc-700 mt-6">
     <table class="min-w-full text-sm text-left text-zinc-300">
         <thead class="bg-zinc-700 text-xs uppercase font-semibold text-zinc-200">

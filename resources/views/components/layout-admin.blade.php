@@ -77,7 +77,7 @@
                                     <a href="{{ route('admin.absensi.index') }}" 
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
                                         {{ request()->routeIs('admin.absensi.index', 'admin.lembur.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
-                                        Absensi
+                                        Absensi & Lembur
                                     </a>
                                 </li>
                                 <li>

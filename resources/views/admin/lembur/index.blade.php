@@ -1,74 +1,78 @@
 <x-layout-admin>
-    <x-slot:title>Aktivitas</x-slot:title>
+    <x-slot:title>Lembur</x-slot:title>
 
     <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
         <h1 class="text-2xl font-bold text-white">Lembur Harian Karyawan</h1>
-        <div class="flex gap-2">
-            <a href="{{ route('admin.absensi.index') }}"
-               class="font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors duration-200
-               @if(Route::is('admin.absensi.index')) bg-indigo-600 hover:bg-indigo-700 text-white @else bg-zinc-700 hover:bg-zinc-600 text-zinc-300 @endif">
-                <i class="fas fa-chart-bar mr-2"></i> Absensi 
+        {{-- Tab Navigasi (Absensi / Lembur) --}}
+        <div class="bg-zinc-800 p-1 rounded-lg inline-flex shadow-sm border border-zinc-700">
+            <a href="{{ route('admin.absensi.index') }}" 
+               class="px-4 py-2 rounded-md text-sm font-bold transition-all {{ Route::is('admin.absensi.index') ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white hover:bg-zinc-700' }}">
+                <i class="fas fa-calendar-check mr-2"></i> Absensi
             </a>
-            <a href="{{ route('admin.lembur.index') }}"
-               class="font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors duration-200
-               @if(Route::is('admin.lembur.index')) bg-indigo-600 hover:bg-indigo-700 text-white @else bg-zinc-700 hover:bg-zinc-600 text-zinc-300 @endif">
+            <a href="{{ route('admin.lembur.index') }}" 
+               class="px-4 py-2 rounded-md text-sm font-bold transition-all {{ Route::is('admin.lembur.index') ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white hover:bg-zinc-700' }}">
                 <i class="fas fa-clock mr-2"></i> Lembur
-            </a>
-            <a href="{{ route('admin.lembur.downloadPdf', request()->query()) }}"
-               class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
-                <i class="fas fa-file-pdf mr-2"></i> Download PDF
             </a>
         </div>
     </div>
 
-    {{-- Filter --}}
-    <div class="my-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
-        <form method="GET" action="{{ route('admin.lembur.index') }}" id="filter-form">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 items-end">
-                
-                <div>
-                    <label for="month" class="block text-sm font-medium text-zinc-300">Bulan</label>
-                    <select name="month" id="month" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        @php
-                            $currentMonth = request('month') ? intval(request('month')) : now()->month;
-                        @endphp
-                        @foreach($months as $num => $name)
-                            <option value="{{ $num }}" @selected($num == $currentMonth)>{{ $name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="year" class="block text-sm font-medium text-zinc-300">Tahun</label>
-                    <select name="year" id="year" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        @php
-                            $currentYear = request('year') ? intval(request('year')) : now()->year;
-                        @endphp
-                        @foreach($years as $yearItem)
-                            <option value="{{ $yearItem }}" @selected($yearItem == $currentYear)>{{ $yearItem }}</option>
-                        @endforeach
-                    </select>
-                </div>
+{{-- FILTER & ACTIONS SECTION --}}
+    <div class="mb-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
+        <form method="GET" action="{{ route('admin.lembur.index') }}" class="flex flex-wrap items-end gap-4 w-full">
 
-                <div>
-                    <label for="divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
-                    <select name="divisi" id="divisi" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        <option value="">Semua Divisi</option>
-                        @foreach($divisions as $d)
-                            <option value="{{ $d }}" @selected(request('divisi') == $d)>{{ $d }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4 flex items-end justify-end gap-2">
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
-                        <i class="fas fa-filter mr-2"></i> Filter
-                    </button>
-                    <a href="{{ route('admin.lembur.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors">
-                        Reset
-                    </a>
-                </div>
+            {{-- Input Bulan (Flex-1 agar melebar) --}}
+            <div class="flex-1 min-w-[150px]">
+                <label for="month" class="block text-sm font-medium text-zinc-300">Bulan</label>
+                <select name="month" id="month" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-2 py-2 text-white text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    @foreach($months as $key => $name)
+                        <option value="{{ $key }}" {{ $month == $key ? 'selected' : '' }}>{{ $name }}</option>
+                    @endforeach
+                </select>
             </div>
+
+            {{-- Input Tahun (Flex-1 agar melebar) --}}
+            <div class="flex-1 min-w-[120px]">
+                <label for="year" class="block text-sm font-medium text-zinc-300">Tahun</label>
+                <select name="year" id="year" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-2 py-2 text-white text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    @foreach($years as $y)
+                        <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Input Divisi (Flex-1 agar melebar paling dominan) --}}
+            <div class="flex-1 min-w-[200px]">
+                <label for="divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
+                <select name="divisi" id="divisi" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">Semua Divisi</option>
+                    @foreach($divisions as $d)
+                        <option value="{{ $d }}" {{ $divisi == $d ? 'selected' : '' }}>{{ $d }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- BUTTON GROUP --}}
+            {{-- Tidak pakai flex-grow agar ukurannya pas sesuai tombol --}}
+            <div class="flex items-end gap-2">
+                {{-- Tombol Filter --}}
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform hover:scale-105">
+                    <i class="fas fa-filter mr-2"></i> Filter
+                </button>
+
+                {{-- Tombol Reset --}}
+                <a href="{{ route('admin.lembur.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors">
+                    <i class="fas fa-undo mr-2"></i> Reset
+                </a>
+
+                {{-- Divider --}}
+                <div class="w-px h-8 bg-zinc-600 mx-1 hidden sm:block"></div>
+
+                {{-- Tombol Download PDF --}}
+                <a href="{{ route('admin.lembur.downloadPdf', request()->query()) }}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform hover:scale-105" title="Download Laporan Lembur">
+                    <i class="fas fa-file-pdf mr-2"></i> PDF
+                </a>
+            </div>
+
         </form>
     </div>
 

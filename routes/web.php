@@ -239,7 +239,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::delete('/{agenda}', [AdminAgendaController::class, 'destroy'])->name('destroy');
     });
 
-    Route::get('aktivitas', [AdminAktivitasController::class, 'index'])->name('aktivitas.index');
+    Route::prefix('aktivitas')->name('aktivitas.')->group(function () {
+        Route::get('/', [AdminAktivitasController::class, 'index'])->name('index');
+        
+        // Tambahkan ini:
+        Route::get('/download-pdf', [AdminAktivitasController::class, 'downloadPdf'])->name('downloadPdf');
+    });
 
     Route::controller(AdminCrmController::class)->prefix('crm')->name('crm.')->group(function () {
         Route::get('/', 'index')->name('index');

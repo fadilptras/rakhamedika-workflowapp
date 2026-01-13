@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class AdminAktivitasController extends Controller
 {
@@ -16,8 +17,6 @@ class AdminAktivitasController extends Controller
     public function index(Request $request)
     {
         // --- Ambil Data Untuk Filter ---
-        
-        // Ambil semua divisi unik, hilangkan null/kosong
         $divisions = User::select('divisi')
             ->whereNotNull('divisi')
             ->where('divisi', '!=', '')
@@ -29,39 +28,74 @@ class AdminAktivitasController extends Controller
         $users = User::orderBy('name')->get(['id', 'name']);
 
         // --- Proses Filter ---
-
-        // Tentukan tanggal. Default-nya adalah hari ini.
         $tanggal = $request->input('tanggal', now()->toDateString());
+        $divisi = $request->input('divisi');
+        $userId = $request->input('user_id');
 
-        // Mulai query, load relasi 'user' agar efisien
+        // Query Builder
         $query = Aktivitas::with('user')
                     ->whereDate('created_at', $tanggal)
                     ->orderBy('created_at', 'desc');
 
-        // Filter berdasarkan Divisi
-        if ($request->filled('divisi')) {
-            $divisi = $request->input('divisi');
+        // Filter Divisi
+        if ($divisi) {
             $query->whereHas('user', function ($q) use ($divisi) {
                 $q->where('divisi', $divisi);
             });
         }
 
-        // Filter berdasarkan Karyawan
-        if ($request->filled('user_id')) {
-            $userId = $request->input('user_id');
+        // Filter User (Perorangan)
+        if ($userId) {
             $query->where('user_id', $userId);
         }
 
         // Ambil hasil akhir dengan paginasi
         $aktivitasHarian = $query->paginate(25)->withQueryString();
 
-        // Kirim data ke view
-        return view('admin.aktivitas.index', [
-            'title' => 'Aktivitas Karyawan',
-            'aktivitasHarian' => $aktivitasHarian,
-            'divisions' => $divisions,
-            'users' => $users,
-            'filters' => $request->only(['tanggal', 'divisi', 'user_id']), // Untuk menyimpan nilai filter
-        ]);
+        return view('admin.aktivitas.index', compact('aktivitasHarian', 'divisions', 'users', 'tanggal', 'divisi', 'userId'));
+    }
+
+    /**
+     * Download PDF Aktivitas berdasarkan filter.
+     */
+    public function downloadPdf(Request $request)
+    {
+        // Ambil input filter
+        $tanggal = $request->input('tanggal', now()->toDateString());
+        $divisi = $request->input('divisi');
+        $userId = $request->input('user_id');
+
+        // Query sama persis dengan index, tapi gunakan get() bukan paginate()
+        $query = Aktivitas::with('user')
+                    ->whereDate('created_at', $tanggal)
+                    ->orderBy('created_at', 'asc'); // Urutkan ASC agar runut waktunya di PDF
+
+        if ($divisi) {
+            $query->whereHas('user', function ($q) use ($divisi) {
+                $q->where('divisi', $divisi);
+            });
+        }
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        $aktivitas = $query->get();
+
+        // Siapkan Judul Filter untuk ditampilkan di PDF
+        $filterInfo = 'Semua Karyawan';
+        if($userId) {
+            $user = User::find($userId);
+            $filterInfo = $user ? $user->name : '-';
+        } elseif($divisi) {
+            $filterInfo = 'Divisi ' . $divisi;
+        }
+
+        $pdf = PDF::loadView('admin.aktivitas.pdf', compact('aktivitas', 'tanggal', 'filterInfo'));
+
+        // Set paper size (A4 Portrait biasanya cukup untuk list aktivitas)
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download('laporan_aktivitas_' . $tanggal . '.pdf');
     }
 }

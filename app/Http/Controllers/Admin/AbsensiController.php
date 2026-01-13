@@ -73,11 +73,10 @@ class AbsensiController extends Controller
                 }
 
                 // 4. Hitung Durasi Manual
-                // Jangan pakai ->format('%H') karena akan reset jadi 0 setelah 24 jam
                 $totalMenit = $waktuMasuk->diffInMinutes($waktuKeluar);
                 
-                $jamKerja = floor($totalMenit / 60); // 1454 menit / 60 = 24 Jam
-                $menitKerja = $totalMenit % 60;      // Sisa bagi = 14 Menit
+                $jamKerja = floor($totalMenit / 60); 
+                $menitKerja = $totalMenit % 60;      
                 
                 $absensi->durasi_teks = "{$jamKerja} Jam {$menitKerja} Menit";
 
@@ -106,15 +105,26 @@ class AbsensiController extends Controller
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
         $divisi = $request->input('divisi');
         
-        $rekapData = $this->getRekapData($startDate, $endDate, $divisi);
+        // [FIX] Menggunakan variable $userId (camelCase) agar konsisten
+        $userId = $request->input('user_id');
 
+        $rekapData = $this->getRekapData($startDate, $endDate, $divisi, $userId);
+        
         $divisions = User::select('divisi')->whereNotNull('divisi')->distinct()->pluck('divisi');
+        
+        // List user untuk dropdown filter
+        $usersList = User::where('role', 'user')->orderBy('name')->get(['id', 'name']);
+
         $allDates = collect();
         if ($startDate && $endDate) {
             $allDates = collect(CarbonPeriod::create($startDate, $endDate));
         }
 
-        return view('admin.absensi.rekap', compact('title', 'rekapData', 'allDates', 'divisions', 'divisi', 'startDate', 'endDate'));
+        return view('admin.absensi.rekap', compact(
+            'title', 'rekapData', 'allDates', 'divisions', 
+            'divisi', 'startDate', 'endDate', 
+            'usersList', 'userId'
+        ));
     }
 
     /**
@@ -125,8 +135,11 @@ class AbsensiController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
         $divisi = $request->input('divisi');
+        
+        // [FIX] Menggunakan variable $userId
+        $userId = $request->input('user_id'); 
 
-        $rekapData = $this->getRekapData($startDate, $endDate, $divisi);
+        $rekapData = $this->getRekapData($startDate, $endDate, $divisi, $userId);
         
         $allDates = collect();
         if ($startDate && $endDate) {
@@ -161,8 +174,6 @@ class AbsensiController extends Controller
         }
         $absensi_harian = $query->get();
         
-        // (Opsional) Jika di PDF harian juga ingin durasi, Anda bisa copy logika foreach index() ke sini sebelum dikirim ke view PDF
-        
         $pdf = PDF::loadView('admin.absensi.pdf_harian', compact('absensi_harian', 'date_for_page'));
         
         $filename = 'absensi_harian_' . $date_for_page->format('Y-m-d') . '.pdf';
@@ -177,8 +188,11 @@ class AbsensiController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
         $divisi = $request->input('divisi');
+        
+        // [FIX] Menggunakan variable $userId
+        $userId = $request->input('user_id');
 
-        $rekapData = $this->getRekapData($startDate, $endDate, $divisi);
+        $rekapData = $this->getRekapData($startDate, $endDate, $divisi, $userId);
 
         $allDates = CarbonPeriod::create($startDate, $endDate);
         $fileName = 'rekap-absensi-' . Carbon::parse($startDate)->format('M-Y') . '.xlsx';
@@ -186,14 +200,20 @@ class AbsensiController extends Controller
         return Excel::download(new RekapAbsensiExport($rekapData, $allDates, $startDate, $endDate), $fileName);
     }
 
+
     /**
      * Method private untuk mengambil dan memproses data rekapitulasi absensi.
      */
-    private function getRekapData($startDate, $endDate, $divisi)
+    private function getRekapData($startDate, $endDate, $divisi, $userId = null)
     {
         $queryUsers = User::query();
         if ($divisi) {
             $queryUsers->where('divisi', $divisi);
+        }
+        
+        // Filter Perorangan
+        if ($userId) {
+            $queryUsers->where('id', $userId);
         }
         
         $users = $queryUsers->where('role', 'user')
