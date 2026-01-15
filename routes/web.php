@@ -24,6 +24,7 @@ use App\Http\Controllers\InteractionController;
 use App\Http\Controllers\Admin\AdminCrmController;
 use App\Http\Controllers\PengajuanBarangController;
 use App\Http\Controllers\Admin\AdminPengajuanBarangController;
+use App\Http\Controllers\Admin\HolidayController;
 
 // Route utama, langsung arahkan ke halaman login
 Route::get('/', fn() => redirect()->route('login'));
@@ -275,13 +276,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{client}/export', 'exportClientRecap')->name('client.export');
     });
     
-    // Pengajuan Barang (Admin)
     Route::prefix('pengajuan-barang')->name('pengajuan_barang.')->group(function() {
         Route::get('/', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'index'])->name('index');
         Route::get('/rekap-pdf', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'downloadRekapPDF'])->name('downloadRekapPdf');
         Route::get('/{pengajuanBarang}', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'show'])->name('show');
         Route::get('/{pengajuanBarang}/download', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'downloadPDF'])->name('downloadPdf');
     });
+
+
+    Route::resource('holidays', HolidayController::class);
+
 
     
 });

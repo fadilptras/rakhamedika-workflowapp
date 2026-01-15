@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Validator;
 use Carbon\CarbonPeriod;
 use Jenssegers\Agent\Agent;
 use App\Notifications\AbsensiNotification;
+use App\Models\Holiday;
 
 class AbsenController extends Controller
 {
@@ -22,10 +23,24 @@ class AbsenController extends Controller
         $title = 'Form Absensi';
         $user = Auth::user();
         $today = Carbon::today();
+        
+        // 1. Cek Hari Minggu
+        $isSunday = $today->isSunday();
+
+        // 2. Cek Sabtu
+        $isSaturday = $today->isSaturday();
+
+        // 3. Cek Libur Nasional dari DB
+        $holidayDb = Holiday::whereDate('tanggal', $today)->first();
+
+        // Kategori "Hari Libur" (Minggu ATAU Tanggal Merah)
+        $isHoliday = $isSunday || $holidayDb;
+
+        // Kategori "Sabtu Masuk Opsional" (Sabtu DAN BUKAN Tanggal Merah)
+        $isSaturdayOpen = $isSaturday && !$holidayDb;
+
         $yesterday = Carbon::yesterday();
-
-        $isWeekend = $today->isWeekend();
-
+        
         $unfinishedAbsensi = Absensi::where('user_id', $user->id)
             ->where('tanggal', $yesterday->toDateString())
             ->whereNotNull('jam_masuk')
@@ -40,17 +55,22 @@ class AbsenController extends Controller
             ->where('tanggal', $today->toDateString())
             ->first();
 
+        // Asumsi function helper ada di controller ini
         $rekapAbsen = $this->rekapAbsensiBulanan($user, $today);
         $daftarRekan = $this->getDaftarRekan($user, $today);
 
+        // Masukkan variable ke compact
         $data = compact(
-            'title',
-            'absensiHariIni',
-            'lemburHariIni',
-            'rekapAbsen',
+            'title', 
+            'user', 
+            'unfinishedAbsensi', 
+            'absensiHariIni', 
+            'lemburHariIni', 
+            'rekapAbsen', 
             'daftarRekan',
-            'unfinishedAbsensi',
-            'isWeekend'
+            'isHoliday',      // True jika Minggu/Libur Nasional
+            'isSaturdayOpen', // True jika Sabtu biasa
+            'holidayDb' 
         );
 
         return view('users.absen', $data);
@@ -243,7 +263,7 @@ class AbsenController extends Controller
                 $inputStatus = 'tidak hadir';
                 $keterangan = null;
             }
-            else if ($jamMasuk->gt($standardWorkHour)) {
+            else if ($jamMasuk->gt($standardWorkHour) && !today()->isSaturday()) {
                 $diffInMinutes = abs($jamMasuk->diffInMinutes($standardWorkHour));
                 $jamTerlambat = floor($diffInMinutes / 60);
                 $menitTerlambat = $diffInMinutes % 60;

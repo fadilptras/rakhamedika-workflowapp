@@ -16,55 +16,46 @@ class AdminLemburController extends Controller
      */
     public function index(Request $request)
     {
-        // Mengambil bulan, tahun, divisi, user, dan hari dari request atau menggunakan nilai default
-        $month = intval($request->input('month', now()->month));
-        $year = intval($request->input('year', now()->year));
-        $day = intval($request->input('day', now()->day));
+        // Ambil input filter
+        $tanggal = $request->input('tanggal');
         $divisi = $request->input('divisi');
+        $userId = $request->input('user_id');
 
-        // Mengambil semua divisi dan user untuk dropdown filter
+        // Data untuk dropdown filter
         $divisions = User::select('divisi')->whereNotNull('divisi')->distinct()->pluck('divisi');
+        $users = User::orderBy('name')->get(); // Data user untuk dropdown
 
-        // Buat objek Carbon untuk bulan dan tahun yang dipilih
-        $dateForDays = Carbon::createFromDate($year, $month, 1);
-
-        // Query dasar untuk mengambil data dari model Lembur
+        // Query Dasar
         $query = Lembur::with('user');
         
-        // Menambahkan filter opsional jika ada
+        // 1. Filter Divisi
         if ($divisi) {
             $query->whereHas('user', function ($q) use ($divisi) {
                 $q->where('divisi', $divisi);
             });
         }
+
+        // 2. Filter User
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
         
-        // Filter berdasarkan hari jika ada, jika tidak, filter berdasarkan bulan dan tahun
-        if ($day) {
-            $query->whereDate('tanggal', $dateForDays->day($day)->format('Y-m-d'));
-        } else {
-             $query->whereBetween('tanggal', [$dateForDays->startOfMonth(), $dateForDays->endOfMonth()]);
+        // 3. Filter Tanggal (Hanya jika diisi, jika kosong tampilkan semua)
+        if ($tanggal) {
+            $query->whereDate('tanggal', $tanggal);
         }
 
+        // Ambil data, urutkan dari yang terbaru (tanggal descending)
         $lemburRecords = $query->latest('tanggal')->paginate(15);
         
-        // Data untuk dropdown filter bulan dan tahun
-        $months = collect(range(1, 12))->mapWithKeys(function ($bulan) {
-            return [$bulan => Carbon::create()->month($bulan)->translatedFormat('F')];
-        });
-        $years = range(now()->year, now()->year - 5);
-        $daysInMonth = $dateForDays->daysInMonth;
-
         return view('admin.lembur.index', [
             'title' => 'Rekap Lembur Karyawan',
             'lemburRecords' => $lemburRecords,
             'divisions' => $divisions,
-            'months' => $months,
-            'years' => $years,
-            'month' => $month,
-            'year' => $year,
-            'day' => $day,
+            'users' => $users, // Kirim data user ke view
+            'tanggal' => $tanggal,
             'divisi' => $divisi,
-            'daysInMonth' => $daysInMonth
+            'userId' => $userId,
         ]);
     }
     
@@ -73,12 +64,9 @@ class AdminLemburController extends Controller
      */
     public function downloadPdf(Request $request)
     {
-        $month = intval($request->input('month', now()->month));
-        $year = intval($request->input('year', now()->year));
-        $day = intval($request->input('day', now()->day));
+        $tanggal = $request->input('tanggal');
         $divisi = $request->input('divisi');
-
-        $dateForDays = Carbon::createFromDate($year, $month, 1);
+        $userId = $request->input('user_id');
 
         $query = Lembur::with('user');
         
@@ -87,18 +75,25 @@ class AdminLemburController extends Controller
                 $q->where('divisi', $divisi);
             });
         }
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
         
-        if ($day) {
-            $query->whereDate('tanggal', $dateForDays->day($day)->format('Y-m-d'));
-        } else {
-             $query->whereBetween('tanggal', [$dateForDays->startOfMonth(), $dateForDays->endOfMonth()]);
+        if ($tanggal) {
+            $query->whereDate('tanggal', $tanggal);
         }
 
+        // Urutkan terbaru -> terlama
         $lemburRecords = $query->latest('tanggal')->get();
 
-        $pdf = PDF::loadView('admin.lembur.pdf', compact('lemburRecords', 'dateForDays'));
+        // Siapkan variabel tanggal untuk judul PDF
+        $dateLabel = $tanggal ? Carbon::parse($tanggal)->isoFormat('D MMMM YYYY') : 'Semua Periode';
+        $dateForDays = $tanggal ? Carbon::parse($tanggal) : now(); // Fallback untuk header PDF jika perlu
+
+        $pdf = PDF::loadView('admin.lembur.pdf', compact('lemburRecords', 'dateForDays', 'dateLabel'));
         
-        $filename = 'rekap_lembur_'. ($day ? $dateForDays->day($day)->format('Y-m-d') : $dateForDays->isoFormat('MMMM_YYYY')) .'.pdf';
+        $filename = 'rekap_lembur_'. ($tanggal ? $tanggal : 'all') .'.pdf';
         return $pdf->download($filename);
     }
 }

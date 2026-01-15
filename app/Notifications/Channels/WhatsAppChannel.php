@@ -46,7 +46,7 @@ class WhatsAppChannel
         // 5. Kirim Request ke API Fonnte
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Nr83eEgjuodLSc8deiDG', // PASTIKAN TOKEN INI BENAR
+                'Authorization' => 'Nr83eEgjhhuodLSc8deiDG', // PASTIKAN TOKEN INI BENAR
             ])->post('https://api.fonnte.com/send', [
                 'target' => $target,
                 'message' => $data['message'],

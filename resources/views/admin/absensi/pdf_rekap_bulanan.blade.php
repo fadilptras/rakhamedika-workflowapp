@@ -13,7 +13,7 @@
             color: #333;
         }
 
-        /* --- HEADER DOKUMEN --- */
+        /* HEADER DOKUMEN */
         .header-doc {
             text-align: center;
             margin-bottom: 15px;
@@ -33,7 +33,7 @@
             color: #555; 
         }
 
-        /* --- TABEL --- */
+        /* TABEL */
         table.main-table {
             width: 100%;
             border-collapse: collapse;
@@ -43,18 +43,17 @@
 
         table.main-table th, table.main-table td {
             border: 1px solid #d1d5db;
-            padding: 0; /* Padding 0 agar status bertumpuk rapi */
+            padding: 0; 
             vertical-align: middle;
             text-align: center;
             word-wrap: break-word;
         }
         
-        /* Padding khusus untuk sel yang bukan status (Nama, No, Summary) */
         table.main-table td.pad-normal {
             padding: 4px 2px;
         }
 
-        /* HEADER TABEL */
+        /* HEADER TABEL DEFAULT */
         table.main-table thead th {
             background-color: #1e3a8a;
             color: white;
@@ -68,57 +67,26 @@
             background-color: #2563eb;
         }
 
-        .th-minggu { background-color: #dc2626 !important; color: white !important; }
-        .th-sabtu { background-color: #64748b !important; color: white !important; }
-
         /* UKURAN KOLOM */
         .col-karyawan { width: 15%; text-align: left; padding-left: 5px; }
-        .col-date { width: 16px; } /* Sedikit diperlebar agar tumpukan muat */
+        .col-date { width: 16px; } 
         .col-late { width: 10%; }
         .col-sum { width: auto; font-weight: bold; background-color: #eff6ff; }
 
-        /* ISI TABEL */
+        /* ISI TABEL DEFAULT */
         table.main-table tbody tr:nth-child(even) { background-color: #f8fafc; }
         
-        /* Typography Nama & Jabatan (RATA KIRI) */
-        .name-text { 
-            font-weight: bold; 
-            color: #1e3a8a; 
-            display: block; 
-            text-align: left; /* Pastikan rata kiri */
-        }
-        .jabatan-text {
-            display: block;
-            text-align: left; /* Pastikan rata kiri */
-            color: #64748b;
-            font-style: italic;
-            margin-top: 2px;
-        }
+        /* Typography */
+        .name-text { font-weight: bold; color: #1e3a8a; display: block; text-align: left; }
+        .jabatan-text { display: block; text-align: left; color: #64748b; font-style: italic; margin-top: 2px; }
         
-        /* Layout Status Bertumpuk (H/L) */
-        .status-stack {
-            display: block;
-            width: 100%;
-        }
-        .status-top {
-            display: block;
-            width: 100%;
-            border-bottom: 1px solid #e5e7eb; /* Garis pemisah */
-            padding: 2px 0;
-            line-height: 1;
-        }
-        .status-bottom {
-            display: block;
-            width: 100%;
-            padding: 2px 0;
-            line-height: 1;
-        }
-        .status-single {
-            display: block;
-            padding: 5px 0; /* Padding vertikal agar teks di tengah */
-        }
+        /* Status Stack */
+        .status-stack { display: block; width: 100%; }
+        .status-top { display: block; width: 100%; border-bottom: 1px solid #e5e7eb; padding: 2px 0; line-height: 1; }
+        .status-bottom { display: block; width: 100%; padding: 2px 0; line-height: 1; }
+        .status-single { display: block; padding: 5px 0; }
 
-        /* Warna Status */
+        /* Warna Status Text */
         .st-h { color: #166534; font-weight: 900; }
         .st-s { color: #dc2626; font-weight: bold; }
         .st-i { color: #d97706; font-weight: bold; }
@@ -126,9 +94,6 @@
         .st-a { color: #374151; font-weight: bold; }
         .st-l { color: #7c3aed; font-weight: bold; }
         .st-empty { color: #d1d5db; }
-
-        .bg-minggu { background-color: #fef2f2; }
-        .bg-sabtu { background-color: #f3f4f6; }
 
         /* FOOTER */
         .footer-table { width: 100%; margin-top: 5px; border: none; }
@@ -156,11 +121,20 @@
             <tr>
                 @foreach($allDates as $date)
                     @php
-                        $class = '';
-                        if ($date->isSunday()) $class = 'th-minggu';
-                        elseif ($date->isSaturday()) $class = 'th-sabtu';
+                        $isSunday = $date->isSunday();
+                        $isSaturday = $date->isSaturday();
+                        $dateKey = $date->format('Y-m-d'); // Format kunci yang cocok dengan Controller
+                        $isHoliday = isset($holidays) && isset($holidays[$dateKey]);
+
+                        // Inline style untuk memaksa warna di PDF
+                        $thStyle = '';
+                        if ($isSunday || $isHoliday) {
+                            $thStyle = 'background-color: #dc2626 !important; color: white !important;'; 
+                        } elseif ($isSaturday) {
+                            $thStyle = 'background-color: #64748b !important; color: white !important;';
+                        }
                     @endphp
-                    <th class="col-date {{ $class }}">{{ $date->day }}</th>
+                    <th class="col-date" style="{{ $thStyle }}">{{ $date->day }}</th>
                 @endforeach
                 
                 <th class="col-sum" style="color:#166534;">H</th>
@@ -174,24 +148,23 @@
         <tbody>
             @forelse ($rekapData as $index => $data)
             <tr>
-                {{-- 1. NAMA & JABATAN (RATA KIRI) --}}
                 <td class="col-karyawan pad-normal" style="text-align: left;">
                     <span class="name-text">{{ $data['user']->name ?? 'User Dihapus' }}</span>
                     <span class="jabatan-text">{{ $data['user']->divisi ?? '-' }}</span>
                 </td>
 
-                {{-- 2. LOOP TANGGAL --}}
                 @foreach($allDates as $date)
                     @php
                         $isSunday = $date->isSunday();
                         $isSaturday = $date->isSaturday();
+                        $dateKey = $date->format('Y-m-d'); // Format kunci yang cocok dengan Controller
+                        $isHoliday = isset($holidays) && isset($holidays[$dateKey]);
                         
-                        $statusString = $data['daily'][$date->toDateString()] ?? '-';
+                        $statusString = $data['daily'][$dateKey] ?? '-';
                         $hasLembur = str_contains($statusString, 'L');
                         $mainStatus = $hasLembur ? trim(str_replace('L', '', $statusString)) : $statusString;
-                        if ($mainStatus == "") $mainStatus = 'L'; // Handle jika cuma Lembur
+                        if ($mainStatus == "") $mainStatus = 'L'; 
 
-                        // Tentukan Warna Teks
                         $textClass = 'st-empty';
                         switch ($mainStatus) {
                             case 'H': $textClass = 'st-h'; break;
@@ -199,37 +172,36 @@
                             case 'I': $textClass = 'st-i'; break;
                             case 'C': $textClass = 'st-c'; break;
                             case 'A': $textClass = 'st-a'; break;
-                            case 'L': $textClass = 'st-l'; $hasLembur = false; break; // Jika main status L, matikan flag lembur ganda
+                            case 'L': $textClass = 'st-l'; $hasLembur = false; break; 
                         }
 
-                        $bgClass = '';
-                        if ($isSunday) $bgClass = 'bg-minggu';
-                        elseif ($isSaturday) $bgClass = 'bg-sabtu';
+                        // Inline style untuk memaksa warna background cell di PDF
+                        $tdStyle = '';
+                        if ($isSunday || $isHoliday) {
+                            $tdStyle = 'background-color: #fef2f2 !important;'; 
+                        } elseif ($isSaturday) {
+                            $tdStyle = 'background-color: #f3f4f6 !important;';
+                        }
                     @endphp
                     
-                    <td class="{{ $bgClass }}">
-                        {{-- LOGIKA TAMPILAN BERTUMPUK (H di atas, L di bawah) --}}
+                    <td style="{{ $tdStyle }}">
                         @if ($hasLembur && $mainStatus != '-' && $mainStatus != 'L')
                             <div class="status-stack">
                                 <span class="{{ $textClass }} status-top">{{ $mainStatus }}</span>
                                 <span class="st-l status-bottom">L</span>
                             </div>
                         @else
-                            {{-- Tampilan Biasa (Single Status) --}}
                             <span class="{{ $textClass }} status-single">{{ $mainStatus }}</span>
                         @endif
                     </td>
                 @endforeach
 
-                {{-- 3. SUMMARY --}}
                 <td class="col-sum pad-normal st-h">{{ $data['summary']['H'] }}</td>
                 <td class="col-sum pad-normal st-s">{{ $data['summary']['S'] }}</td>
                 <td class="col-sum pad-normal st-i">{{ $data['summary']['I'] }}</td>
                 <td class="col-sum pad-normal st-c">{{ $data['summary']['C'] }}</td>
                 <td class="col-sum pad-normal st-a">{{ $data['summary']['A'] }}</td>
                 <td class="col-sum pad-normal st-l">{{ $data['summary']['L'] }}</td>
-                
-                {{-- 4. TERLAMBAT --}}
                 <td class="pad-normal" style="color: #b91c1c; font-weight: bold;">
                     {{ $data['summary']['terlambat_formatted'] }}
                 </td>

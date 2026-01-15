@@ -26,10 +26,38 @@
                 </div>
             @endif
             
-            @if ($isWeekend)
-                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md mb-4" role="alert">
-                    <p class="font-bold">Akhir Pekan</p>
-                    <p>Hari ini adalah hari libur</p>
+            {{-- KONDISI 1: LIBUR TOTAL (Minggu / Tanggal Merah) --}}
+            @if($isHoliday)
+                <div class="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-4 shadow-sm animate-fade-in-down">
+                    <div class="p-3 bg-red-500/20 rounded-full text-red-500 shrink-0">
+                        <i class="fas fa-calendar-times text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-red-600 text-lg">Hari Libur</h3>
+                        <p class="text-zinc-600 dark:text-zinc-400 mt-1">
+                            Hari ini adalah 
+                            @if($holidayDb)
+                                <span class="font-semibold text-red-600">{{ $holidayDb->keterangan }}</span>.
+                            @else
+                                <span class="font-semibold text-red-600">Hari Minggu</span>.
+                            @endif
+                            Absensi tetap dibuka khusus untuk petugas piket atau lembur.
+                        </p>
+                    </div>
+                </div>
+
+            {{-- KONDISI 2: SABTU OPSIONAL --}}
+            @elseif($isSaturdayOpen)
+                <div class="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-4 shadow-sm animate-fade-in-down">
+                    <div class="p-3 bg-blue-500/20 rounded-full text-blue-600 shrink-0">
+                        <i class="fas fa-umbrella-beach text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-blue-600 text-lg">Hari Sabtu (Opsional)</h3>
+                        <p class="text-zinc-600 dark:text-zinc-400 mt-1">
+                            Kehadiran hari ini bersifat opsional. Tidak tercatat sebagai Alpha jika tidak hadir.
+                        </p>
+                    </div>
                 </div>
             @endif
 
@@ -341,7 +369,7 @@
                     {{-- ========================================================= --}}
                     <div class="flex flex-col lg:flex-row gap-6 items-start">
                         
-                        @if ($isWeekend)
+                        @if ($isHoliday)
                             {{-- TAMPILAN KHUSUS WEEKEND (BELUM ABSEN LEMBUR) --}}
                             <div class="w-full lg:w-2/3 bg-white p-6 md:p-8 rounded-xl shadow-sm">
                                 <h2 class="text-2xl font-bold text-gray-800">Absensi Lembur Akhir Pekan</h2>
@@ -594,7 +622,7 @@
     @endif
     
     {{-- MODAL UNTUK ABSEN LEMBUR (LAYOUT: KIRI KAMERA SQUARE, KANAN TEXTAREA) --}}
-    @if ( ($absensiHariIni && $absensiHariIni->jam_keluar && $absensiHariIni->status == 'hadir') || $isWeekend )
+    @if ( ($absensiHariIni && $absensiHariIni->jam_keluar && $absensiHariIni->status == 'hadir') || $isHoliday )
     <div id="modal-absen-lembur" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         {{-- Lebar modal ditingkatkan --}}
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl transform transition-all duration-300 scale-95 opacity-0">

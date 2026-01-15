@@ -1,6 +1,7 @@
 <x-layout-admin>
     <x-slot:title>Lembur</x-slot:title>
 
+    {{-- HEADER --}}
     <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
         <h1 class="text-2xl font-bold text-white">Lembur Harian Karyawan</h1>
         {{-- Tab Navigasi (Absensi / Lembur) --}}
@@ -16,79 +17,72 @@
         </div>
     </div>
 
-{{-- FILTER & ACTIONS SECTION --}}
-    <div class="mb-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
-        <form method="GET" action="{{ route('admin.lembur.index') }}" class="flex flex-wrap items-end gap-4 w-full">
+    {{-- FILTER & ACTIONS SECTION --}}
+    <div class="my-6 p-4 bg-zinc-800 rounded-lg shadow-md border border-zinc-700">
+        <form method="GET" action="{{ route('admin.lembur.index') }}" id="filter-form">
+            <div class="flex flex-wrap items-end gap-4">
 
-            {{-- Input Bulan (Flex-1 agar melebar) --}}
-            <div class="flex-1 min-w-[150px]">
-                <label for="month" class="block text-sm font-medium text-zinc-300">Bulan</label>
-                <select name="month" id="month" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-2 py-2 text-white text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    @foreach($months as $key => $name)
-                        <option value="{{ $key }}" {{ $month == $key ? 'selected' : '' }}>{{ $name }}</option>
-                    @endforeach
-                </select>
+                {{-- Filter Tanggal (Single Date) --}}
+                <div class="w-full sm:w-auto">
+                    <label for="tanggal" class="block text-sm font-medium text-zinc-300">Tanggal</label>
+                    <input type="date" name="tanggal" id="tanggal" 
+                           value="{{ request('tanggal') }}" 
+                           class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+
+                {{-- Filter Divisi --}}
+                <div class="w-full sm:w-auto">
+                    <label for="divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
+                    <select name="divisi" id="divisi" 
+                            class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm min-w-[150px]">
+                        <option value="">Semua Divisi</option>
+                        @foreach($divisions as $d)
+                            <option value="{{ $d }}" {{ request('divisi') == $d ? 'selected' : '' }}>{{ $d }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Filter Karyawan (User) --}}
+                <div class="w-full sm:w-auto">
+                    <label for="user_id" class="block text-sm font-medium text-zinc-300">Karyawan</label>
+                    <select name="user_id" id="user_id" 
+                            class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm min-w-[200px]">
+                        <option value="">Semua Karyawan</option>
+                        @foreach ($users as $user)
+                            <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- ACTION BUTTONS (Filter, Reset, PDF) --}}
+                <div class="flex items-end gap-2">
+                    {{-- Tombol Filter --}}
+                    <button type="submit" 
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
+                        <i class="fas fa-filter mr-2"></i> Filter
+                    </button>
+
+                    {{-- Tombol Reset --}}
+                    <a href="{{ route('admin.lembur.index') }}" 
+                       class="bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors">
+                        Reset
+                    </a>
+
+                    {{-- Divider Kecil --}}
+                    <div class="w-px h-8 bg-zinc-600 mx-1 hidden sm:block"></div>
+
+                    {{-- Tombol Download PDF --}}
+                    <a href="{{ route('admin.lembur.downloadPdf', request()->query()) }}" 
+                       class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105" 
+                       title="Download Laporan Lembur">
+                        <i class="fas fa-file-pdf mr-2"></i> PDF
+                    </a>
+                </div>
+
             </div>
-
-            {{-- Input Tahun (Flex-1 agar melebar) --}}
-            <div class="flex-1 min-w-[120px]">
-                <label for="year" class="block text-sm font-medium text-zinc-300">Tahun</label>
-                <select name="year" id="year" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-2 py-2 text-white text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    @foreach($years as $y)
-                        <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Input Divisi (Flex-1 agar melebar paling dominan) --}}
-            <div class="flex-1 min-w-[200px]">
-                <label for="divisi" class="block text-sm font-medium text-zinc-300">Divisi</label>
-                <select name="divisi" id="divisi" class="mt-1 w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Semua Divisi</option>
-                    @foreach($divisions as $d)
-                        <option value="{{ $d }}" {{ $divisi == $d ? 'selected' : '' }}>{{ $d }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- BUTTON GROUP --}}
-            {{-- Tidak pakai flex-grow agar ukurannya pas sesuai tombol --}}
-            <div class="flex items-end gap-2">
-                {{-- Tombol Filter --}}
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform hover:scale-105">
-                    <i class="fas fa-filter mr-2"></i> Filter
-                </button>
-
-                {{-- Tombol Reset --}}
-                <a href="{{ route('admin.lembur.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors">
-                    <i class="fas fa-undo mr-2"></i> Reset
-                </a>
-
-                {{-- Divider --}}
-                <div class="w-px h-8 bg-zinc-600 mx-1 hidden sm:block"></div>
-
-                {{-- Tombol Download PDF --}}
-                <a href="{{ route('admin.lembur.downloadPdf', request()->query()) }}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform hover:scale-105" title="Download Laporan Lembur">
-                    <i class="fas fa-file-pdf mr-2"></i> PDF
-                </a>
-            </div>
-
         </form>
-    </div>
-
-    <div class="mb-4">
-        <h2 class="text-white font-semibold">Pilih Tanggal: </h2>
-    </div>
-
-    <div class="mt-6 flex justify-start items-center flex-wrap">
-        @for ($i = 1; $i <= $daysInMonth; $i++)
-            <a href="{{ route('admin.lembur.index', array_merge(request()->except('day'), ['day' => $i])) }}"
-               class="m-1 px-3 py-1 text-sm rounded-md transition-colors duration-200
-               @if ($i == $day) bg-indigo-600 text-white font-bold
-               @else bg-zinc-700 text-zinc-300 hover:bg-zinc-600 @endif">
-                {{ $i }}
-            </a>
-        @endfor
     </div>
 
     {{-- Tabel Rekap Lembur --}}
@@ -128,9 +122,7 @@
                         {{ $record->keterangan ?? '-' }}
                     </td>
                     <td class="px-4 py-3 space-y-1">
-                        @php
-                            $hasLink = false;
-                        @endphp
+                        @php $hasLink = false; @endphp
                         @if ($record->lampiran_masuk)
                             <a href="{{ asset('storage/' . $record->lampiran_masuk) }}" target="_blank"
                                class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
@@ -146,14 +138,14 @@
                             @php $hasLink = true; @endphp
                         @endif
                         @if ($record->latitude_masuk && $record->longitude_masuk)
-                            <a href="[http://maps.google.com/maps?q=](http://maps.google.com/maps?q=){{ $record->latitude_masuk }},{{ $record->longitude_masuk }}" target="_blank"
+                            <a href="https://maps.google.com/?q={{ $record->latitude_masuk }},{{ $record->longitude_masuk }}" target="_blank"
                                class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
                                 Lokasi Masuk
                             </a><br>
                             @php $hasLink = true; @endphp
                         @endif
                         @if ($record->latitude_keluar && $record->longitude_keluar)
-                            <a href="[http://maps.google.com/maps?q=](http://maps.google.com/maps?q=){{ $record->latitude_keluar }},{{ $record->longitude_keluar }}" target="_blank"
+                            <a href="https://maps.google.com/?q={{ $record->latitude_keluar }},{{ $record->longitude_keluar }}" target="_blank"
                                class="text-indigo-400 hover:text-indigo-300 underline text-xs font-medium">
                                 Lokasi Keluar
                             </a>

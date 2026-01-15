@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cuti;
 use App\Models\User;
 use App\Models\Absensi;
+use App\Models\Holiday; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -22,30 +23,39 @@ class CutiController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $totalCuti = $user->jatah_cuti ?? 12; // Default 12
-        $tahunIni = Carbon::now()->year;
-
+        
+        $totalCuti = $user->jatah_cuti ?? 12; 
+        $tahunIni = Carbon::now()->year; 
         $title = 'Pengajuan Cuti';
 
-        // Hitung cuti disetujui tahun ini
+        // Hitung cuti yang HANYA diambil di tahun INI
         $cutiDisetujui = Cuti::where('user_id', $user->id)
             ->where('status', 'disetujui')
             ->whereYear('tanggal_mulai', $tahunIni)
             ->get();
 
         $cutiTerpakai = $this->hitungCutiTerpakai($cutiDisetujui);
-        
-        // Asumsi 'tahunan' adalah key yang konsisten. 
-        // Jika di DB kamu tersimpan "Tahunan" (huruf besar), sesuaikan di sini.
         $terpakaiTahunan = $cutiTerpakai['tahunan'] ?? ($cutiTerpakai['Tahunan'] ?? 0); 
         $sisaCuti = $totalCuti - $terpakaiTahunan; 
 
+        // Riwayat Pengajuan
         $cutiRequests = Cuti::where('user_id', $user->id)
             ->whereYear('created_at', $tahunIni)
             ->latest()
             ->get();
 
-        return view('users.cuti', compact('sisaCuti', 'totalCuti', 'cutiRequests', 'title'));
+        // [PERBAIKAN UTAMA]
+        // Ambil data libur dan PAKSA formatnya jadi Y-m-d string
+        // Agar JS bisa membacanya dengan tepat (menghindari format DateTime/Timestamp)
+        $liburNasional = Holiday::whereYear('tanggal', '>=', $tahunIni)
+            ->get()
+            ->map(function ($h) {
+                return Carbon::parse($h->tanggal)->format('Y-m-d');
+            })
+            ->values() // Reset keys agar jadi array murni
+            ->toArray();
+
+        return view('users.cuti', compact('sisaCuti', 'totalCuti', 'cutiRequests', 'title', 'liburNasional'));
     }
     
     /**
@@ -53,17 +63,11 @@ class CutiController extends Controller
      */
     public function show(Cuti $cuti)
     {
-        // [FIX] Menambahkan variabel title agar tidak error di view
         $title = 'Detail Pengajuan Cuti';
         
-        // Validasi akses (User ybs, Admin, atau Atasan)
         $approverId = $cuti->approver_1_id ?? null;
         if (Auth::id() !== $cuti->user_id && Auth::user()->role !== 'admin' && Auth::id() !== $approverId) {
-            // Cek logic approver lama jika approver_1_id null
-            $approverLama = $this->getApprover($cuti->user);
-            if (!$approverLama || Auth::id() !== $approverLama->id) {
-                 // abort(403, 'Unauthorized action.'); // Uncomment jika ingin strict
-            }
+             // Authorization logic
         }
 
         $approver = $this->getApprover($cuti->user);
@@ -72,46 +76,77 @@ class CutiController extends Controller
     }
 
     /**
-     * Menyimpan Pengajuan Cuti (Gabungan Logic Lama & Notif Baru)
+     * Menyimpan Pengajuan Cuti
      */
     public function store(Request $request)
     {
-        // 1. Validasi Input
         $validatedData = $request->validate([
-            // Sesuaikan validasi jenis cuti dengan opsi di form kamu
-            'jenis_cuti' => 'required|string', 
-            'tanggal_mulai' => 'required|date|after_or_equal:today',
+            'jenis_cuti'      => 'required|string', 
+            'tanggal_mulai'   => 'required|date|after_or_equal:today', 
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'alasan' => 'required|string|max:2000',
-            'lampiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'alasan'          => 'required|string|max:2000',
+            'lampiran'        => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ], [
+            'tanggal_mulai.after_or_equal' => 'Tanggal cuti tidak boleh tanggal yang sudah lewat.',
         ]);
 
         $user = Auth::user();
+
+        // 1. HITUNG DURASI BERSIH (EXCLUDE SABTU, MINGGU & LIBUR)
+        $startDate = Carbon::parse($validatedData['tanggal_mulai']);
+        $endDate   = Carbon::parse($validatedData['tanggal_selesai']);
         
-        // 2. [LOGIC LAMA] Cek Sisa Cuti
-        // Pastikan jenis cuti Tahunan dicek kuotanya
+        // [PERBAIKAN UTAMA] Ambil Libur Nasional di Range Tanggal & Format ke Y-m-d
+        $holidays = Holiday::whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                        ->get()
+                        ->map(function ($h) {
+                            return Carbon::parse($h->tanggal)->format('Y-m-d');
+                        })
+                        ->toArray();
+        
+        $durasiEfektif = 0;
+        $period = CarbonPeriod::create($startDate, $endDate);
+
+        foreach ($period as $date) {
+            // Cek: Apakah Weekend (Sabtu/Minggu) ATAU Tanggal Merah?
+            if ($date->isWeekend() || in_array($date->format('Y-m-d'), $holidays)) {
+                continue; // Skip
+            }
+            $durasiEfektif++;
+        }
+
+        // Jika user memilih tanggal yang isinya full libur
+        if ($durasiEfektif === 0) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['tanggal_mulai' => 'Tanggal yang dipilih sepenuhnya adalah Hari Libur (Sabtu, Minggu, atau Tanggal Merah). Tidak perlu mengajukan cuti.']);
+        }
+
+        // 2. CEK SISA CUTI
         if (strtolower($validatedData['jenis_cuti']) == 'tahunan') {
+            $tahunPengajuan = $startDate->year; 
+
             $cutiDisetujui = Cuti::where('user_id', $user->id)
                 ->where('status', 'disetujui')
-                ->whereYear('tanggal_mulai', now()->year)
+                ->whereYear('tanggal_mulai', $tahunPengajuan) 
                 ->get();
             
             $terpakai = $this->hitungCutiTerpakai($cutiDisetujui);
             $terpakaiCount = $terpakai['tahunan'] ?? ($terpakai['Tahunan'] ?? 0);
             
-            $sisaCuti = ($user->jatah_cuti ?? 12) - $terpakaiCount;
-            
-            $durasiCuti = Carbon::parse($validatedData['tanggal_mulai'])
-                ->diffInDays(Carbon::parse($validatedData['tanggal_selesai'])) + 1;
+            $jatahCuti = $user->jatah_cuti ?? 12;
+            $sisaCuti  = $jatahCuti - $terpakaiCount;
 
-            if ($durasiCuti > $sisaCuti) {
-                return redirect()->back()->withInput()->withErrors(['tanggal_selesai' => 'Durasi cuti melebihi sisa cuti Anda (tersisa ' . $sisaCuti . ' hari).']);
+            if ($durasiEfektif > $sisaCuti) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['tanggal_selesai' => "Durasi cuti efektif ($durasiEfektif hari kerja) melebihi sisa cuti Anda di tahun $tahunPengajuan (Sisa: $sisaCuti hari)."]);
             }
         }
         
-        // 3. [LOGIC LAMA] Cek Tanggal Bertabrakan
+        // 3. CEK TANGGAL BERTABRAKAN
         $isOverlapping = Cuti::where('user_id', $user->id)
-            ->whereIn('status', ['diajukan', 'disetujui']) // Pastikan status sesuai DB ('diajukan' atau 'menunggu')
+            ->whereIn('status', ['diajukan', 'disetujui']) 
             ->where(function ($query) use ($validatedData) {
                 $query->whereBetween('tanggal_mulai', [$validatedData['tanggal_mulai'], $validatedData['tanggal_selesai']])
                     ->orWhereBetween('tanggal_selesai', [$validatedData['tanggal_mulai'], $validatedData['tanggal_selesai']])
@@ -125,33 +160,27 @@ class CutiController extends Controller
             return redirect()->back()->withInput()->withErrors(['tanggal_mulai' => 'Anda sudah memiliki pengajuan cuti pada rentang tanggal tersebut.']);
         }
 
-        // 4. [LOGIC LAMA] Cari Approver
+        // 4. Proses Simpan
         $approver = $this->getApprover($user);
         if (!$approver) {
             return redirect()->back()->withInput()->with('error', 'Gagal: Atasan tidak ditemukan. Hubungi admin.');
         }
 
-        // 5. Upload File
         $pathLampiran = $request->hasFile('lampiran') ? $request->file('lampiran')->store('lampiran_cuti', 'public') : null;
 
-        // 6. Simpan Data
         $cuti = Cuti::create([
-            'user_id' => $user->id,
-            'status' => 'diajukan', // Pastikan ini sesuai ENUM database kamu ('diajukan'/'menunggu')
-            'jenis_cuti' => $validatedData['jenis_cuti'],
-            'tanggal_mulai' => $validatedData['tanggal_mulai'],
+            'user_id'         => $user->id,
+            'status'          => 'diajukan', 
+            'jenis_cuti'      => $validatedData['jenis_cuti'],
+            'tanggal_mulai'   => $validatedData['tanggal_mulai'],
             'tanggal_selesai' => $validatedData['tanggal_selesai'],
-            'alasan' => $validatedData['alasan'],
-            'lampiran' => $pathLampiran,
-            'approver_1_id' => $approver->id, // Simpan ID approver agar mudah dilacak
+            'alasan'          => $validatedData['alasan'],
+            'lampiran'        => $pathLampiran,
+            'approver_1_id'   => $approver->id,
         ]);
         
-        // 7. [LOGIC BARU] Kirim Notifikasi dengan Try-Catch
         try {
             $approver->notify(new CutiNotification($cuti, 'baru'));
-            Log::info("WA Cuti dikirim ke: " . $approver->name);
-
-            // Opsional: Kirim ke HRD juga
             $hrd = User::where('jabatan', 'HRD')->first();
             if ($hrd && $hrd->id !== $approver->id) {
                 $hrd->notify(new CutiNotification($cuti, 'baru'));
@@ -165,12 +194,9 @@ class CutiController extends Controller
 
     /**
      * Update Status (Approve/Reject)
-     * [PENTING] Method ini wajib ada untuk tombol di detail-cuti.blade.php
      */
     public function updateStatus(Request $request, Cuti $cuti)
     {
-        // $this->authorize('update', $cuti); // Nyalakan jika menggunakan Policy
-        
         $request->validate([
             'status' => 'required|in:disetujui,ditolak',
             'catatan' => 'nullable|string',
@@ -181,10 +207,20 @@ class CutiController extends Controller
             'catatan_approval' => $request->catatan,
         ]);
 
-        // Jika disetujui, update Tabel Absensi
         if ($request->status === 'disetujui') {
             $period = CarbonPeriod::create($cuti->tanggal_mulai, $cuti->tanggal_selesai);
+            
+            // Format holiday ke Y-m-d untuk check
+            $holidays = Holiday::whereBetween('tanggal', [$cuti->tanggal_mulai, $cuti->tanggal_selesai])
+                ->get()
+                ->map(fn($h) => Carbon::parse($h->tanggal)->format('Y-m-d'))
+                ->toArray();
+
             foreach ($period as $date) {
+                if ($date->isWeekend() || in_array($date->format('Y-m-d'), $holidays)) {
+                    continue;
+                }
+
                 Absensi::updateOrCreate(
                     ['user_id' => $cuti->user_id, 'tanggal' => $date->format('Y-m-d')],
                     ['status' => 'cuti', 'keterangan' => 'Cuti ' . $cuti->jenis_cuti, 'jam_masuk' => '00:00:00']
@@ -192,25 +228,17 @@ class CutiController extends Controller
             }
         }
         
-        // Kirim Notifikasi Balikan ke User
         try {
             Notification::send($cuti->user, new CutiNotification($cuti, $request->status));
         } catch (\Exception $e) {
-            Log::error("Gagal kirim notif status cuti: " . $e->getMessage());
+            Log::error("Gagal kirim notif status: " . $e->getMessage());
         }
 
         return redirect()->route('cuti.show', $cuti)->with('success', 'Status pengajuan cuti berhasil diperbarui.');
     }
 
-    /**
-     * Membatalkan Cuti
-     * [PENTING] Method ini wajib ada untuk tombol "Batalkan"
-     */
     public function cancel(Cuti $cuti)
     {
-        // $this->authorize('cancel', $cuti);
-
-        // Hapus entri absensi jika cuti sebelumnya sudah disetujui
         if ($cuti->status === 'disetujui') {
             Absensi::where('user_id', $cuti->user_id)
                 ->where('status', 'cuti')
@@ -220,7 +248,6 @@ class CutiController extends Controller
 
         $cuti->update(['status' => 'dibatalkan']);
 
-        // Notif Pembatalan ke Approver
         $approver = $this->getApprover($cuti->user);
         if ($approver) {
             try {
@@ -233,24 +260,20 @@ class CutiController extends Controller
         return redirect()->route('cuti.create')->with('success', 'Pengajuan cuti telah berhasil dibatalkan.');
     }
 
-    /**
-     * Download PDF
-     */
     public function download(Cuti $cuti)
     {
-        // Validasi
         if (Auth::id() !== $cuti->user_id && Auth::user()->role !== 'admin') {
              // abort(403);
         }
         
         $approver = $this->getApprover($cuti->user);
         $user = $cuti->user;
-        $tahunIni = Carbon::now()->year;
+        
+        $tahunCuti = Carbon::parse($cuti->tanggal_mulai)->year;
 
-        // Hitung ulang sisa cuti untuk ditampilkan di PDF
         $cutiDisetujui = Cuti::where('user_id', $user->id)
             ->where('status', 'disetujui')
-            ->whereYear('tanggal_mulai', $tahunIni)
+            ->whereYear('tanggal_mulai', $tahunCuti)
             ->get();
 
         $cutiTerpakai = $this->hitungCutiTerpakai($cutiDisetujui);
@@ -265,59 +288,66 @@ class CutiController extends Controller
         ]);
         
         $pdf->setPaper('a4', 'portrait');
-        
         return $pdf->download('Formulir-Cuti-' . $user->name . '.pdf');
     }
 
-    /**
-     * HELPER: Mencari Atasan secara berjenjang
-     */
     private function getApprover(User $user): ?User
     {
-        // Jika ada approver yang diset manual di DB (kolom approver_1_id atau atasan_id)
-        if (!empty($user->approver_1_id)) {
-            return User::find($user->approver_1_id);
-        }
-
-        // Logic Hierarchy Otomatis
-        if ($user->jabatan === 'Direktur') {
-            return null; // Direktur tidak punya atasan di sistem
-        }
-
-        if (str_starts_with($user->jabatan, 'Kepala')) {
-            return User::where('jabatan', 'Direktur')->first();
-        }
+        if (!empty($user->approver_1_id)) return User::find($user->approver_1_id);
+        if ($user->jabatan === 'Direktur') return null;
+        if (str_starts_with($user->jabatan, 'Kepala')) return User::where('jabatan', 'Direktur')->first();
         
         if ($user->divisi) {
             $approver = User::where('divisi', $user->divisi)
                 ->where('is_kepala_divisi', true)
                 ->where('id', '!=', $user->id)
                 ->first();
-            if ($approver) {
-                return $approver;
-            }
+            if ($approver) return $approver;
         }
 
-        // Default ke Direktur jika tidak ada kepala divisi
         return User::where('jabatan', 'Direktur')->first();
     }
 
-    /**
-     * HELPER: Menghitung Statistik Cuti
-     */
     private function hitungCutiTerpakai(object $cutiCollection): array
     {
         $cutiTerpakai = [];
+        
+        // Ambil holidays tahun ini dan format ke Y-m-d
+        $currentYearHolidays = Holiday::whereYear('tanggal', Carbon::now()->year)
+            ->get()
+            ->map(fn($h) => Carbon::parse($h->tanggal)->format('Y-m-d'))
+            ->toArray();
+
         foreach ($cutiCollection as $cuti) {
-            $durasi = Carbon::parse($cuti->tanggal_mulai)->diffInDays(Carbon::parse($cuti->tanggal_selesai)) + 1;
+            $start = Carbon::parse($cuti->tanggal_mulai);
+            $end = Carbon::parse($cuti->tanggal_selesai);
             
-            // Normalize key (e.g. "Tahunan" vs "tahunan") if needed
-            $jenis = $cuti->jenis_cuti; 
-            
-            if (array_key_exists($jenis, $cutiTerpakai)) {
-                $cutiTerpakai[$jenis] += $durasi;
+            // Jika tahun beda, ambil lagi
+            if ($start->year != Carbon::now()->year) {
+                $holidays = Holiday::whereYear('tanggal', $start->year)
+                    ->get()
+                    ->map(fn($h) => Carbon::parse($h->tanggal)->format('Y-m-d'))
+                    ->toArray();
             } else {
-                $cutiTerpakai[$jenis] = $durasi;
+                $holidays = $currentYearHolidays;
+            }
+
+            $days = 0;
+            $period = CarbonPeriod::create($start, $end);
+            
+            foreach ($period as $date) {
+                // Skip Weekend & Holidays
+                if ($date->isWeekend() || in_array($date->format('Y-m-d'), $holidays)) {
+                    continue;
+                }
+                $days++;
+            }
+            
+            $jenis = $cuti->jenis_cuti; 
+            if (array_key_exists($jenis, $cutiTerpakai)) {
+                $cutiTerpakai[$jenis] += $days;
+            } else {
+                $cutiTerpakai[$jenis] = $days;
             }
         }
         return $cutiTerpakai;

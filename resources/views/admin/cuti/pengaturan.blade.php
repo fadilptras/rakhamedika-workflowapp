@@ -5,7 +5,9 @@
         {{-- [UPDATE] Ubah bagian header ini --}}
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-white">Pengaturan Jatah Cuti Karyawan</h1>
+                <h1 class="text-2xl font-bold text-white">
+                    Pengaturan Jatah Cuti Karyawan (Tahun {{ \Carbon\Carbon::now()->year }})
+                </h1>
                 <p class="text-sm text-zinc-400 mt-1">Atur kuota cuti tahunan dan pantau sisa cuti karyawan.</p>
             </div>
             

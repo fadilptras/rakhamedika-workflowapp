@@ -1,7 +1,7 @@
 <x-layout-admin>
     <x-slot:title>Rekap Absensi Bulanan</x-slot:title>
 
-    {{-- Header Judul (Tombol download sudah dipindah ke bawah) --}}
+    {{-- Header Judul --}}
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-white">Rekap Absensi Bulanan</h1>
     </div>
@@ -42,27 +42,23 @@
                 </select>
             </div>
 
-            {{-- Tombol Actions (Filter, Reset, Download) --}}
+            {{-- Tombol Actions --}}
             <div class="flex items-end gap-2">
-                {{-- Tombol Filter --}}
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105">
                     <i class="fas fa-filter mr-2"></i> Filter
                 </button>
                 
-                {{-- Tombol Reset --}}
                 <a href="{{ route('admin.absensi.rekap') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center transition-colors">
                     Reset
                 </a>
 
-                <div class="w-px h-8 bg-zinc-600 mx-1"></div> {{-- Divider kecil --}}
+                <div class="w-px h-8 bg-zinc-600 mx-1"></div>
 
-                {{-- Tombol Download PDF --}}
                 <a href="{{ route('admin.absensi.rekap.downloadPdf', request()->query()) }}"
                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105" title="Download PDF">
                     <i class="fas fa-file-pdf mr-2"></i> PDF
                 </a>
                 
-                {{-- Tombol Download Excel --}}
                 <a href="{{ route('admin.absensi.rekap.downloadExcel', request()->query()) }}"
                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg shadow-md flex items-center transition-transform duration-200 hover:scale-105" title="Download Excel">
                     <i class="fas fa-file-excel mr-2"></i> Excel
@@ -76,7 +72,6 @@
         <table class="w-full text-sm text-left text-zinc-800 border-collapse whitespace-nowrap">
             <thead class="bg-zinc-200 text-xs uppercase font-semibold text-zinc-700 sticky top-0 z-20">
                 <tr class="border-b border-zinc-300">
-                    {{-- Kolom Nama: Sticky Left agar tetap terlihat saat scroll horizontal --}}
                     <th class="px-4 py-3 bg-zinc-200 border-r border-zinc-300 sticky left-0 z-20 min-w-[250px]">
                         No. & Karyawan
                     </th>
@@ -87,24 +82,34 @@
                     <th class="px-4 py-3 text-center">Evaluasi</th>
                 </tr>
                 <tr class="border-b border-zinc-300">
-                    {{-- Header Kosong untuk kolom nama --}}
                     <th class="px-4 py-3 bg-zinc-200 border-r border-zinc-300 sticky left-0 z-20"></th>
                     
-                    {{-- Loop Tanggal --}}
+                    {{-- Loop Header Tanggal --}}
                     @foreach($allDates as $date)
                         @php
                             $isSunday = $date->isSunday();
                             $isSaturday = $date->isSaturday();
-                            $textColor = $isSunday ? 'text-red-500' : ''; 
-                            $bgColor = $isSunday ? 'bg-red-50' : ($isSaturday ? 'bg-zinc-100' : 'bg-zinc-200');
+                            // [UPDATE] Cek apakah tanggal merah
+                            $isHoliday = isset($holidays[$date->toDateString()]);
+                            
+                            $titleText = '';
+                            $textColor = '';
+                            $bgColor = 'bg-zinc-200';
+
+                            if ($isSunday || $isHoliday) {
+                                $textColor = 'text-red-600';
+                                $bgColor = 'bg-red-100'; // Merah
+                                $titleText = $isHoliday ? ($holidays[$date->toDateString()] ?? 'Libur Nasional') : 'Hari Minggu';
+                            } elseif ($isSaturday) {
+                                $bgColor = 'bg-zinc-100';
+                                $titleText = 'Sabtu';
+                            }
                         @endphp
-                        {{-- UPDATED: Lebar diperkecil jadi 30px --}}
-                        <th class="px-1 py-2 text-center border-r border-zinc-300 w-[30px] min-w-[30px] {{ $textColor }} {{ $bgColor }}">
+                        <th title="{{ $titleText }}" class="px-1 py-2 text-center border-r border-zinc-300 w-[30px] min-w-[30px] {{ $textColor }} {{ $bgColor }}">
                             {{ $date->day }}
                         </th>
                     @endforeach
 
-                    {{-- Header Summary --}}
                     <th class="px-2 py-2 text-center text-green-600 font-bold border-r border-zinc-300 w-[35px]">H</th>
                     <th class="px-2 py-2 text-center text-red-600 font-bold border-r border-zinc-300 w-[35px]">S</th>
                     <th class="px-2 py-2 text-center text-orange-600 font-bold border-r border-zinc-300 w-[35px]">I</th>
@@ -117,17 +122,17 @@
             <tbody class="divide-y divide-zinc-300">
                 @forelse ($rekapData as $index => $data)
                 <tr class="hover:bg-zinc-50 transition-colors">
-                    {{-- Kolom Nama (Sticky Left) --}}
                     <td class="px-4 py-3 border-r border-zinc-300 sticky left-0 z-10 bg-white hover:bg-zinc-50 transition-colors">
                         <p class="font-semibold text-zinc-800">{{ $index + 1 }}. {{ $data['user']->name ?? 'User Dihapus' }}</p>
                         <p class="text-xs text-zinc-500">{{ $data['user']->jabatan ?? '-' }}</p>
                     </td>
 
-                    {{-- Loop Data Absen --}}
                     @foreach($allDates as $date)
                         @php
                             $isSunday = $date->isSunday();
                             $isSaturday = $date->isSaturday();
+                            // [UPDATE] Cek Holiday
+                            $isHoliday = isset($holidays[$date->toDateString()]);
                             
                             $statusString = $data['daily'][$date->toDateString()] ?? '-';
                             $hasLembur = str_contains($statusString, 'L');
@@ -142,13 +147,16 @@
                                 case 'C': $colorClass = 'text-blue-600'; break;
                                 case 'A': $colorClass = 'text-gray-800 font-bold'; break;
                                 case 'L': $colorClass = 'text-purple-600'; $hasLembur = false; break;
-                                case '-': $colorClass = $isSunday ? 'text-red-300' : 'text-zinc-300'; break;
+                                case '-': $colorClass = ($isSunday || $isHoliday) ? 'text-red-300' : 'text-zinc-300'; break;
                             }
 
-                            // Background cells
+                            // [UPDATE] Background Merah jika Minggu ATAU Libur Nasional
                             $bgClass = '';
-                            if ($isSunday) $bgClass = 'bg-red-50';
-                            elseif ($isSaturday) $bgClass = 'bg-zinc-100';
+                            if ($isSunday || $isHoliday) {
+                                $bgClass = 'bg-red-50'; 
+                            } elseif ($isSaturday) {
+                                $bgClass = 'bg-zinc-100';
+                            }
                         @endphp
                         <td class="px-1 py-2 text-center font-bold border-r border-zinc-300 {{ $bgClass }}">
                             <span class="{{ $colorClass }}">{{ $mainStatus }}</span>
@@ -158,7 +166,6 @@
                         </td>
                     @endforeach
 
-                    {{-- Summary Counts --}}
                     <td class="px-2 py-2 text-center font-bold text-green-600 border-r border-zinc-300">{{ $data['summary']['H'] }}</td>
                     <td class="px-2 py-2 text-center font-bold text-red-600 border-r border-zinc-300">{{ $data['summary']['S'] }}</td>
                     <td class="px-2 py-2 text-center font-bold text-orange-600 border-r border-zinc-300">{{ $data['summary']['I'] }}</td>

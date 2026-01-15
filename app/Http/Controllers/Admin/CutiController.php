@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cuti;
 use App\Models\Absensi;
 use App\Models\User;
+use App\Models\Holiday; // [PENTING] Tambahkan Model Holiday
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\CarbonPeriod;
@@ -22,55 +23,39 @@ class CutiController extends Controller
     {
         $query = Cuti::with('user')->latest();
 
-        // [BARU] Logika Tabulasi (Menggantikan Filter Status manual)
-        // Default tab adalah 'pending' agar admin langsung melihat yang butuh tindakan
         $activeTab = $request->input('tab', 'pending'); 
 
         switch ($activeTab) {
             case 'pending':
-                // Menampilkan cuti yang masih berstatus 'diajukan'
                 $query->where('status', 'diajukan');
                 break;
             case 'approved':
-                // Menampilkan cuti yang sudah disetujui
                 $query->whereIn('status', ['disetujui', 'diterima']);
                 break;
             case 'rejected':
-                // Menampilkan cuti yang ditolak
                 $query->where('status', 'ditolak');
-                break;
-            default:
-                // Jika tab 'all' atau tidak dikenali, tampilkan semua
                 break;
         }
 
-        // Filter Tambahan: Karyawan (User ID)
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
 
-        // Filter Tambahan: Tanggal
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_akhir')) {
             $query->whereBetween('tanggal_mulai', [$request->tanggal_mulai, $request->tanggal_akhir]);
         }
 
-        // Pagination
         $cutiRequests = $query->paginate(10)->withQueryString(); 
-        
-        // List user untuk dropdown filter
         $users = User::where('role', 'user')->orderBy('name')->get();
 
         return view('admin.cuti.index', [
             'title' => 'Manajemen Pengajuan Cuti',
             'cutiRequests' => $cutiRequests,
             'users' => $users, 
-            'activeTab' => $activeTab // Mengirim data tab aktif ke view
+            'activeTab' => $activeTab
         ]);
     }
     
-    /**
-     * Menampilkan detail pengajuan cuti untuk admin.
-     */
     public function show(Cuti $cuti)
     {
         $title = 'Detail Pengajuan Cuti';
@@ -78,32 +63,27 @@ class CutiController extends Controller
     }
 
     /**
-     * Download PDF Formulir Cuti (Dilengkapi Sisa Cuti).
+     * Download PDF Formulir Cuti
      */
     public function download(Cuti $cuti)
     {
-        // 1. Ambil data approver (Atasan/Direktur)
         $approver = $this->getApprover($cuti->user);
-
-        // 2. LOGIKA HITUNG SISA CUTI
         $user = $cuti->user;
-        $tahunIni = \Carbon\Carbon::now()->year;
+        
+        // [UPDATE] Hitung sisa cuti berdasarkan TAHUN PENGAJUAN CUTI tersebut
+        $tahunCuti = Carbon::parse($cuti->tanggal_mulai)->year;
 
-        // Hitung total hari cuti yang SUDAH DISETUJUI tahun ini milik user tersebut
-        $cutiTerpakai = Cuti::where('user_id', $user->id)
+        // Ambil cuti yang disetujui di tahun yang sama dengan cuti ini
+        $cutiSetahun = Cuti::where('user_id', $user->id)
             ->where('status', 'disetujui')
-            ->whereYear('tanggal_mulai', $tahunIni)
-            ->get()
-            ->sum(function ($c) {
-                $start = Carbon::parse($c->tanggal_mulai);
-                $end = Carbon::parse($c->tanggal_selesai);
-                return $start->diffInDays($end) + 1; // +1 agar inklusif
-            });
+            ->whereYear('tanggal_mulai', $tahunCuti)
+            ->get();
 
-        // Hitung Sisa
-        $sisaCuti = ($user->jatah_cuti ?? 0) - $cutiTerpakai;
+        // Hitung hari efektif (Skip Libur/Minggu)
+        $terpakai = $this->hitungHariEfektif($cutiSetahun);
 
-        // 3. Kirim ke View PDF
+        $sisaCuti = ($user->jatah_cuti ?? 12) - $terpakai;
+
         $pdf = Pdf::loadView('pdf.cuti', [
             'cuti' => $cuti,
             'approver' => $approver,
@@ -111,39 +91,23 @@ class CutiController extends Controller
         ]);
         
         $pdf->setPaper('a4', 'portrait');
-        
-        return $pdf->download('ADMIN_Formulir-Cuti-' . $cuti->user->name . '-' . $cuti->created_at->format('dmY') . '.pdf');
+        return $pdf->download('ADMIN_Formulir-Cuti-' . $cuti->user->name . '.pdf');
     }
 
-    /**
-     * Helper untuk mendapatkan atasan (Logic approval).
-     */
     private function getApprover(User $user): ?User
     {
-        if ($user->jabatan === 'Direktur') {
-            return null;
-        }
-
-        if (str_starts_with($user->jabatan, 'Kepala')) {
-            return User::where('jabatan', 'Direktur')->first();
-        }
-        
+        if ($user->jabatan === 'Direktur') return null;
+        if (str_starts_with($user->jabatan, 'Kepala')) return User::where('jabatan', 'Direktur')->first();
         if ($user->divisi) {
             $approver = User::where('divisi', $user->divisi)
                 ->where('is_kepala_divisi', true)
                 ->where('id', '!=', $user->id)
                 ->first();
-            if ($approver) {
-                return $approver;
-            }
+            if ($approver) return $approver;
         }
-
         return User::where('jabatan', 'Direktur')->first();
     }
 
-    /**
-     * Mengubah status pengajuan cuti (Action Disetujui/Ditolak).
-     */
     public function updateStatus(Request $request, Cuti $cuti)
     {
         $request->validate([
@@ -156,85 +120,80 @@ class CutiController extends Controller
         $userJabatan = strtolower($user->jabatan);
         $catatan = $request->status === 'disetujui' ? $request->catatan_persetujuan : $request->catatan_penolakan;
 
-        // Logika Manajer (Jika ada flow Manajer)
+        // Logic Approval (Manajer/HRD) disederhanakan sesuai kode Anda sebelumnya
         if ($userJabatan === 'manajer' && $cuti->status_manajer === 'diajukan') {
             $cuti->update([
                 'status_manajer' => $request->status,
                 'catatan_manajer' => $catatan ?? ($request->status === 'disetujui' ? 'Disetujui oleh Manajer' : 'Ditolak oleh Manajer'),
             ]);
-
-            if ($request->status === 'ditolak') {
-                $cuti->update(['status' => 'ditolak']);
-            }
-            
-            return redirect()->route('admin.cuti.show', $cuti)->with('success', 'Status pengajuan cuti berhasil diperbarui oleh Manajer.');
+            if ($request->status === 'ditolak') $cuti->update(['status' => 'ditolak']);
+            return redirect()->route('admin.cuti.show', $cuti)->with('success', 'Status diperbarui Manajer.');
         }
 
-        // Logika HRD (Final Approval)
-        // HRD biasanya memproses setelah Manajer setuju, atau jika manajer skipped/tidak diperlukan
-        // Asumsi logic: HRD bisa memproses jika status_manajer disetujui OR (jika flow manajer tidak wajib)
         if ($userJabatan === 'hrd' || $user->role === 'admin') { 
-            // Cek apakah sudah disetujui manajer (jika diperlukan) atau langsung diproses
-            
             $cuti->update([
                 'status_hrd' => $request->status,
                 'catatan_hrd' => $catatan ?? ($request->status === 'disetujui' ? 'Disetujui oleh HRD' : 'Ditolak oleh HRD'),
+                'status' => $request->status
             ]);
 
-            $cuti->update(['status' => $request->status]);
-
-            // Jika disetujui HRD, masukkan ke tabel Absensi
+            // Jika disetujui, Masukkan ke Absensi (SKIP HARI LIBUR & MINGGU)
             if ($request->status === 'disetujui') {
                  $period = CarbonPeriod::create($cuti->tanggal_mulai, $cuti->tanggal_selesai);
+                 $holidays = Holiday::whereBetween('tanggal', [$cuti->tanggal_mulai, $cuti->tanggal_selesai])
+                            ->pluck('tanggal')->toArray();
+
                  foreach ($period as $date) {
+                     // [FIX] Jangan buat absen cuti di hari libur/minggu
+                     if ($date->isSunday() || in_array($date->format('Y-m-d'), $holidays)) {
+                        continue;
+                     }
+
                      Absensi::updateOrCreate(
                          ['user_id' => $cuti->user_id, 'tanggal' => $date->format('Y-m-d')],
                          ['status' => 'cuti', 'keterangan' => 'Cuti ' . $cuti->jenis_cuti . ': ' . $cuti->alasan, 'jam_masuk' => '00:00:00']
                      );
                  }
             }
-            
-            return redirect()->route('admin.cuti.show', $cuti)->with('success', 'Status pengajuan cuti berhasil diperbarui oleh Admin/HRD.');
+            return redirect()->route('admin.cuti.show', $cuti)->with('success', 'Status diperbarui Admin/HRD.');
         }
 
-        return redirect()->route('admin.cuti.show', $cuti)->with('error', 'Aksi tidak diizinkan atau pengajuan cuti belum pada tahap ini.');
+        return redirect()->route('admin.cuti.show', $cuti)->with('error', 'Aksi tidak diizinkan.');
     }
 
     /**
-     * Menampilkan halaman pengaturan jatah cuti untuk admin.
+     * [PENTING] Halaman Pengaturan Jatah Cuti
+     * Di sini logika hitung sisa cuti diperbaiki agar konsisten.
      */
     public function pengaturanCuti()
     {
-        // Ambil user dan hitung sisa cuti on-the-fly
-        $users = User::where('role', 'user')->get()->map(function ($user) {
-            
-            // Hitung total hari cuti yang SUDAH DISETUJUI tahun ini
-            $terpakai = Cuti::where('user_id', $user->id)
-                ->where('status', 'disetujui')
-                ->whereYear('tanggal_mulai', now()->year) // Hanya hitung tahun berjalan
-                ->get()
-                ->sum(function ($cuti) {
-                    $start = Carbon::parse($cuti->tanggal_mulai);
-                    $end = Carbon::parse($cuti->tanggal_selesai);
-                    return $start->diffInDays($end) + 1; // +1 agar inklusif
-                });
+        // 1. Tentukan Tahun Ini (Server Time)
+        $tahunIni = Carbon::now()->year;
 
-            // Attach data sementara ke object user
+        // 2. Ambil user dan hitung sisa cuti on-the-fly dengan logika BARU
+        $users = User::where('role', 'user')->get()->map(function ($user) use ($tahunIni) {
+            
+            // Ambil semua cuti disetujui di tahun ini
+            $cutiSetahun = Cuti::where('user_id', $user->id)
+                ->where('status', 'disetujui')
+                ->whereYear('tanggal_mulai', $tahunIni) // Filter Reset Tahunan
+                ->get();
+
+            // Hitung pakai fungsi helper (Exclude Libur)
+            $terpakai = $this->hitungHariEfektif($cutiSetahun);
+
             $user->cuti_terpakai = $terpakai;
-            $user->sisa_cuti = ($user->jatah_cuti ?? 0) - $terpakai;
+            $user->sisa_cuti = ($user->jatah_cuti ?? 12) - $terpakai;
             
             return $user;
         });
 
         return view('admin.cuti.pengaturan', [
-            'title' => 'Pengaturan Jatah Cuti',
+            'title' => 'Pengaturan Jatah Cuti (' . $tahunIni . ')',
             'users' => $users
         ]);
     }
 
-    /**
-     * Menyimpan perubahan jatah cuti.
-     */
     public function updatePengaturanCuti(Request $request)
     {
         $request->validate([
@@ -249,47 +208,26 @@ class CutiController extends Controller
                 $user->save();
             }
         }
-
         return redirect()->route('admin.cuti.pengaturan')->with('success', 'Jatah cuti berhasil diperbarui.');
     }
 
-    /**
-     * [BARU] Download Rekap PDF (Laporan) sesuai Filter & Tab
-     */
     public function downloadRekapPDF(Request $request)
     {
         $query = Cuti::with('user')->latest();
-
-        // 1. Terapkan Filter TAB (Agar rekap sesuai tab yang dibuka)
         $activeTab = $request->input('tab', 'pending'); 
 
         switch ($activeTab) {
-            case 'pending':
-                $query->where('status', 'diajukan');
-                break;
-            case 'approved':
-                $query->whereIn('status', ['disetujui', 'diterima']);
-                break;
-            case 'rejected':
-                $query->where('status', 'ditolak');
-                break;
-            default:
-                // All
-                break;
+            case 'pending': $query->where('status', 'diajukan'); break;
+            case 'approved': $query->whereIn('status', ['disetujui', 'diterima']); break;
+            case 'rejected': $query->where('status', 'ditolak'); break;
         }
 
-        // 2. Filter Karyawan & Tanggal
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
+        if ($request->filled('user_id')) $query->where('user_id', $request->user_id);
         if ($request->filled('tanggal_mulai') && $request->filled('tanggal_akhir')) {
             $query->whereBetween('tanggal_mulai', [$request->tanggal_mulai, $request->tanggal_akhir]);
         }
 
-        // Ambil Data (Get, bukan Paginate)
         $cutiRequests = $query->get();
-
-        // Info untuk Header Laporan
         $userName = 'Semua Karyawan';
         if ($request->filled('user_id')) {
             $user = User::find($request->user_id);
@@ -299,51 +237,69 @@ class CutiController extends Controller
         $startDate = $request->tanggal_mulai;
         $endDate = $request->tanggal_akhir;
 
-        // Load View PDF Rekap
-        $pdf = Pdf::loadView('admin.cuti.pdf_rekap', compact(
-            'cutiRequests', 
-            'activeTab', 
-            'userName', 
-            'startDate', 
-            'endDate'
-        ));
-        
-        $pdf->setPaper('a4', 'landscape'); // Landscape agar muat banyak kolom
-        
-        $filename = "rekap-cuti-" . strtoupper($activeTab) . "-" . Carbon::now()->format('Y-m-d') . ".pdf";
-        return $pdf->download($filename);
+        $pdf = Pdf::loadView('admin.cuti.pdf_rekap', compact('cutiRequests', 'activeTab', 'userName', 'startDate', 'endDate'));
+        $pdf->setPaper('a4', 'landscape'); 
+        return $pdf->download("rekap-cuti-" . strtoupper($activeTab) . "-" . Carbon::now()->format('Y-m-d') . ".pdf");
     }
 
+    /**
+     * [PENTING] Download Laporan Sisa Cuti
+     * Update logika agar sama persis dengan tampilan web
+     */
     public function downloadPengaturanPDF()
     {
-        // Ambil data user & hitung sisa cuti (Sama logic-nya dengan index pengaturan)
-        $users = User::where('role', 'user')->orderBy('name')->get()->map(function ($user) {
-            $tahunIni = now()->year;
+        $tahunIni = Carbon::now()->year;
+
+        $users = User::where('role', 'user')->orderBy('name')->get()->map(function ($user) use ($tahunIni) {
             
-            // Hitung cuti terpakai (status disetujui) di tahun ini
-            $terpakai = Cuti::where('user_id', $user->id)
+            $cutiSetahun = Cuti::where('user_id', $user->id)
                 ->where('status', 'disetujui')
                 ->whereYear('tanggal_mulai', $tahunIni)
-                ->get()
-                ->sum(function ($cuti) {
-                    $start = Carbon::parse($cuti->tanggal_mulai);
-                    $end = Carbon::parse($cuti->tanggal_selesai);
-                    return $start->diffInDays($end) + 1;
-                });
+                ->get();
+
+            // Hitung pakai fungsi helper (Exclude Libur)
+            $terpakai = $this->hitungHariEfektif($cutiSetahun);
 
             $user->cuti_terpakai = $terpakai;
-            $user->sisa_cuti = ($user->jatah_cuti ?? 0) - $terpakai;
+            $user->sisa_cuti = ($user->jatah_cuti ?? 12) - $terpakai;
             
             return $user;
         });
 
         $pdf = Pdf::loadView('admin.cuti.pdf_pengaturan', [
             'users' => $users,
-            'tahun' => now()->year
+            'tahun' => $tahunIni
         ]);
         
         $pdf->setPaper('a4', 'portrait');
+        return $pdf->download('Laporan-Sisa-Cuti-Karyawan-' . $tahunIni . '.pdf');
+    }
+
+    /**
+     * HELPER BARU: Menghitung Durasi Bersih (Tanpa Minggu/Libur)
+     * Digunakan berulang kali agar logic konsisten
+     */
+    private function hitungHariEfektif($cutiCollection)
+    {
+        $totalDays = 0;
         
-        return $pdf->download('Laporan-Sisa-Cuti-Karyawan-' . now()->format('Y') . '.pdf');
+        // Ambil semua libur tahun ini sekali saja untuk efisiensi
+        $holidays = Holiday::whereYear('tanggal', Carbon::now()->year)->pluck('tanggal')->toArray();
+
+        foreach ($cutiCollection as $cuti) {
+            $start = Carbon::parse($cuti->tanggal_mulai);
+            $end = Carbon::parse($cuti->tanggal_selesai);
+            
+            $period = CarbonPeriod::create($start, $end);
+            
+            foreach ($period as $date) {
+                // Skip Minggu (0) & Libur Nasional
+                if ($date->isSunday() || in_array($date->format('Y-m-d'), $holidays)) {
+                    continue;
+                }
+                $totalDays++;
+            }
+        }
+        return $totalDays;
     }
 }

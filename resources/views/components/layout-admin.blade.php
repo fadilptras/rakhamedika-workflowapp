@@ -190,6 +190,15 @@
                             <span class="ml-3 font-semibold">Kelola Agenda</span>
                         </a>
                     </li>
+
+                    <li>
+                        <a href="{{ route('admin.holidays.index') }}" class="flex items-center p-3 rounded-lg transition-colors duration-200 
+                        {{ request()->routeIs('admin.holidays.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
+                            {{-- Icon Libur (Payung Pantai / Kalender) --}}
+                            <i class="fas fa-umbrella-beach text-xl w-8 text-center"></i>
+                            <span class="ml-3 font-semibold">Kelola Hari Libur</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>
