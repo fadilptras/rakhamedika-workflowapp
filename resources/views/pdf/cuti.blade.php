@@ -6,7 +6,7 @@
     <title>Formulir Pengajuan Cuti - {{ str_pad($cuti->id, 4, '0', STR_PAD_LEFT) }}</title>
     <style>
         /* Gaya Inti (Seragam dengan Pengajuan Barang/Dana) */
-        body { font-family: 'Helvetica', sans-serif; font-size: 11px; color: #333; line-height: 1.4; }
+        body { font-family: 'Helvetica', sans-serif; font-size: 9px; color: #333; line-height: 1.2; }
         .container { width: 95%; margin: 15px auto; }
         
         /* Header */
@@ -23,9 +23,9 @@
         .section-title {
             background-color: #eaf2f8;
             padding: 8px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
-            margin-top: 20px;
+            margin-top: 10px;
             margin-bottom: 10px;
             border-left: 4px solid #3498db;
             color: #003366;

@@ -9,16 +9,20 @@ use Illuminate\Support\Facades\Notification;
 
 class SendBirthdayNotifications extends Command
 {
-    // Nama perintah yang nanti dipanggil scheduler
+    /**
+     * Nama perintah yang nanti dipanggil scheduler atau via terminal:
+     * php artisan app:send-birthday-notifications
+     */
     protected $signature = 'app:send-birthday-notifications';
-    protected $description = 'Kirim notifikasi ulang tahun karyawan';
+    
+    protected $description = 'Kirim notifikasi ulang tahun (ucapan ke ybs & info ke rekan kerja)';
 
     public function handle()
     {
         $today = now();
 
         // 1. Cari User yang ulang tahun HARI INI
-        // Asumsi nama kolom di database Anda 'tgl_lahir' atau 'birth_date'
+        // whereMonth dan whereDay otomatis mengambil bulan & tanggal dari format 'YYYY-MM-DD'
         $birthdayUsers = User::whereMonth('tanggal_lahir', $today->month)
                              ->whereDay('tanggal_lahir', $today->day)
                              ->get();
@@ -28,17 +32,26 @@ class SendBirthdayNotifications extends Command
             return;
         }
 
-        // 2. Loop setiap orang yang ulang tahun
+        // 2. Loop setiap orang yang ulang tahun hari ini (bisa jadi lebih dari 1 orang)
         foreach ($birthdayUsers as $birthdayPerson) {
             
-            // 3. Kirim notifikasi ke SEMUA User KECUALI yang sedang ulang tahun
-            // (Agar yang ultah tidak dapat notif "Jangan lupa ucapkan selamat ke diri sendiri")
-            $recipients = User::where('id', '!=', $birthdayPerson->id)->get();
+            $this->info("Memproses ulang tahun: {$birthdayPerson->name}");
 
-            // Panggil file Notification yang Anda buat tadi
-            Notification::send($recipients, new BirthdayNotification($birthdayPerson));
+            // --- A. Kirim Notifikasi ke REKAN KERJA (Semua user KECUALI yang ultah) ---
+            $colleagues = User::where('id', '!=', $birthdayPerson->id)->get();
             
-            $this->info("Notifikasi ultah {$birthdayPerson->name} berhasil dikirim.");
+            if ($colleagues->isNotEmpty()) {
+                // Gunakan Facade Notification untuk kirim ke banyak user sekaligus
+                Notification::send($colleagues, new BirthdayNotification($birthdayPerson));
+                $this->info(" - Info terkirim ke " . $colleagues->count() . " rekan kerja.");
+            }
+
+            // --- B. Kirim Notifikasi ke USER YANG ULANG TAHUN (Ucapan Selamat) ---
+            // Kita panggil method notify() langsung dari model User ybs
+            $birthdayPerson->notify(new BirthdayNotification($birthdayPerson));
+            $this->info(" - Ucapan selamat terkirim ke {$birthdayPerson->name}.");
         }
+        
+        $this->info('Selesai mengirim semua notifikasi ulang tahun.');
     }
 }

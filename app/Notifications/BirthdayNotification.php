@@ -5,7 +5,7 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
-use App\Models\User; // Import Model User
+use App\Models\User;
 use App\Notifications\Channels\WhatsAppChannel;
 
 class BirthdayNotification extends Notification
@@ -18,7 +18,6 @@ class BirthdayNotification extends Notification
      * Buat instance notifikasi baru.
      *
      * @param \App\Models\User $user Orang yang sedang ulang tahun
-     * @return void
      */
     public function __construct(User $user)
     {
@@ -30,45 +29,87 @@ class BirthdayNotification extends Notification
         return ['database', WhatsAppChannel::class];
     }
 
-    public function toWhatsApp($notifiable)
+    /**
+     * Helper: Membuat Link WhatsApp (wa.me)
+     */
+    private function getWhatsAppLink($name)
     {
-        $yangUltah = $this->user->name;
-        $jabatan = $this->user->jabatan ?? 'Rekan Kerja';
+        $noHp = $this->user->no_telepon; 
 
-        return [
-            'message' => "🎂 *HARI INI ADA YANG ULANG TAHUN!* 🥳\n\nHalo {$notifiable->name},\n\nHari ini adalah hari spesial untuk rekan kita:\n\n👤 *{$yangUltah}* ({$jabatan})\n\nJangan lupa berikan ucapan selamat dan doa terbaik untuk beliau ya! 🎉\n\n_Management_"
-        ];
+        if (!$noHp) {
+            return null;
+        }
+
+        $noHp = preg_replace('/[^0-9]/', '', $noHp);
+
+        if (substr($noHp, 0, 1) === '0') {
+            $noHp = '62' . substr($noHp, 1);
+        }
+
+        $text = urlencode("Happy Birthday {$name}! 脂 Semoga panjang umur, sehat selalu, dan makin sukses ya!");
+        return "https://wa.me/{$noHp}?text={$text}";
     }
 
     /**
-     * Get the array representation of the notification.
+     * Format pesan untuk WhatsApp
+     */
+    public function toWhatsApp($notifiable)
+    {
+        // yg ultah
+        if ($notifiable->id === $this->user->id) {
+            return [
+                'message' => "Halo *{$notifiable->name}*,\n\n" .
+                             "*SELAMAT ULANG TAHUN!*\n\n" .
+                             "Selamat bertambah usia! Semoga sehat selalu, bahagia, dan makin sukses perjalanan karirnya bareng kita.\n\n" .
+                             "Nikmati hari spesialmu ya!\n\n"
+            ];
+        }
+
+        // karyawan lain
+        $yangUltah = $this->user->name;
+        
+        $waLink = $this->getWhatsAppLink($yangUltah);
+
+        $pesan = "*HARI INI ADA YANG ULANG TAHUN!*\n\n" .
+                 "Hari ini adalah hari spesial untuk rekan kita: *{$yangUltah}*\n\n" .
+                 "Jangan lupa berikan ucapan selamat dan doa terbaik untuk *{$yangUltah}* ya!";
+
+        if ($waLink) {
+            $pesan .= "\n\nKlik link ini buat kirim ucapan langsung:\n{$waLink}";
+        } else {
+            $pesan .= "\n\n(Nomor WhatsApp rekan tidak tersedia)";
+        }
+
+        return ['message' => $pesan];
+    }
+
+    /**
+     * Format pesan untuk Notifikasi Database (Web)
      */
     public function toArray(object $notifiable): array
     {
-        // Tentukan Pesan
-        $namaYangUltah = $this->user->name;
-        
-        // Gunakan icon kue ulang tahun
-        $icon = 'fas fa-birthday-cake'; 
-        
-        // Warna pink/ungu agar terlihat festive, sesuai pola Tailwind di file lain
-        $color = 'text-pink-500'; 
+
+        if ($notifiable->id === $this->user->id) {
+            return [
+                'id'      => $this->user->id, 
+                'title'   => 'Selamat Ulang Tahun!',
+                'message' => "Selamat ulang tahun {$notifiable->name}, semoga hari ini menyenangkan!",
+                'url'     => '#', 
+                'icon'    => 'fas fa-birthday-cake',
+                'color'   => 'text-pink-500',
+            ];
+        }
+
+        $yangUltah = $this->user->name;
+        $waLink    = $this->getWhatsAppLink($yangUltah);
 
         return [
-            // Kita kirim ID user yang ultah, agar frontend bisa handle jika perlu
-            'id' => $this->user->id, 
-            
-            'title' => 'Hari Ini Ada yang Ulang Tahun! 🎉',
-            
-            'message' => "Hari ini adalah ulang tahun $namaYangUltah. Jangan lupa ucapkan selamat dan doa terbaik!",
-            
-            // Arahkan ke profile user tersebut (Asumsi route 'profile.show' atau sejenis ada)
-            // Jika tidak ada route khusus user, bisa ganti jadi url('#') atau route('dashboard')
-            // Saya gunakan '#' aman sementara ini
-            'url' => '#', 
-            
-            'icon' => $icon,
-            'color' => $color,
+            'id'      => $this->user->id,
+            'title'   => 'Hari Ini Ada yang Ulang Tahun!',
+            'message' => "Hari ini {$yangUltah} ulang tahun. Klik untuk kirim ucapan!",
+            'url'     => $waLink ?? '#', 
+            'icon'    => 'fas fa-birthday-cake',
+            'color'   => 'text-pink-500',
         ];
     }
 }

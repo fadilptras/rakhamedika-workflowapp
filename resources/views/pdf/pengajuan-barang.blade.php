@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulir Pengajuan Barang - {{ str_pad($pengajuanBarang->id, 4, '0', STR_PAD_LEFT) }}</title>
     <style>
-        body { font-family: 'Helvetica', sans-serif; font-size: 11px; color: #333; line-height: 1.5; }
+        body { font-family: 'Helvetica', sans-serif; font-size: 11px; color: #333; line-height: 1.2; }
         .container { width: 95%; margin: 15px auto; }
         .header { text-align: center; margin-bottom: 15px; }
         .header h1 { margin: 0; font-size: 20px; color: #003366; font-weight: bold; } 
