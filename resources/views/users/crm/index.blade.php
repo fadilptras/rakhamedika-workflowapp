@@ -66,9 +66,9 @@
                         <i class="fas fa-map-marked-alt"></i>
                     </div>
                     <div>
-                        <p class="text-blue-200 text-xs font-bold uppercase tracking-wider">Area Terbanyak</p>
-                        <p class="text-white text-lg font-bold truncate">
-                            {{ $clients->groupBy('area')->sortDesc()->keys()->first() ?? '-' }}
+                        <p class="text-blue-200 text-xs font-bold uppercase tracking-wider">Total Nilai Sales</p>
+                        <p class="text-emerald-300 text-2xl font-mono font-bold">
+                            Rp {{ number_format($totalGrossSales, 0, ',', '.') }}
                         </p>
                     </div>
                 </div>

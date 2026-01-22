@@ -35,18 +35,33 @@ class CrmController extends Controller
         }
 
         $clients = $query->get();
+        
+        // Inisialisasi variabel
         $totalAllBalance = 0;
+        $totalGrossSales = 0; // Tambahkan variabel baru ini
 
         foreach($clients as $client) {
+            // 1. Hitung Saldo (Net)
             $balance = $this->calculateRealTimeBalance($client);
             $client->current_balance = $balance;
             $totalAllBalance += $balance;
+
+            // 2. Hitung Total Sales (Gross) - Hanya transaksi 'IN'
+            $clientSales = $client->interactions
+                ->where('jenis_transaksi', 'IN')
+                ->sum(function($item) {
+                    // Handle logika sales lama vs baru (jika nilai_sales 0, pakai nilai_kontribusi)
+                    return $item->nilai_sales > 0 ? $item->nilai_sales : $item->nilai_kontribusi;
+                });
+                
+            $totalGrossSales += $clientSales;
         }
 
         return view('users.crm.index', [
             'title' => 'Sistem Informasi Sales (CRM)', 
             'clients' => $clients,
-            'totalAllBalance' => $totalAllBalance
+            'totalAllBalance' => $totalAllBalance,
+            'totalGrossSales' => $totalGrossSales 
         ]);
     }
 
