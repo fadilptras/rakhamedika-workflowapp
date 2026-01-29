@@ -177,32 +177,51 @@ class CrmController extends Controller
 
     public function updateInteraction(Request $request, Interaction $interaction)
     {
+        // Cek Hak Akses
         if ($interaction->client->user_id !== Auth::id() && !$this->hasFullAccess()) abort(403);
 
+        // Ambil input nominal (bisa dari field 'nilai_sales' atau 'nominal')
         $inputNominal = $request->input('nilai_sales') ?? $request->input('nominal');
+        // Hilangkan titik ribuan pada nominal (misal: 1.000.000 jadi 1000000)
         $cleanNominal = str_replace('.', '', $inputNominal);
 
+        // --- LOGIKA UNTUK TIPE: SALES (IN) ---
         if ($interaction->jenis_transaksi == 'IN') {
-            $request->merge(['nilai_sales' => $cleanNominal]);
+            
+            // 1. BERSIHKAN KOMISI (Ubah Koma jadi Titik)
+            // Contoh: Input "2,5" menjadi "2.5" agar terbaca sebagai desimal
+            $cleanKomisi = str_replace(',', '.', $request->input('komisi'));
+
+            // Masukkan data bersih kembali ke request agar lolos validasi
+            $request->merge([
+                'nilai_sales' => $cleanNominal,
+                'komisi'      => $cleanKomisi 
+            ]);
+
+            // Validasi
             $request->validate([
                 'nama_produk'       => 'required|string|max:255',
                 'nilai_sales'       => 'required|numeric|min:0',
-                'komisi'            => 'required|numeric|min:0|max:100',
+                'komisi'            => 'required|numeric|min:0|max:100', // Sekarang 2.5 dianggap valid numeric
                 'tanggal_interaksi' => 'required|date',
                 'catatan'           => 'nullable|string',
             ]);
 
+            // Update Data ke Database
             $interaction->update([
                 'nama_produk'       => $request->nama_produk,
                 'tanggal_interaksi' => $request->tanggal_interaksi,
                 'nilai_sales'       => $request->nilai_sales,
                 'nilai_kontribusi'  => $request->nilai_sales,
-                'komisi'            => $request->komisi,
+                'komisi'            => $request->komisi, // Data desimal masuk ke sini
                 'catatan'           => "[Rate:" . $request->komisi . "] " . $request->catatan,
             ]);
 
+        // --- LOGIKA UNTUK TIPE: PENGELUARAN (OUT) ---
         } elseif ($interaction->jenis_transaksi == 'OUT') {
+            
             $request->merge(['nominal' => $cleanNominal]);
+            
             $request->validate([
                 'keperluan'         => 'required|string|max:255',
                 'nominal'           => 'required|numeric|min:0',
@@ -218,8 +237,11 @@ class CrmController extends Controller
                 'catatan'           => $request->catatan,
             ]);
 
+        // --- LOGIKA UNTUK TIPE: AKTIVITAS (ENTERTAIN) ---
         } elseif ($interaction->jenis_transaksi == 'ENTERTAIN') {
+            
             $request->merge(['nominal' => $cleanNominal]);
+            
             $request->validate([
                 'nominal'           => 'required|numeric|min:0',
                 'tanggal_interaksi' => 'required|date',
@@ -245,7 +267,16 @@ class CrmController extends Controller
     {
         $client = Client::findOrFail($request->client_id);
         if ($client->user_id !== Auth::id() && !$this->hasFullAccess()) abort(403);
-        $request->merge(['nilai_sales' => str_replace('.', '', $request->nilai_sales)]);
+
+        // TAMBAHAN: Bersihkan input nilai sales DAN komisi
+        $cleanNominal = str_replace('.', '', $request->nilai_sales);
+        $cleanKomisi  = str_replace(',', '.', $request->komisi);
+
+        $request->merge([
+            'nilai_sales' => $cleanNominal,
+            'komisi'      => $cleanKomisi
+        ]);
+
         $request->validate([
             'client_id' => 'required|exists:clients,id', 
             'nama_produk' => 'required|string|max:255',
@@ -254,12 +285,19 @@ class CrmController extends Controller
             'tanggal_interaksi' => 'required|date', 
             'catatan' => 'nullable|string',
         ]);
+
         Interaction::create([
-            'user_id' => Auth::id(), 'client_id' => $request->client_id, 'jenis_transaksi' => 'IN', 
-            'nama_produk' => $request->nama_produk, 'tanggal_interaksi' => $request->tanggal_interaksi,
-            'nilai_sales' => $request->nilai_sales, 'nilai_kontribusi' => $request->nilai_sales,
-            'komisi' => $request->komisi, 'catatan' => "[Rate:" . $request->komisi . "] " . $request->catatan,
+            'user_id' => Auth::id(), 
+            'client_id' => $request->client_id, 
+            'jenis_transaksi' => 'IN', 
+            'nama_produk' => $request->nama_produk, 
+            'tanggal_interaksi' => $request->tanggal_interaksi,
+            'nilai_sales' => $request->nilai_sales, 
+            'nilai_kontribusi' => $request->nilai_sales,
+            'komisi' => $request->komisi, 
+            'catatan' => "[Rate:" . $request->komisi . "] " . $request->catatan,
         ]);
+
         return redirect()->back()->with('success', 'Transaksi sales berhasil ditambahkan!');
     }
 

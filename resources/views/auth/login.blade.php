@@ -2,117 +2,149 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign In</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sign In - Workflow Rakha</title>
 
-    <meta name="theme-color" content="#ffffff">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
-    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96x96.png') }}">
-    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
-    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+  <meta name="theme-color" content="#1e40af">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96x96.png') }}">
+  <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
+  <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      /* Background gambar dihapus dari sini */
+    body { font-family: 'Poppins', sans-serif; }
+    
+    .animated-float { animation: floating 6s ease-in-out infinite; }
+    @keyframes floating {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
     }
-    .animated-image {
-      animation: float 6s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-20px); }
+
+    .bg-pattern {
+      background-image: radial-gradient(#4f46e5 0.5px, transparent 0.5px), radial-gradient(#4f46e5 0.5px, #f3f4f6 0.5px);
+      background-size: 20px 20px;
+      background-position: 0 0, 10px 10px;
     }
   </style>
 </head>
-{{-- --- PERUBAHAN BACKGROUND KEMBALI KE ABU-ABU --- --}}
-<body class="bg-gray-100">
 
-  <div class="flex items-center justify-center min-h-screen p-4">
-    <div class="flex w-full max-w-4xl rounded-lg shadow-lg bg-white overflow-hidden">
+<body class="bg-gray-50 text-gray-800">
+
+  <div class="min-h-screen flex flex-col lg:items-center lg:justify-center relative">
+
+    <div class="lg:hidden absolute top-0 left-0 w-full h-[40vh] bg-gradient-to-b from-blue-800 to-indigo-900 rounded-b-[3rem] z-0 overflow-hidden">
+        <div class="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+        <div class="absolute bottom-10 left-0 w-32 h-32 bg-blue-400 opacity-10 rounded-full -ml-5 blur-xl"></div>
+        
+        <div class="flex flex-col items-center justify-center h-full pb-12 px-6 text-center">
+            <h2 class="text-white text-2xl font-bold tracking-wide mb-1">Selamat Datang</h2>
+            <p class="text-blue-200 text-sm font-light">Sistem Workflow Rakha</p>
+        </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row w-full max-w-4xl lg:rounded-2xl lg:shadow-2xl bg-white lg:overflow-hidden z-10 
+                mt-[30vh] lg:mt-0 px-4 pb-8 lg:p-0 rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] lg:shadow-xl">
       
-      <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-700 to-indigo-900 items-center justify-center p-8">
-        <div class="text-center">
+      <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-700 to-indigo-900 items-center justify-center p-12 relative overflow-hidden">
+        <div class="absolute inset-0 bg-pattern opacity-5"></div>
+        <div class="absolute top-0 left-0 w-40 h-40 bg-white opacity-10 rounded-full -translate-x-10 -translate-y-10 blur-3xl"></div>
+        
+        <div class="w-full max-w-sm relative z-10"> 
           <img 
             src="{{ asset('asset/images/ilustrasi1.png') }}"
             alt="Ilustrasi login" 
-            class="w-full max-w-xs mx-auto animated-image"
+            class="w-64 mx-auto mb-8 animated-float drop-shadow-2xl"
           />
-          <h2 class="text-2xl font-bold text-left text-white mt-4">Selamat Datang Kembali</h2>
-          <p class="text-blue-100 mt-0 text-left">Masuk untuk mengakses Sistem Workflow Rakha.</p>
+          <h2 class="text-3xl font-bold text-white mb-2 text-left">Selamat Datang Kembali</h2>
+          <p class="text-blue-100 text-base font-light text-left">Masuk untuk mengakses Sistem Workflow Rakha.</p>
         </div>
       </div>
 
-      <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 md:p-12">
-        <div class="w-full max-w-md">
-          <div class="text-center lg:text-left mb-8">
-              <h1 class="text-3xl font-extrabold text-gray-900">Sign In</h1>
-              <p class="mt-2 text-gray-600">Silakan masuk untuk melanjutkan</p>
+      <div class="w-full lg:w-1/2 bg-white flex flex-col justify-center p-6 lg:p-12">
+        
+        <div class="text-center lg:text-left mb-8 mt-4 lg:mt-0">
+            <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Sign In</h1>
+            <p class="mt-2 text-sm text-gray-500">Silakan masuk untuk melanjutkan</p>
+        </div>
+
+        @if ($errors->any())
+          <div class="mb-6 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 text-sm rounded-r shadow-sm animate-pulse" role="alert">
+              <p class="font-bold flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                Login Gagal
+              </p>
+              <p class="mt-1 ml-6">{{ $errors->first('email') ?: $errors->first('password') }}</p>
           </div>
+        @endif
 
-          @if ($errors->any())
-            <div class="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 text-sm rounded" role="alert">
-                <p class="font-bold">Login Gagal</p>
-                <p>{{ $errors->first('email') ?: $errors->first('password') }}</p>
-            </div>
-          @endif
-
-          <form class="space-y-6" action="{{ route('login.post') }}" method="POST">
-            @csrf
-            
-            <div>
-              <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input 
-                id="email" 
-                name="email" 
-                type="email" 
-                required 
-                placeholder="email@anda.com"
-                autocomplete="username"
-                class="w-full px-4 py-3 border @error('email') border-red-500 @else border-gray-300 @enderror rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                value="{{ old('email') }}" />
-            </div>
-            
-            <div>
-              <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <div class="relative">
+        <form class="space-y-5" action="{{ route('login.post') }}" method="POST">
+          @csrf
+          
+          <div class="group">
+            <label for="email" class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 ml-1">Email</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>
+                </div>
                 <input 
-                  id="password" 
-                  name="password" 
-                  type="password" 
+                  id="email" 
+                  name="email" 
+                  type="email" 
                   required 
-                  placeholder="Masukkan password"
-                  autocomplete="current-password"
-                  class="w-full px-4 py-3 border @error('password') border-red-500 @else border-gray-300 @enderror rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition pr-10"
-                />
-                <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none">
-                  <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  </svg>
-                </button>
-              </div>
+                  placeholder="nama@email.com" 
+                  autocomplete="username"
+                  class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 outline-none text-gray-800 placeholder-gray-400"
+                  value="{{ old('email') }}" />
             </div>
-
-            <div class="flex items-center justify-between text-sm">
-              <div class="flex items-center">
-                <input id="remember" name="remember" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                <label for="remember" class="ml-2 block text-gray-700">Ingat Saya</label>
-              </div>
-              <div>
-                <a href="{{ route('password.request') }}" class="font-medium text-blue-600 hover:underline">Lupa Password?</a>
-              </div>
+          </div>
+          
+          <div class="group">
+            <div class="flex items-center justify-between mb-1 ml-1">
+                <label for="password" class="block text-xs font-bold text-gray-500 uppercase tracking-wide">Password</label>
             </div>
-
-            <div>
-              {{-- --- PERUBAHAN WARNA TOMBOL --- --}}
-              <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-700 to-indigo-900 hover:from-blue-800 hover:to-indigo-950 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
-                Masuk
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              </div>
+              <input 
+                id="password" 
+                name="password" 
+                type="password" 
+                required 
+                placeholder="Masukkan password"
+                autocomplete="current-password"
+                class="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 outline-none text-gray-800 placeholder-gray-400"
+              />
+              <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-blue-600 transition-colors focus:outline-none">
+                <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"></svg>
               </button>
             </div>
-          </form>
+          </div>
 
+          <div class="flex items-center justify-between text-sm mt-2">
+            <div class="flex items-center">
+              <input id="remember" name="remember" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer">
+              <label for="remember" class="ml-2 block text-gray-600 cursor-pointer select-none">Ingat Saya</label>
+            </div>
+            <div>
+              <a href="{{ route('password.request') }}" class="font-medium text-blue-600 hover:text-blue-800 transition-colors">Lupa Password?</a>
+            </div>
+          </div>
+
+          <div class="pt-4">
+            <button type="submit" class="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-500/30 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-800 hover:from-blue-700 hover:to-indigo-900 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300 transform hover:-translate-y-1 active:scale-95">
+              Masuk
+            </button>
+          </div>
+        </form>
+
+        <div class="mt-8 text-center lg:hidden">
+            <p class="text-[10px] text-gray-400 font-medium">© {{ date('Y') }} Workflow Rakha. All rights reserved.</p>
         </div>
+
       </div>
     </div>
   </div>
