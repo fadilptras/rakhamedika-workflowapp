@@ -284,4 +284,28 @@ class AdminPengajuanDanaController extends Controller
 
         return back()->with('success', 'Pembayaran berhasil diselesaikan oleh Admin.');
     }
+
+    /**
+     * Menghapus pengajuan dana.
+     */
+    public function destroy($id)
+    {
+        $pengajuan = PengajuanDana::findOrFail($id);
+
+        // 1. Hapus file Bukti Transfer jika ada
+        if ($pengajuan->bukti_transfer && \Illuminate\Support\Facades\Storage::disk('public')->exists($pengajuan->bukti_transfer)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($pengajuan->bukti_transfer);
+        }
+        
+        // 2. Hapus file Lampiran Pendukung jika ada (Sesuaikan nama kolom 'lampiran' di database kamu)
+        // Jika di database kolomnya 'file_pendukung' atau 'lampiran', gunakan yang sesuai.
+        if ($pengajuan->lampiran && \Illuminate\Support\Facades\Storage::disk('public')->exists($pengajuan->lampiran)) {
+             \Illuminate\Support\Facades\Storage::disk('public')->delete($pengajuan->lampiran);
+        }
+
+        // 3. Hapus Record Database
+        $pengajuan->delete();
+
+        return redirect()->back()->with('success', 'Data pengajuan dana berhasil dihapus.');
+    }
 }

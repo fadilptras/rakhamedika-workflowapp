@@ -117,9 +117,6 @@
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
                                         {{ request()->routeIs('admin.cuti.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
                                         Pengajuan Cuti
-                                        @if(isset($pending_cuti_count) && $pending_cuti_count > 0)
-                                            <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_cuti_count }}</span>
-                                        @endif
                                     </a>
                                 </li>                                
                                 <li>
@@ -127,6 +124,13 @@
                                         class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
                                         {{ request()->routeIs('admin.cuti.pengaturan') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
                                         Pengaturan Jatah Cuti
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.cuti.set_approvers') }}" method="POST"
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm
+                                        {{ request()->routeIs('admin.cuti.set_approvers') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Set Approver Cuti
                                     </a>
                                 </li>
                             </ul>
@@ -169,17 +173,35 @@
                     </li>
 
                     {{-- Pengajuan Barang --}}
-                    <li>
-                        <a href="{{ route('admin.pengajuan_barang.index') }}" 
-                            class="flex items-center p-3 rounded-lg transition-colors duration-200 
+                    <li x-data="{ open: {{ request()->routeIs('admin.pengajuan_barang.*') ? 'true' : 'false' }} }">
+                        <a @click.prevent="open = !open" href="#" 
+                            class="flex items-center p-3 rounded-lg transition-colors duration-200 cursor-pointer 
                             {{ request()->routeIs('admin.pengajuan_barang.*') ? 'bg-amber-600 text-white shadow-lg' : 'hover:bg-zinc-700' }}">
                             <i class="fas fa-box text-xl w-8 text-center"></i>
                             <span class="ml-3 font-semibold flex-1">Kelola Barang</span>
-                            {{-- Jika Anda ingin menambahkan badge notifikasi untuk barang nanti, bisa tambahkan logic di sini --}}
                             @if(isset($pending_barang_count) && $pending_barang_count > 0)
                                 <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-auto">{{ $pending_barang_count }}</span>
                             @endif
+                            <i class="fas fa-chevron-down text-sm transition-transform ml-2" :class="open ? 'rotate-180' : ''"></i>
                         </a>
+                        <div x-show="open" x-collapse>
+                            <ul class="ml-12 mt-2 space-y-1">
+                                <li>
+                                    <a href="{{ route('admin.pengajuan_barang.index') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm 
+                                        {{ request()->routeIs('admin.pengajuan_barang.index') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Pengajuan Barang
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.pengajuan_barang.set_approvers') }}" 
+                                        class="flex items-center p-2 rounded-lg transition-colors duration-200 text-sm 
+                                        {{ request()->routeIs('admin.pengajuan_barang.set_approvers') ? 'text-amber-400 font-bold' : 'hover:bg-zinc-700' }}">
+                                        Set Approver Barang
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
 
                     {{-- Agenda --}}

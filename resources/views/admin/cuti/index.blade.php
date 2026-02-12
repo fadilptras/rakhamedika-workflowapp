@@ -8,9 +8,30 @@
         </div>
     </div>
 
+    @if (session('success'))
+        <div class="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg flex items-center gap-3 shadow-lg fade-in">
+            <i class="fas fa-check-circle text-xl"></i>
+            <div>
+                <span class="font-bold">Berhasil!</span>
+                <span class="block text-sm opacity-90">{{ session('success') }}</span>
+            </div>
+            {{-- Tombol Close (Opsional, menggunakan AlpineJS jika ada, atau biarkan auto-hilang) --}}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg flex items-center gap-3 shadow-lg">
+            <i class="fas fa-exclamation-circle text-xl"></i>
+            <div>
+                <span class="font-bold">Gagal!</span>
+                <span class="block text-sm opacity-90">{{ session('error') }}</span>
+            </div>
+        </div>
+    @endif
+
     <div class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700">
         
-        {{-- [BARU] TAB NAVIGATION --}}
+        {{-- TAB NAVIGATION (Tetap sama seperti sebelumnya) --}}
         <div class="flex border-b border-zinc-700 px-6 mt-4">
             <a href="{{ route('admin.cuti.index', array_merge(request()->query(), ['tab' => 'pending', 'page' => 1])) }}" 
                class="px-4 py-3 text-sm font-medium transition-colors border-b-2 {{ $activeTab == 'pending' ? 'border-amber-500 text-amber-500' : 'border-transparent text-zinc-400 hover:text-zinc-200' }}">
@@ -30,72 +51,37 @@
             </a>
         </div>
 
-        {{-- Form Filter --}}
+        {{-- Form Filter (Tetap sama seperti sebelumnya) --}}
         <div class="p-6">
             <form action="{{ route('admin.cuti.index') }}" method="GET">
                 <input type="hidden" name="tab" value="{{ $activeTab }}">
-                
-                {{-- 
-                    UBAH DISINI: 
-                    Ganti lg:grid-cols-4 menjadi lg:grid-cols-5 
-                    agar kita punya pembagian ruang yang lebih fleksibel.
-                --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                    
                     <div>
                         <label for="user_id" class="block text-sm font-medium text-zinc-400 mb-1">Karyawan</label>
-                        
                         <div class="relative">
-                            <select name="user_id" id="user_id" 
-                                    class="w-full appearance-none bg-zinc-700 border border-zinc-600 rounded-lg pl-3 pr-10 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-pointer">
+                            <select name="user_id" id="user_id" class="w-full appearance-none bg-zinc-700 border border-zinc-600 rounded-lg pl-3 pr-10 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-pointer">
                                 <option value="">Semua Karyawan</option>
                                 @foreach($users as $user)
                                     <option value="{{ $user->id }}" @selected(request('user_id') == $user->id)>{{ $user->name }}</option>
                                 @endforeach
                             </select>
-                            
-                            {{-- Custom Arrow Icon --}}
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400">
                                 <i class="fas fa-chevron-down text-xs"></i>
                             </div>
                         </div>
                     </div>
-
-                    {{-- Filter Tanggal Mulai (Lebar otomatis mengecil karena grid dibagi 5) --}}
                     <div>
                         <label for="tanggal_mulai" class="block text-sm font-medium text-zinc-400 mb-1">Tanggal Mulai</label>
                         <input type="date" name="tanggal_mulai" id="tanggal_mulai" value="{{ request('tanggal_mulai') }}" class="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm [color-scheme:dark]">
                     </div>
-                    
-                    {{-- Filter Tanggal Akhir (Lebar otomatis mengecil karena grid dibagi 5) --}}
                     <div>
                         <label for="tanggal_akhir" class="block text-sm font-medium text-zinc-400 mb-1">Tanggal Akhir</label>
                         <input type="date" name="tanggal_akhir" id="tanggal_akhir" value="{{ request('tanggal_akhir') }}" class="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm [color-scheme:dark]">
                     </div>
-
-                    {{-- Bagian Tombol Filter --}}
-                    {{-- 
-                        TAMBAHKAN: class "lg:col-span-2" 
-                        Ini akan membuat area tombol mengambil jatah 2 kolom, 
-                        memberikan ruang yang cukup agar tombol "Cetak Rekap" tidak turun ke bawah.
-                    --}}
                     <div class="flex items-end gap-2 lg:col-span-2">
-                        {{-- Tombol Filter --}}
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition">
-                            Filter
-                        </button>
-                        
-                        {{-- Tombol Reset --}}
-                        <a href="{{ route('admin.cuti.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition text-center">
-                            Reset
-                        </a>
-
-                        {{-- Tombol Cetak Rekap --}}
-                        <button type="submit" 
-                                formaction="{{ route('admin.cuti.downloadRekapPdf') }}" 
-                                formmethod="GET" 
-                                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center justify-center gap-2 whitespace-nowrap" 
-                                title="Download Rekap PDF">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition">Filter</button>
+                        <a href="{{ route('admin.cuti.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition text-center">Reset</a>
+                        <button type="submit" formaction="{{ route('admin.cuti.downloadRekapPdf') }}" formmethod="GET" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center justify-center gap-2 whitespace-nowrap" title="Download Rekap PDF">
                             <i class="fas fa-file-pdf"></i>
                             <span>Cetak Rekap</span>
                         </button>
@@ -113,13 +99,21 @@
                         <th class="px-6 py-3">Jenis Cuti</th>
                         <th class="px-6 py-3">Tanggal</th>
                         <th class="px-6 py-3">Status</th>
-                        <th class="px-6 py-3 text-center">Aksi</th>
+                        <th class="px-6 py-3 text-center">Aksi</th> {{-- Aksi sekarang untuk PDF & Hapus --}}
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-700">
                     @forelse($cutiRequests as $cuti)
-                    <tr class="hover:bg-zinc-700/50 transition">
-                        <td class="px-6 py-4 font-medium text-white">{{ $cuti->user->name }}</td>
+                    <tr class="hover:bg-zinc-700/50 transition group">
+                        
+                        {{-- UBAH: Nama Karyawan jadi Link ke Detail --}}
+                        <td class="px-6 py-4 font-medium">
+                            <a href="{{ route('admin.cuti.show', $cuti) }}" class="text-white hover:text-amber-400 hover:underline transition flex flex-col">
+                                <span class="text-base">{{ $cuti->user->name }}</span>
+                                <span class="text-xs text-zinc-500 font-normal mt-0.5 group-hover:text-amber-500/70">Klik untuk melihat detail</span>
+                            </a>
+                        </td>
+
                         <td class="px-6 py-4 capitalize">{{ $cuti->jenis_cuti }}</td>
                         <td class="px-6 py-4">
                             {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d M Y') }} 
@@ -138,17 +132,25 @@
                                 {{ $cuti->status }}
                             </span>
                         </td>
+                        
+                        {{-- UBAH: Aksi hanya PDF & Hapus --}}
                         <td class="px-6 py-4 text-center">
-                            <div class="flex items-center justify-center gap-4">
-                                {{-- Tombol Lihat Detail --}}
-                                <a href="{{ route('admin.cuti.show', $cuti) }}" class="text-indigo-400 hover:text-indigo-300 transition" title="Lihat Detail">
-                                    <i class="fas fa-file text-lg"></i>
+                            <div class="flex items-center justify-center gap-3">
+                                
+                                {{-- Tombol Download PDF --}}
+                                <a href="{{ route('admin.cuti.download', $cuti) }}" class="text-zinc-400 hover:text-red-400 transition" title="Download Formulir PDF">
+                                    <i class="fas fa-file-pdf text-xl"></i>
                                 </a>
 
-                                {{-- Tombol Download PDF --}}
-                                <a href="{{ route('admin.cuti.download', $cuti) }}" class="text-red-400 hover:text-red-300 transition" title="Download Formulir PDF">
-                                    <i class="fas fa-file-pdf text-lg"></i>
-                                </a>
+                                {{-- Tombol Hapus --}}
+                                <form action="{{ route('admin.cuti.destroy', $cuti->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data cuti ini? Tindakan ini tidak dapat dibatalkan.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-zinc-400 hover:text-red-600 transition" title="Hapus Data">
+                                        <i class="fas fa-trash text-xl"></i>
+                                    </button>
+                                </form>
+
                             </div>
                         </td>
                     </tr>

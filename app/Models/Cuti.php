@@ -18,7 +18,16 @@ class Cuti extends Model
         'alasan',
         'lampiran',
         'status',
-        'catatan_approval', // Kolom baru
+        // 'catatan_approval', // Kolom baru
+        // 'approver_1_id',
+        // 'approver_2_id',
+        // 'status_appr_1',
+        // 'status_appr_2'
+        'status_approver_1',
+        'status_approver_2',
+        'catatan_approval',
+        'tanggal_approve_1',
+        'tanggal_approve_2',
     ];
 
     /**

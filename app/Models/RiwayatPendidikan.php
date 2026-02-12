@@ -18,6 +18,7 @@ class RiwayatPendidikan extends Model
         'nama_institusi',
         'jurusan',
         'tahun_lulus',
+        'file_ijazah',
     ];
 
     // Kita tidak perlu relasi baliknya (belongsTo) untuk form ini

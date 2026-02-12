@@ -77,7 +77,7 @@ class CutiNotification extends Notification
                     'message' => "Pengajuan cuti tanggal $tanggal disetujui.",
                     'icon' => 'fas fa-check-circle',
                     'color' => 'text-green-600',
-                    'url' => route('cuti.show', $this->cuti->id)
+                    'url' => route('cuti.show', $this->cuti->id),
                 ];
             case 'ditolak':
                 return [
@@ -86,7 +86,7 @@ class CutiNotification extends Notification
                     'message' => "Pengajuan cuti tanggal $tanggal ditolak.",
                     'icon' => 'fas fa-times-circle',
                     'color' => 'text-red-600',
-                    'url' => route('cuti.show', $this->cuti->id)
+                    'url' => route('cuti.show', $this->cuti->id),
                 ];
             case 'dibatalkan':
                 return [
@@ -95,7 +95,7 @@ class CutiNotification extends Notification
                     'message' => "$pemohon membatalkan cuti.",
                     'icon' => 'fas fa-ban',
                     'color' => 'text-gray-500',
-                    'url' => route('cuti.show', $this->cuti->id)
+                    'url' => route('cuti.show', $this->cuti->id),
                 ];
             default:
                 return [

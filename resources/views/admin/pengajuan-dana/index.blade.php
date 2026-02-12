@@ -1,18 +1,38 @@
 <x-layout-admin>
     <x-slot:title>Kelola Pengajuan Dana</x-slot:title>
 
-
+    {{-- Header --}}
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Rekap Pengajuan Dana Karyawan</h1>
+            <p class="text-sm text-zinc-400 mt-1">Pantau semua riwayat pengajuan dana yang masuk.</p>
+        </div>
+    </div>
+
+    {{-- [BARU] Notifikasi Sukses/Gagal --}}
+    @if (session('success'))
+        <div class="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg flex items-center gap-3 shadow-lg fade-in">
+            <i class="fas fa-check-circle text-xl"></i>
             <div>
-                <h1 class="text-2xl font-bold text-white">Rekap Pengajuan Dana Karyawan</h1>
-                <p class="text-sm text-zinc-400 mt-1">Pantau semua riwayat pengajuan dana yang masuk.</p>
+                <span class="font-bold">Berhasil!</span>
+                <span class="block text-sm opacity-90">{{ session('success') }}</span>
             </div>
         </div>
+    @endif
+
+    @if (session('error'))
+        <div class="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg flex items-center gap-3 shadow-lg">
+            <i class="fas fa-exclamation-circle text-xl"></i>
+            <div>
+                <span class="font-bold">Gagal!</span>
+                <span class="block text-sm opacity-90">{{ session('error') }}</span>
+            </div>
+        </div>
+    @endif
 
     <div class="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700">
         
-        {{-- [BARU] TAB NAVIGATION --}}
-        {{-- Kita menggunakan request()->query() agar saat pindah tab, filter tanggal/nama tidak hilang --}}
+        {{-- TAB NAVIGATION --}}
         <div class="flex border-b border-zinc-700 px-6 mt-4">
             <a href="{{ route('admin.pengajuan_dana.index', array_merge(request()->query(), ['tab' => 'pending', 'page' => 1])) }}" 
                class="px-4 py-3 text-sm font-medium transition-colors border-b-2 {{ $activeTab == 'pending' ? 'border-amber-500 text-amber-500' : 'border-transparent text-zinc-400 hover:text-zinc-200' }}">
@@ -32,14 +52,13 @@
             </a>
         </div>
 
-{{-- FORM FILTER --}}
+        {{-- FORM FILTER --}}
         <div class="p-6">
             <form method="GET" action="{{ route('admin.pengajuan_dana.index') }}">
                 <input type="hidden" name="tab" value="{{ $activeTab }}">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                    
-                    {{-- 1. DROPDOWN NAMA KARYAWAN (Custom Arrow) --}}
+                    {{-- Dropdown Nama --}}
                     <div class="lg:col-span-2">
                         <label for="karyawan_id" class="block text-sm font-medium text-zinc-400 mb-1">Nama Karyawan</label>
                         <div class="relative">
@@ -51,16 +70,13 @@
                                     </option>
                                 @endforeach
                             </select>
-                            {{-- Icon Panah Custom --}}
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
+                                <i class="fas fa-chevron-down text-xs"></i>
                             </div>
                         </div>
                     </div>
 
-                    {{-- 2. DROPDOWN DIVISI (Custom Arrow) --}}
+                    {{-- Dropdown Divisi --}}
                     <div>
                         <label for="divisi" class="block text-sm font-medium text-zinc-400 mb-1">Divisi</label>
                         <div class="relative">
@@ -72,16 +88,13 @@
                                     </option>
                                 @endforeach
                             </select>
-                            {{-- Icon Panah Custom --}}
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
+                                <i class="fas fa-chevron-down text-xs"></i>
                             </div>
                         </div>
                     </div>
                     
-                    {{-- INPUT TANGGAL (Tidak perlu diubah, icon kalender bawaan browser biasanya sudah oke) --}}
+                    {{-- Input Tanggal --}}
                     <div>
                         <label for="start_date" class="block text-sm font-medium text-zinc-400 mb-1">Dari Tanggal</label>
                         <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full bg-zinc-700 border-zinc-600 rounded-lg text-white px-3 py-2 [color-scheme:dark]">
@@ -93,15 +106,13 @@
                     </div>
                 </div>
 
-                {{-- TOMBOL FILTER (Posisi Kanan) --}}
+                {{-- Tombol Action Filter --}}
                 <div class="mt-4 flex justify-end">
                     <div class="flex items-center gap-2">
-                        <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold py-2 px-4 rounded-lg">Filter</button>
-                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white text-sm font-semibold py-2 px-4 rounded-lg text-center">Reset</a>
-                        <button type="submit" formaction="{{ route('admin.pengajuan_dana.downloadRekapPdf') }}" formmethod="GET" class="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2" title="Download Rekap PDF">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                        <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition">Filter</button>
+                        <a href="{{ route('admin.pengajuan_dana.index') }}" class="bg-zinc-600 hover:bg-zinc-500 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition text-center">Reset</a>
+                        <button type="submit" formaction="{{ route('admin.pengajuan_dana.downloadRekapPdf') }}" formmethod="GET" class="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center justify-center gap-2" title="Download Rekap PDF">
+                            <i class="fas fa-file-pdf"></i>
                             <span>Cetak Rekap</span>
                         </button>
                     </div>
@@ -109,25 +120,35 @@
             </form>
         </div>
 
+        {{-- Tabel Data --}}
         <div class="relative overflow-x-auto">
             <table class="w-full table-fixed text-sm text-left text-zinc-300"> 
                 <thead class="text-xs text-zinc-400 uppercase bg-zinc-700/50">
                     <tr>
                         <th scope="col" class="px-6 py-3 w-[120px]">Tanggal</th> 
-                        <th scope="col" class="px-6 py-3 w-[180px]">Nama Karyawan</th> 
+                        <th scope="col" class="px-6 py-3 w-[200px]">Nama Karyawan</th> 
                         <th scope="col" class="px-6 py-3 w-auto">Judul Pengajuan</th> 
-                        <th scope="col" class="px-6 py-3 w-[180px]">Total Dana</th> 
-                        <th scope="col" class="px-6 py-3 w-[200px]">Status Final</th> 
-                        <th scope="col" class="px-6 py-3 w-[100px] text-center">Aksi</th> 
+                        <th scope="col" class="px-6 py-3 w-[150px]">Total Dana</th> 
+                        <th scope="col" class="px-6 py-3 w-[180px]">Status Final</th> 
+                        <th scope="col" class="px-6 py-3 w-[120px] text-center">Aksi</th> 
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($pengajuanDanas as $pengajuan)
-                    <tr class="bg-zinc-800 border-b border-zinc-700 hover:bg-zinc-700/50">
+                    <tr class="bg-zinc-800 border-b border-zinc-700 hover:bg-zinc-700/50 transition group">
                         <td class="px-6 py-4">{{ $pengajuan->created_at->format('d M Y') }}</td>
-                        <td class="px-6 py-4 font-medium text-white">{{ $pengajuan->user->name }}</td>
+                        
+                        {{-- UBAH: Nama jadi Link --}}
+                        <td class="px-6 py-4 font-medium">
+                            <a href="{{ route('admin.pengajuan_dana.show', $pengajuan) }}" class="text-white hover:text-amber-400 hover:underline transition flex flex-col">
+                                <span class="text-base truncate">{{ $pengajuan->user->name }}</span>
+                                <span class="text-xs text-zinc-500 font-normal mt-0.5 group-hover:text-amber-500/70">Klik untuk melihat detail</span>
+                            </a>
+                        </td>
+                        
                         <td class="px-6 py-4 truncate">{{ $pengajuan->judul_pengajuan }}</td> 
                         <td class="px-6 py-4 font-mono">Rp {{ number_format($pengajuan->total_dana, 0, ',', '.') }}</td>
+                        
                         <td class="px-6 py-4">
                             @if ($pengajuan->status == 'selesai')
                                 <span class="font-bold bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full text-xs">Selesai</span>
@@ -143,21 +164,30 @@
                                 <span class="font-bold bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded-full text-xs">Menunggu Appr 1</span>
                             @endif
                         </td>
+
+                        {{-- UBAH: Aksi PDF & Delete --}}
                         <td class="px-6 py-4 text-center">
-                            <div class="flex items-center justify-center gap-4">
-                                <a href="{{ route('admin.pengajuan_dana.show', $pengajuan) }}" class="text-indigo-400 hover:text-indigo-300 transition" title="Lihat Detail">
-                                    <i class="fas fa-file text-lg"></i>
+                            <div class="flex items-center justify-center gap-3">
+                                
+                                {{-- Tombol Download PDF --}}
+                                <a href="{{ route('admin.pengajuan_dana.downloadPdf', $pengajuan) }}" class="text-zinc-400 hover:text-red-400 transition" title="Download Formulir PDF">
+                                    <i class="fas fa-file-pdf text-xl"></i>
                                 </a>
-                                <a href="{{ route('admin.pengajuan_dana.downloadPdf', $pengajuan) }}" class="text-red-400 hover:text-red-300 transition" title="Download Formulir PDF">
-                                   <i class="fas fa-file-pdf text-lg"></i>
-                                </a>
+
+                                {{-- Tombol Hapus --}}
+                                <form action="{{ route('admin.pengajuan_dana.destroy', $pengajuan->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pengajuan ini? Tindakan ini tidak dapat dibatalkan.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-zinc-400 hover:text-red-600 transition" title="Hapus Data">
+                                        <i class="fas fa-trash text-xl"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
                         <td colspan="6" class="px-6 py-10 text-center text-zinc-500">
-                            {{-- Pesan kosong disesuaikan dengan Tab --}}
                             @if($activeTab == 'pending')
                                 Tidak ada pengajuan yang perlu diproses saat ini.
                             @elseif($activeTab == 'approved')

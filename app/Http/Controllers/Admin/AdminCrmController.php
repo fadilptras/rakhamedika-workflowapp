@@ -274,4 +274,26 @@ class AdminCrmController extends Controller
         }
         return $balance;
     }
+    
+    public function exportClientRecap(Client $client, Request $request)
+    {
+        // 1. Ambil tahun
+        $year = $request->input('year', date('Y'));
+    
+        // 2. Hitung data rekap
+        $calc = $this->calculateRecapData($client, $year);
+    
+        // 3. BERSIHKAN NAMA FILE (Hapus / dan \)
+        // Kita hapus karakter yang dilarang menggunakan str_replace atau preg_replace
+        $safeName = str_replace(['/', '\\'], '_', $client->nama_user);
+        $fileName = 'Laporan_Sales_' . str_replace(' ', '_', $safeName) . '_' . $year . '.xlsx';
+    
+        // 4. Download
+        return Excel::download(new ClientAnnualExport(
+            $client,
+            $calc['recap'],
+            $year,
+            $calc['totals']
+        ), $fileName);
+    }
 }

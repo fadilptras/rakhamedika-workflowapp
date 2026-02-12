@@ -92,9 +92,9 @@
 
                 {{-- TAHAP 1: ATASAN --}}
                 @php
-                    $statusAtasan = $pengajuanBarang->status_atasan;
-                    $catatanAtasan = $pengajuanBarang->catatan_atasan;
-                    $tglAtasan = $pengajuanBarang->atasan_approved_at;
+                    $statusAtasan = $pengajuanBarang->status_appr_1;
+                    $catatanAtasan = $pengajuanBarang->catatan_approver_1;
+                    $tglAtasan = $pengajuanBarang->tanggal_approve_1;
                     $namaAtasan = $pengajuanBarang->approverAtasan->name ?? $pengajuanBarang->user->name; // Fallback jika data lama
 
                     $clsAtasan = match($statusAtasan) {
@@ -135,9 +135,9 @@
 
                 {{-- TAHAP 2: GUDANG --}}
                 @php
-                    $statusGudang = $pengajuanBarang->status_gudang;
-                    $catatanGudang = $pengajuanBarang->catatan_gudang;
-                    $tglGudang = $pengajuanBarang->gudang_approved_at;
+                    $statusGudang = $pengajuanBarang->status_appr_2;
+                    $catatanGudang = $pengajuanBarang->catatan_approver_2;
+                    $tglGudang = $pengajuanBarang->tanggal_approve_2;
                     $namaGudang = $pengajuanBarang->approverGudang->name ?? 'Admin Gudang';
 
                     $clsGudang = match($statusGudang) {

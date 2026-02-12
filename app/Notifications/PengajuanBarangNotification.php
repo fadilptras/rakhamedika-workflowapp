@@ -60,7 +60,7 @@ class PengajuanBarangNotification extends Notification
         $message = '';
         $icon = 'fas fa-box';
         $color = 'text-blue-600';
-        $pemohon = $this->pengajuanBarang->user->name;
+        $pemohon = $this->pengajuanBarang->user?->name ?? 'Sistem'; 
         $judulPengajuan = \Illuminate\Support\Str::limit($this->pengajuanBarang->judul_pengajuan, 30);
 
         switch ($this->tipe) {

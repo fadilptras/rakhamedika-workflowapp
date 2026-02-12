@@ -8,160 +8,187 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AdminPengajuanBarangController extends Controller
 {
     /**
-     * Menampilkan daftar pengajuan barang.
+     * Menampilkan daftar pengajuan barang dengan tabulasi.
      */
     public function index(Request $request)
     {
         $query = PengajuanBarang::with('user')->latest();
-
-        // [BARU] Logika Tabulasi Status
         $activeTab = $request->input('tab', 'pending'); 
 
         switch ($activeTab) {
             case 'pending':
-                // Menampilkan yang sedang berjalan (Menunggu Atasan atau Diproses Gudang)
                 $query->whereIn('status', ['diajukan', 'diproses']);
                 break;
             case 'approved':
-                // Menampilkan yang sudah selesai
                 $query->where('status', 'selesai');
                 break;
             case 'rejected':
-                // Menampilkan yang gagal/batal
                 $query->whereIn('status', ['ditolak', 'dibatalkan']);
-                break;
-            default:
-                // Jika tab='all', tampilkan semua
                 break;
         }
 
-        // Filter Karyawan
         if ($request->filled('karyawan_id')) {
             $query->where('user_id', $request->karyawan_id);
         }
-        // Filter Divisi
-        if ($request->filled('divisi')) {
-            $query->whereHas('user', function($q) use ($request) {
-                $q->where('divisi', $request->divisi);
-            });
-        }
-        // Filter Tanggal
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $startDate = Carbon::parse($request->start_date)->startOfDay();
-            $endDate = Carbon::parse($request->end_date)->endOfDay();
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }
 
-        $pengajuanBarangs = $query->paginate(10)->appends($request->query());
-
-        // Data untuk Dropdown Filter
+        // --- TAMBAHKAN BAGIAN INI ---
+        // Ambil list karyawan untuk dropdown filter
         $karyawanList = User::where('role', 'user')->orderBy('name')->get();
-        $divisiList = User::where('role', 'user')
-                            ->whereNotNull('divisi')
-                            ->select('divisi')
-                            ->distinct()
-                            ->orderBy('divisi')
-                            ->get();
+        
+        // Ambil list divisi (distinct) untuk dropdown filter
+        // Pastikan kolom 'divisi' ada di tabel users
+        $divisiList = User::select('divisi')->whereNotNull('divisi')->distinct()->get();
+        // -----------------------------
 
-        return view('admin.pengajuan-barang.index', [
-            'title' => 'Kelola Pengajuan Barang',
-            'pengajuanBarangs' => $pengajuanBarangs,
-            'karyawanList' => $karyawanList,
-            'divisiList' => $divisiList,
-            'activeTab' => $activeTab // Kirim variable tab ke view
+        $pengajuanBarangs = $query->paginate(10);
+
+        // Tambahkan variabel baru ke compact()
+        return view('admin.pengajuan-barang.index', compact('pengajuanBarangs', 'activeTab', 'karyawanList', 'divisiList'));
+    }
+
+    /**
+     * HALAMAN BARU: Setting approver barang per karyawan.
+     */
+    public function setApprovers()
+    {
+        // Ambil semua user kecuali yang bernama 'Admin Rakha'
+        // Jika ingin mengecualikan user yang sedang login juga, tambahkan: ->where('id', '!=', Auth::id())
+        $potentialApprovers = User::where('name', '!=', 'Admin Rakha')
+                                  ->orderBy('name')
+                                  ->get();
+
+        return view('admin.pengajuan-barang.set-approvers', [
+            'employees' => User::where('role', 'user')->orderBy('name')->get(),
+            'approvers' => $potentialApprovers, // Variable ini sekarang berisi seluruh karyawan
+            'title' => 'Set Approver Pengajuan Barang'
         ]);
     }
 
     /**
-     * Menampilkan detail pengajuan barang.
+     * METHODO BARU: Simpan approver barang.
      */
-    public function show(PengajuanBarang $pengajuanBarang)
+    public function saveApprovers(Request $request)
     {
-        $pengajuanBarang->load(['user', 'approverAtasan', 'approverGudang']);
-
-        return view('admin.pengajuan-barang.show', [
-            'title' => 'Detail Pengajuan Barang',
-            'pengajuanBarang' => $pengajuanBarang,
+        $request->validate([
+            'approver_barang_1.*' => 'nullable|exists:users,id',
+            'approver_barang_2.*' => 'nullable|exists:users,id',
         ]);
+
+        DB::transaction(function () use ($request) {
+            if ($request->has('approver_barang_1')) {
+                foreach ($request->approver_barang_1 as $userId => $val) {
+                    User::where('id', $userId)->update([
+                        'approver_barang_1_id' => $request->approver_barang_1[$userId],
+                        'approver_barang_2_id' => $request->approver_barang_2[$userId] ?? null,
+                    ]);
+                }
+            }
+        });
+
+        return redirect()->back()->with('success', 'Pengaturan Approver Barang berhasil diperbarui.');
     }
 
     /**
-     * Download PDF Satuan.
+     * UPDATE: Logika Approve Barang Dinamis.
      */
-    public function downloadPDF(PengajuanBarang $pengajuanBarang)
+    public function approve(Request $request, $id)
     {
-        $pengajuanBarang->load(['user', 'approverAtasan', 'approverGudang']);
-        
-        $pdf = Pdf::loadView('pdf.pengajuan-barang', compact('pengajuanBarang'));
-        $pdf->setPaper('a4', 'portrait');
-        
-        $namaJudul = \Illuminate\Support\Str::slug($pengajuanBarang->judul_pengajuan, '-');
-        return $pdf->download("Form-Barang-{$pengajuanBarang->id}-{$namaJudul}.pdf");
-    }
+        $pengajuan = PengajuanBarang::findOrFail($id);
+        $user = $pengajuan->user;
+        $adminId = Auth::id();
 
-    /**
-     * Download Rekap PDF (Laporan Bulanan/Filter).
-     */
-    public function downloadRekapPDF(Request $request)
-    {
-        $query = PengajuanBarang::with('user')->latest();
-        
-        // [BARU] Terapkan logika Tab pada PDF juga
-        $activeTab = $request->input('tab', 'pending'); 
-        switch ($activeTab) {
-            case 'pending':
-                $query->whereIn('status', ['diajukan', 'diproses']);
-                break;
-            case 'approved':
-                $query->where('status', 'selesai');
-                break;
-            case 'rejected':
-                $query->whereIn('status', ['ditolak', 'dibatalkan']);
-                break;
+        if ($adminId == $user->approver_barang_1_id) {
+            $pengajuan->update([
+                'status_approver_1' => 'disetujui',
+                'tanggal_approve_1' => now()
+            ]);
+        } elseif ($adminId == $user->approver_barang_2_id) {
+            $pengajuan->update([
+                'status_approver_2' => 'disetujui',
+                'tanggal_approve_2' => now()
+            ]);
+        } else {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses sebagai approver untuk karyawan ini.');
         }
 
-        $startDate = null; $endDate = null;
-        $karyawanId = $request->input('karyawan_id');
-        $divisi = $request->input('divisi');
+        // Jika keduanya setuju, pengajuan selesai
+        if ($pengajuan->status_approver_1 === 'disetujui' && $pengajuan->status_approver_2 === 'disetujui') {
+            $pengajuan->update(['status' => 'selesai']);
+        }
 
-        // Filter Query
+        return redirect()->back()->with('success', 'Persetujuan berhasil diproses.');
+    }
+
+    public function show($id)
+    {
+        $pengajuanBarang = PengajuanBarang::with('user')->findOrFail($id);
+        return view('admin.pengajuan-barang.show', compact('pengajuanBarang'));
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $pengajuan = PengajuanBarang::findOrFail($id);
+        $pengajuan->update([
+            'status' => 'ditolak',
+            'alasan_penolakan' => $request->alasan_penolakan
+        ]);
+
+        return redirect()->back()->with('success', 'Pengajuan barang telah ditolak.');
+    }
+
+    public function downloadPdf($id)
+    {
+        $pengajuan = PengajuanBarang::with('user')->findOrFail($id);
+        $pdf = Pdf::loadView('pdf.pengajuan-barang', compact('pengajuan'));
+        return $pdf->download('Pengajuan_Barang_' . $pengajuan->user->name . '.pdf');
+    }
+
+    public function downloadRekapPdf(Request $request)
+    {
+        $query = PengajuanBarang::with('user');
+
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            $startDate = Carbon::parse($request->start_date)->startOfDay();
-            $endDate = Carbon::parse($request->end_date)->endOfDay();
-            $query->whereBetween('created_at', [$startDate, $endDate]);
+            $query->whereBetween('created_at', [
+                Carbon::parse($request->start_date)->startOfDay(),
+                Carbon::parse($request->end_date)->endOfDay()
+            ]);
         }
-        if ($karyawanId) {
-            $query->where('user_id', $karyawanId);
-        }
-        if ($divisi) {
-            $query->whereHas('user', function($q) use ($divisi) {
-                $q->where('divisi', $divisi);
-            });
+
+        if ($request->filled('karyawan_id')) {
+            $query->where('user_id', $request->karyawan_id);
         }
 
         $pengajuanBarangs = $query->get();
-
-        // Info untuk Header PDF
-        $karyawanName = 'Semua Karyawan';
-        if ($karyawanId) {
-            $karyawan = User::find($karyawanId);
-            $karyawanName = $karyawan ? $karyawan->name : 'Semua Karyawan';
-        }
-        $divisiName = $divisi ?: 'Semua Divisi';
-
-        $pdf = Pdf::loadView('admin.pengajuan-barang.pdf_rekap', compact(
-            'pengajuanBarangs', 
-            'startDate', 
-            'endDate', 
-            'karyawanName', 
-            'divisiName'
-        ));
+        $pdf = Pdf::loadView('admin.pengajuan-barang.pdf_rekap', compact('pengajuanBarangs'));
         
-        $filename = "rekap-pengajuan-barang-" . strtoupper($activeTab) . "-" . Carbon::now()->format('Y-m-d') . ".pdf";
-        return $pdf->download($filename);
+        return $pdf->download('Rekap_Pengajuan_Barang.pdf');
+    }
+
+    /**
+     * Menghapus pengajuan barang beserta lampirannya.
+     */
+    public function destroy($id)
+    {
+        $pengajuan = PengajuanBarang::findOrFail($id);
+
+        // Hapus file lampiran jika ada
+        if ($pengajuan->lampiran) {
+            foreach ($pengajuan->lampiran as $file) {
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($file)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($file);
+                }
+            }
+        }
+
+        // Hapus Data dari Database
+        $pengajuan->delete();
+
+        return redirect()->back()->with('success', 'Data pengajuan barang berhasil dihapus.');
     }
 }

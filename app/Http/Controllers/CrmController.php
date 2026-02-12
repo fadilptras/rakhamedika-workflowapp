@@ -18,11 +18,24 @@ class CrmController extends Controller
     private function hasFullAccess()
     {
         $user = Auth::user();
-        if ($user->jabatan === 'Direktur') return true;
-        
-        // Cek Divisi: Marketing, Operasional, atau gabungannya
-        if ($user->is_kepala_divisi && in_array($user->divisi, ['Marketing', 'Operasional', 'Marketing dan Operasional'])) return true;
-        
+    
+        // 1. Safety check: Kalau user tidak login, langsung tolak
+        if (!$user) {
+            return false;
+        }
+    
+        // 2. Cek Jabatan (Direktur atau Test)
+        if (in_array($user->jabatan, ['Direktur', 'Test'])) {
+            return true;
+        }
+    
+        // 3. Cek Divisi: Harus kepala divisi DAN masuk dalam list divisi tertentu
+        $allowedDivisi = ['Marketing', 'Operasional', 'Marketing dan Operasional'];
+        if ($user->is_kepala_divisi && in_array($user->divisi, $allowedDivisi)) {
+            return true;
+        }
+    
+        // 4. Kalau semua syarat di atas tidak terpenuhi
         return false;
     }
 
@@ -405,10 +418,29 @@ class CrmController extends Controller
     
     public function exportClientRecap(Client $client, Request $request)
     {
+        // 1. Cek Hak Akses
         if ($client->user_id !== Auth::id() && !$this->hasFullAccess()) abort(403);
+        
+        // 2. Ambil tahun dari request
         $year = $request->input('year', date('Y'));
+        
+        // 3. Hitung data rekap
         $calc = $this->calculateRecapData($client, $year);
-        return Excel::download(new ClientAnnualExport($client, $calc['recap'], $year, $calc['totals']), 'Rekap_' . $client->nama_user . '_' . $year . '.xlsx');
+
+        // 4. BERSIHKAN NAMA FILE (Sanitization)
+        // Gunakan str_replace untuk membuang karakter / dan \ agar tidak error
+        $safeClientName = str_replace(['/', '\\'], '_', $client->nama_user);
+        
+        // Gunakan str_replace lagi untuk mengubah spasi menjadi underscore agar nama file lebih rapi
+        $fileName = 'Rekap_' . str_replace(' ', '_', $safeClientName) . '_' . $year . '.xlsx';
+
+        // 5. Download file
+        return Excel::download(new ClientAnnualExport(
+            $client, 
+            $calc['recap'], 
+            $year, 
+            $calc['totals']
+        ), $fileName);
     }
 
     private function calculateRecapData(Client $client, $year)

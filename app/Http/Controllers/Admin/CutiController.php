@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cuti;
 use App\Models\Absensi;
 use App\Models\User;
-use App\Models\Holiday; // [PENTING] Tambahkan Model Holiday
+use App\Models\Holiday;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\CarbonPeriod;
@@ -22,7 +22,6 @@ class CutiController extends Controller
     public function index(Request $request)
     {
         $query = Cuti::with('user')->latest();
-
         $activeTab = $request->input('tab', 'pending'); 
 
         switch ($activeTab) {
@@ -30,7 +29,7 @@ class CutiController extends Controller
                 $query->where('status', 'diajukan');
                 break;
             case 'approved':
-                $query->whereIn('status', ['disetujui', 'diterima']);
+                $query->where('status', 'disetujui');
                 break;
             case 'rejected':
                 $query->where('status', 'ditolak');
@@ -56,6 +55,47 @@ class CutiController extends Controller
         ]);
     }
     
+    /**
+     * HALAMAN BARU: Menampilkan list untuk setting approver cuti.
+     */
+    public function setApprovers()
+    {
+        // Ambil semua user kecuali 'Admin Rakha' agar bisa dipilih sebagai approver
+        $potentialApprovers = User::where('name', '!=', 'Admin Rakha')
+                                  ->orderBy('name')
+                                  ->get();
+
+        return view('admin.cuti.set-approvers', [
+            'employees' => User::where('role', 'user')->orderBy('name')->get(),
+            'approvers' => $potentialApprovers, // Variabel ini sekarang berisi seluruh karyawan (kecuali admin rakha)
+            'title' => 'Set Approver Pengajuan Cuti'
+        ]);
+    }
+
+    /**
+     * METHODO BARU: Menyimpan perubahan approver cuti per karyawan.
+     */
+    public function saveApprovers(Request $request)
+    {
+        $request->validate([
+            'approver_cuti_1.*' => 'nullable|exists:users,id',
+            'approver_cuti_2.*' => 'nullable|exists:users,id',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            if ($request->has('approver_cuti_1')) {
+                foreach ($request->approver_cuti_1 as $userId => $val) {
+                    User::where('id', $userId)->update([
+                        'approver_cuti_1_id' => $request->approver_cuti_1[$userId],
+                        'approver_cuti_2_id' => $request->approver_cuti_2[$userId] ?? null,
+                    ]);
+                }
+            }
+        });
+
+        return redirect()->back()->with('success', 'Pengaturan Approver Cuti berhasil diperbarui.');
+    }
+    
     public function show(Cuti $cuti)
     {
         $title = 'Detail Pengajuan Cuti';
@@ -67,10 +107,16 @@ class CutiController extends Controller
      */
     public function download(Cuti $cuti)
     {
-        $approver = $this->getApprover($cuti->user);
+        // [HAPUS/GANTI BARIS INI]
+        // $approver = $this->getApprover($cuti->user); 
+
+        // [GANTI DENGAN INI]
+        // Ambil Approver 1 dari data user pemohon cuti
+        $approver = User::find($cuti->user->approver_cuti_1_id);
+
         $user = $cuti->user;
         
-        // [UPDATE] Hitung sisa cuti berdasarkan TAHUN PENGAJUAN CUTI tersebut
+        // Hitung sisa cuti berdasarkan TAHUN PENGAJUAN CUTI tersebut
         $tahunCuti = Carbon::parse($cuti->tanggal_mulai)->year;
 
         // Ambil cuti yang disetujui di tahun yang sama dengan cuti ini
@@ -86,7 +132,7 @@ class CutiController extends Controller
 
         $pdf = Pdf::loadView('pdf.cuti', [
             'cuti' => $cuti,
-            'approver' => $approver,
+            'approver' => $approver, // Kirim object user approver ke view
             'sisaCuti' => $sisaCuti
         ]);
         
@@ -94,72 +140,6 @@ class CutiController extends Controller
         return $pdf->download('ADMIN_Formulir-Cuti-' . $cuti->user->name . '.pdf');
     }
 
-    private function getApprover(User $user): ?User
-    {
-        if ($user->jabatan === 'Direktur') return null;
-        if (str_starts_with($user->jabatan, 'Kepala')) return User::where('jabatan', 'Direktur')->first();
-        if ($user->divisi) {
-            $approver = User::where('divisi', $user->divisi)
-                ->where('is_kepala_divisi', true)
-                ->where('id', '!=', $user->id)
-                ->first();
-            if ($approver) return $approver;
-        }
-        return User::where('jabatan', 'Direktur')->first();
-    }
-
-    public function updateStatus(Request $request, Cuti $cuti)
-    {
-        $request->validate([
-            'status' => 'required|in:disetujui,ditolak',
-            'catatan_persetujuan' => 'nullable|string|max:1000',
-            'catatan_penolakan' => 'nullable|string|max:1000',
-        ]);
-
-        $user = Auth::user();
-        $userJabatan = strtolower($user->jabatan);
-        $catatan = $request->status === 'disetujui' ? $request->catatan_persetujuan : $request->catatan_penolakan;
-
-        // Logic Approval (Manajer/HRD) disederhanakan sesuai kode Anda sebelumnya
-        if ($userJabatan === 'manajer' && $cuti->status_manajer === 'diajukan') {
-            $cuti->update([
-                'status_manajer' => $request->status,
-                'catatan_manajer' => $catatan ?? ($request->status === 'disetujui' ? 'Disetujui oleh Manajer' : 'Ditolak oleh Manajer'),
-            ]);
-            if ($request->status === 'ditolak') $cuti->update(['status' => 'ditolak']);
-            return redirect()->route('admin.cuti.show', $cuti)->with('success', 'Status diperbarui Manajer.');
-        }
-
-        if ($userJabatan === 'hrd' || $user->role === 'admin') { 
-            $cuti->update([
-                'status_hrd' => $request->status,
-                'catatan_hrd' => $catatan ?? ($request->status === 'disetujui' ? 'Disetujui oleh HRD' : 'Ditolak oleh HRD'),
-                'status' => $request->status
-            ]);
-
-            // Jika disetujui, Masukkan ke Absensi (SKIP HARI LIBUR & MINGGU)
-            if ($request->status === 'disetujui') {
-                 $period = CarbonPeriod::create($cuti->tanggal_mulai, $cuti->tanggal_selesai);
-                 $holidays = Holiday::whereBetween('tanggal', [$cuti->tanggal_mulai, $cuti->tanggal_selesai])
-                            ->pluck('tanggal')->toArray();
-
-                 foreach ($period as $date) {
-                     // [FIX] Jangan buat absen cuti di hari libur/minggu
-                     if ($date->isSunday() || in_array($date->format('Y-m-d'), $holidays)) {
-                        continue;
-                     }
-
-                     Absensi::updateOrCreate(
-                         ['user_id' => $cuti->user_id, 'tanggal' => $date->format('Y-m-d')],
-                         ['status' => 'cuti', 'keterangan' => 'Cuti ' . $cuti->jenis_cuti . ': ' . $cuti->alasan, 'jam_masuk' => '00:00:00']
-                     );
-                 }
-            }
-            return redirect()->route('admin.cuti.show', $cuti)->with('success', 'Status diperbarui Admin/HRD.');
-        }
-
-        return redirect()->route('admin.cuti.show', $cuti)->with('error', 'Aksi tidak diizinkan.');
-    }
 
     /**
      * [PENTING] Halaman Pengaturan Jatah Cuti
@@ -243,8 +223,7 @@ class CutiController extends Controller
     }
 
     /**
-     * [PENTING] Download Laporan Sisa Cuti
-     * Update logika agar sama persis dengan tampilan web
+     * Download Laporan Sisa Cuti
      */
     public function downloadPengaturanPDF()
     {
@@ -301,5 +280,30 @@ class CutiController extends Controller
             }
         }
         return $totalDays;
+    }
+
+    /**
+     * Menghapus pengajuan cuti.
+     */
+    public function destroy($id)
+    {
+        $cuti = Cuti::findOrFail($id);
+
+        // Opsi: Hapus file lampiran jika ada
+        if ($cuti->lampiran && \Illuminate\Support\Facades\Storage::disk('public')->exists($cuti->lampiran)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($cuti->lampiran);
+        }
+
+        // Opsi: Hapus data absensi terkait jika statusnya sudah disetujui
+        if ($cuti->status == 'disetujui') {
+            Absensi::where('user_id', $cuti->user_id)
+                ->where('status', 'cuti')
+                ->whereBetween('tanggal', [$cuti->tanggal_mulai, $cuti->tanggal_selesai])
+                ->delete();
+        }
+
+        $cuti->delete();
+
+        return redirect()->back()->with('success', 'Data pengajuan cuti berhasil dihapus.');
     }
 }

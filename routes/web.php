@@ -57,12 +57,18 @@ Route::middleware('auth')->group(function () {
     Route::patch('/absen/lembur/keluar/{lembur}', [AbsenController::class, 'updateLemburKeluar'])->name('absen.lembur.keluar');
 
     // Cuti
-    Route::get('/cuti', [CutiController::class, 'create'])->name('cuti.create'); // Nama diubah dari 'cuti' menjadi 'cuti.create'
-    Route::post('/cuti', [CutiController::class, 'store'])->name('cuti.store');
-    Route::get('/cuti/{cuti}', [CutiController::class, 'show'])->name('cuti.show');
-    Route::match(['PUT', 'PATCH'], '/cuti/{cuti}/status', [CutiController::class, 'updateStatus'])->name('cuti.updateStatus');
-    Route::post('/cuti/{cuti}/cancel', [CutiController::class, 'cancel'])->name('cuti.cancel');
-    Route::get('/cuti/{cuti}/download', [CutiController::class, 'download'])->name('cuti.download');
+    Route::prefix('cuti')->name('cuti.')->group(function () {
+        Route::get('/', [CutiController::class, 'index'])->name('index');
+        Route::get('/create', [CutiController::class, 'create'])->name('create');
+        Route::post('/', [CutiController::class, 'store'])->name('store');
+        
+        // UBAH INI: Tambahkan kata 'detail' agar tidak bentrok dengan route lain
+        Route::get('/detail/{cuti}', [CutiController::class, 'show'])->name('show'); 
+        
+        Route::put('/{cuti}/status', [CutiController::class, 'updateStatus'])->name('updateStatus');
+        Route::post('/{cuti}/cancel', [CutiController::class, 'cancel'])->name('cancel');
+        Route::get('/{cuti}/download', [CutiController::class, 'download'])->name('download');
+    });
 
     // Route Approval Cuti (Ini yang mentrigger notifikasi 'disetujui'/'ditolak')
     Route::post('/cuti/{cuti}/approve', [AdminCutiController::class, 'approve'])->name('cuti.approve');
@@ -148,9 +154,11 @@ Route::controller(CrmController::class)->group(function () {
             // Halaman Detail
             Route::get('/{pengajuanBarang}', 'show')->name('show');
             
-            // Action Approve & Reject
-            Route::post('/{pengajuanBarang}/approve', 'approve')->name('approve');
-            Route::post('/{pengajuanBarang}/reject', 'reject')->name('reject');
+            // [PERBAIKAN] Ganti route approve/reject lama dengan satu route updateStatus
+            // Pastikan form di View (users.detail-pengajuan-barang) action-nya mengarah ke route ini
+            Route::patch('/{pengajuanBarang}/status', 'updateStatus')->name('updateStatus');
+
+            // Download & Cancel
             Route::get('/{pengajuanBarang}/download', 'download')->name('download');
             Route::post('/{pengajuanBarang}/cancel', 'cancel')->name('cancel');
         });
@@ -165,7 +173,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::prefix('employees')->name('employees.')->group(function () {
         Route::get('/', [UserController::class, 'indexByRole'])->defaults('role', 'user')->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
-        Route::post('/update', [UserController::class, 'update'])->name('update');
+        Route::put('/update', [UserController::class, 'update'])->name('update');
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
 
         // Kepala Divisi
@@ -204,10 +212,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::prefix('cuti')->name('cuti.')->group(function () {
     Route::get('/', [AdminCutiController::class, 'index'])->name('index');
     Route::get('/rekap-pdf', [AdminCutiController::class, 'downloadRekapPDF'])->name('downloadRekapPdf');
+    Route::get('/set-approvers', [AdminCutiController::class, 'setApprovers'])->name('set_approvers');
+    Route::post('/set-approvers', [AdminCutiController::class, 'saveApprovers'])->name('set_approvers.save');
     Route::get('/pengaturan-pdf', [AdminCutiController::class, 'downloadPengaturanPDF'])->name('downloadPengaturanPDF');
     Route::get('/pengaturan', [AdminCutiController::class, 'pengaturanCuti'])->name('pengaturan');
     Route::post('/pengaturan', [AdminCutiController::class, 'updatePengaturanCuti'])->name('updatePengaturan');
     Route::get('/{cuti}', [AdminCutiController::class, 'show'])->name('show');
+    Route::delete('/{cuti}', [AdminCutiController::class, 'destroy'])->name('destroy');
     Route::get('/{cuti}/download', [AdminCutiController::class, 'download'])->name('download');
     });
 
@@ -216,6 +227,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [AdminPengajuanDanaController::class, 'index'])->name('index');
         Route::get('/rekap-pdf', [AdminPengajuanDanaController::class, 'downloadRekapPDF'])->name('downloadRekapPdf');
         Route::get('/{pengajuanDana}', [AdminPengajuanDanaController::class, 'show'])->name('show');
+        Route::delete('/{pengajuanDana}', [AdminPengajuanDanaController::class, 'destroy'])->name('destroy');
         Route::get('/{pengajuanDana}/download', [AdminPengajuanDanaController::class, 'downloadPDF'])->name('downloadPdf');
         Route::get('/pengaturan/approvers', [AdminPengajuanDanaController::class, 'showSetApprovers'])->name('set_approvers.index');
         Route::post('/pengaturan/approvers', [AdminPengajuanDanaController::class, 'saveSetApprovers'])->name('set_approvers.save');
@@ -276,16 +288,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{client}/export', 'exportClientRecap')->name('client.export');
     });
     
+    // Pengajuan Barang (Admin)
     Route::prefix('pengajuan-barang')->name('pengajuan_barang.')->group(function() {
         Route::get('/', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'index'])->name('index');
         Route::get('/rekap-pdf', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'downloadRekapPDF'])->name('downloadRekapPdf');
+        Route::get('/set-approvers', [AdminPengajuanBarangController::class, 'setApprovers'])->name('set_approvers'); // Sesuaikan method
+        Route::post('/set-approvers', [AdminPengajuanBarangController::class, 'saveApprovers'])->name('set_approvers.save');
         Route::get('/{pengajuanBarang}', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'show'])->name('show');
+        Route::delete('/{pengajuanBarang}', [AdminPengajuanBarangController::class, 'destroy'])->name('destroy');
         Route::get('/{pengajuanBarang}/download', [App\Http\Controllers\Admin\AdminPengajuanBarangController::class, 'downloadPDF'])->name('downloadPdf');
     });
-
-
+    
     Route::resource('holidays', HolidayController::class);
-
 
     
 });

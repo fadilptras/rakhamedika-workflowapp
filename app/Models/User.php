@@ -33,10 +33,16 @@ class User extends Authenticatable
         'divisi',
         'is_kepala_divisi',
 
-        // Approver
+        // Approver pengajuan dana
         'approver_1_id',
         'approver_2_id',
         'manager_keuangan_id',
+
+        // approver pengajuan barang
+        'approver_barang_1_id', 'approver_barang_2_id',
+
+        // approver pengajuan cuti
+        'approver_cuti_1_id', 'approver_cuti_2_id',
 
         // Informasi Pribadi
         'nomor_telepon',
@@ -60,9 +66,15 @@ class User extends Authenticatable
         'alamat_domisili',
         'kontak_darurat_hubungan',
         'npwp',
+        'file_npwp',
+        'file_ktp',
         'ptkp',
         'bpjs_kesehatan',
+        'file_bpjs_kesehatan',
         'bpjs_ketenagakerjaan',
+        'file_bpjs_ketenagakerjaan',
+
+         // Informasi Bank
         'nama_bank',
         'nomor_rekening',
         'pemilik_rekening',
@@ -136,5 +148,20 @@ class User extends Authenticatable
     public function pengajuanBarangs(): HasMany
     {
         return $this->hasMany(PengajuanBarang::class);
+    }
+
+    public function approverCuti1(): BelongsTo {
+        return $this->belongsTo(User::class, 'approver_cuti_1_id');
+    }
+    public function approverCuti2(): BelongsTo {
+        return $this->belongsTo(User::class, 'approver_cuti_2_id');
+    }
+
+    // Relasi untuk Barang
+    public function approverBarang1(): BelongsTo {
+        return $this->belongsTo(User::class, 'approver_barang_1_id');
+    }
+    public function approverBarang2(): BelongsTo {
+        return $this->belongsTo(User::class, 'approver_barang_2_id');
     }
 }
