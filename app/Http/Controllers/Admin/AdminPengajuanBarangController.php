@@ -37,47 +37,42 @@ class AdminPengajuanBarangController extends Controller
             $query->where('user_id', $request->karyawan_id);
         }
 
-        // --- TAMBAHKAN BAGIAN INI ---
         // Ambil list karyawan untuk dropdown filter
         $karyawanList = User::where('role', 'user')->orderBy('name')->get();
         
         // Ambil list divisi (distinct) untuk dropdown filter
-        // Pastikan kolom 'divisi' ada di tabel users
         $divisiList = User::select('divisi')->whereNotNull('divisi')->distinct()->get();
-        // -----------------------------
 
         $pengajuanBarangs = $query->paginate(10);
 
-        // Tambahkan variabel baru ke compact()
         return view('admin.pengajuan-barang.index', compact('pengajuanBarangs', 'activeTab', 'karyawanList', 'divisiList'));
     }
 
     /**
-     * HALAMAN BARU: Setting approver barang per karyawan.
+     * Setting approver barang per karyawan.
      */
     public function setApprovers()
     {
-        // Ambil semua user kecuali yang bernama 'Admin Rakha'
-        // Jika ingin mengecualikan user yang sedang login juga, tambahkan: ->where('id', '!=', Auth::id())
         $potentialApprovers = User::where('name', '!=', 'Admin Rakha')
                                   ->orderBy('name')
                                   ->get();
 
         return view('admin.pengajuan-barang.set-approvers', [
             'employees' => User::where('role', 'user')->orderBy('name')->get(),
-            'approvers' => $potentialApprovers, // Variable ini sekarang berisi seluruh karyawan
+            'approvers' => $potentialApprovers, 
             'title' => 'Set Approver Pengajuan Barang'
         ]);
     }
 
     /**
-     * METHODO BARU: Simpan approver barang.
+     * Simpan approver barang.
      */
     public function saveApprovers(Request $request)
     {
         $request->validate([
             'approver_barang_1.*' => 'nullable|exists:users,id',
             'approver_barang_2.*' => 'nullable|exists:users,id',
+            'approver_barang_3.*' => 'nullable|exists:users,id',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -86,6 +81,7 @@ class AdminPengajuanBarangController extends Controller
                     User::where('id', $userId)->update([
                         'approver_barang_1_id' => $request->approver_barang_1[$userId],
                         'approver_barang_2_id' => $request->approver_barang_2[$userId] ?? null,
+                        'approver_barang_3_id' => $request->approver_barang_3[$userId] ?? null,
                     ]);
                 }
             }
@@ -94,60 +90,30 @@ class AdminPengajuanBarangController extends Controller
         return redirect()->back()->with('success', 'Pengaturan Approver Barang berhasil diperbarui.');
     }
 
-    /**
-     * UPDATE: Logika Approve Barang Dinamis.
-     */
-    public function approve(Request $request, $id)
-    {
-        $pengajuan = PengajuanBarang::findOrFail($id);
-        $user = $pengajuan->user;
-        $adminId = Auth::id();
-
-        if ($adminId == $user->approver_barang_1_id) {
-            $pengajuan->update([
-                'status_approver_1' => 'disetujui',
-                'tanggal_approve_1' => now()
-            ]);
-        } elseif ($adminId == $user->approver_barang_2_id) {
-            $pengajuan->update([
-                'status_approver_2' => 'disetujui',
-                'tanggal_approve_2' => now()
-            ]);
-        } else {
-            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses sebagai approver untuk karyawan ini.');
-        }
-
-        // Jika keduanya setuju, pengajuan selesai
-        if ($pengajuan->status_approver_1 === 'disetujui' && $pengajuan->status_approver_2 === 'disetujui') {
-            $pengajuan->update(['status' => 'selesai']);
-        }
-
-        return redirect()->back()->with('success', 'Persetujuan berhasil diproses.');
-    }
-
     public function show($id)
     {
         $pengajuanBarang = PengajuanBarang::with('user')->findOrFail($id);
         return view('admin.pengajuan-barang.show', compact('pengajuanBarang'));
     }
 
-    public function reject(Request $request, $id)
+    public function downloadPdf($id) // Ubah ke $id untuk memastikan pencarian manual
     {
-        $pengajuan = PengajuanBarang::findOrFail($id);
-        $pengajuan->update([
-            'status' => 'ditolak',
-            'alasan_penolakan' => $request->alasan_penolakan
-        ]);
+        // Cari data berdasarkan ID, jika tidak ada akan error 404 (lebih baik daripada PDF kosong)
+        // Muat semua relasi: user (pemohon), dan para approver
+        $pengajuan = PengajuanBarang::with(['user', 'approver1', 'approver2', 'approver3'])
+                    ->findOrFail($id);
+        
+        // Pastikan variabel yang dikirim ke view adalah 'pengajuanBarang' 
+        // sesuai dengan yang diminta oleh file pengajuan-barang.blade.php kamu
+        $pdf = Pdf::loadView('pdf.pengajuan-barang', [
+            'pengajuanBarang' => $pengajuan
+        ])->setPaper('a4', 'portrait');
 
-        return redirect()->back()->with('success', 'Pengajuan barang telah ditolak.');
-    }
+        $userName = str_replace(' ', '_', $pengajuan->user->name ?? 'User_Dihapus');
+        $fileName = 'Pengajuan_Barang_' . $userName . '_' . str_pad($pengajuan->id, 4, '0', STR_PAD_LEFT) . '.pdf';
 
-    public function downloadPdf($id)
-    {
-        $pengajuan = PengajuanBarang::with('user')->findOrFail($id);
-        $pdf = Pdf::loadView('pdf.pengajuan-barang', compact('pengajuan'));
-        return $pdf->download('Pengajuan_Barang_' . $pengajuan->user->name . '.pdf');
-    }
+        return $pdf->download($fileName);
+    }       
 
     public function downloadRekapPdf(Request $request)
     {

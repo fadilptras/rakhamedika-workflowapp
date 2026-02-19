@@ -1,190 +1,220 @@
 <x-layout-users>
-    <x-slot:title>{{ $title }}</x-slot:title>
+    <x-slot:title>Detail Pengajuan Cuti</x-slot:title>
     
-    {{-- Font Awesome untuk ikon --}}
+    {{-- Ikon (Font Awesome) --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <div class="bg-gray-100 font-sans bg-gradient-to-br from-sky-50 to-blue-100 p-0 md:p-0 min-h-screen">
-        <div class="max-w-4xl mx-auto">
-            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
+    <div class="bg-gradient-to-br from-sky-50 to-blue-100 min-h-screen p-0 md:p-8">
+        <div class="container mx-auto max-w-5xl">
+
+            {{-- 1. NAVIGASI & AKSI --}}
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+                <a href="{{ route('cuti.create') }}" 
+                   class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#001A6E] rounded-xl shadow-lg hover:bg-[#0B1D51] hover:shadow-xl transition-all duration-300 w-full sm:w-auto">
+                    <i class="fas fa-arrow-left"></i>
+                    Kembali ke Riwayat
+                </a>
+
                 
-                {{-- HEADER HALAMAN --}}
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-200 mb-6">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Detail Pengajuan Cuti</h1>
-                        <p class="text-sm text-gray-500 mt-1">Diajukan pada {{ $cuti->created_at->format('d F Y, H:i') }}</p>
-                    </div>
-                    
-                    <div class="mt-4 sm:mt-0 flex flex-wrap gap-3">
-                        <a href="{{ route('cuti.create') }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors">
-                            <i class="fas fa-arrow-left"></i> Kembali
-                        </a>
+                <a href="{{ route('cuti.download', $cuti->id) }}" 
+                   class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-xl shadow-lg hover:bg-red-700 hover:shadow-xl transition-all duration-300 w-full sm:w-auto">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Cetak PDF</span>
+                </a>
+            
+            </div>
 
-                        <a href="{{ route('cuti.download', $cuti) }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
-                            <i class="fas fa-file-pdf"></i> Cetak PDF
-                        </a>
-                    </div>
-                </div>
-
-                <div class="space-y-6">
-                    {{-- Status Pengajuan (Logic Updated) --}}
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Status Pengajuan</h3>
-                        @if ($cuti->status == 'diajukan')
-                            <p class="flex items-center text-base font-medium text-yellow-600">
-                                <i class="fas fa-clock fa-fw mr-3"></i>
-                                <span>
-                                    Menunggu persetujuan dari: 
-                                    <span class="font-bold ml-1">
-                                        @if($cuti->status_approver_1 == 'menunggu')
-                                            {{ $approver1->name ?? 'Atasan 1' }}
-                                        @else
-                                            {{ $approver2->name ?? 'Atasan 2' }}
-                                        @endif
-                                    </span>
-                                </span>
-                            </p>
-                        @elseif($cuti->status == 'disetujui')
-                            <p class="flex items-center text-base font-medium text-green-600">
-                                <i class="fas fa-check-circle fa-fw mr-3"></i>
-                                Pengajuan telah disetujui.
-                            </p>
-                        @elseif($cuti->status == 'dibatalkan')
-                            <p class="flex items-center text-base font-medium text-gray-600">
-                                <i class="fas fa-ban fa-fw mr-3"></i>
-                                <span>Pengajuan ini telah dibatalkan oleh <strong>{{ $cuti->user->name }}</strong>.</span>
-                            </p>
-                        @else
-                            <p class="flex items-center text-base font-medium text-red-600">
-                                <i class="fas fa-times-circle fa-fw mr-3"></i>
-                                Pengajuan ditolak.
-                            </p>
-                        @endif
-                    </div>
-
-                    {{-- Informasi Detail --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
-                        {{-- Detail Cuti --}}
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Detail Cuti</h3>
-                            <dl class="space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <dt class="text-gray-500">Jenis Cuti</dt>
-                                    <dd class="font-semibold text-gray-900">{{ ucfirst($cuti->jenis_cuti) }}</dd>
-                                </div>
-                                <div class="flex justify-between">
-                                    <dt class="text-gray-500">Tanggal Mulai</dt>
-                                    <dd class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d F Y') }}</dd>
-                                </div>
-                                <div class="flex justify-between">
-                                    <dt class="text-gray-500">Tanggal Selesai</dt>
-                                    <dd class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d F Y') }}</dd>
-                                </div>
-                                <div class="flex justify-between">
-                                    <dt class="text-gray-500">Total Durasi</dt>
-                                    <dd class="font-semibold text-gray-900">
-                                        {{-- Menghitung hari kerja secara dinamis atau dari controller --}}
-                                        {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($cuti->tanggal_selesai)) + 1 }} Hari
-                                    </dd>
-                                </div>
-                            </dl>
-                        </div>
-                        {{-- Detail Pemohon --}}
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Diajukan Oleh</h3>
-                            <dl class="space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <dt class="text-gray-500">Nama</dt>
-                                    <dd class="font-semibold text-gray-900">{{ $cuti->user->name }}</dd>
-                                </div>
-                                <div class="flex justify-between">
-                                    <dt class="text-gray-500">Divisi</dt>
-                                    <dd class="font-semibold text-gray-900">{{ $cuti->user->divisi ?? '-' }}</dd>
-                                </div>
-                                <div class="flex justify-between">
-                                    <dt class="text-gray-500">Jabatan</dt>
-                                    <dd class="font-semibold text-gray-900">{{ $cuti->user->jabatan }}</dd>
-                                </div>
-                            </dl>
-                        </div>
-                    </div>
-
-                    {{-- Alasan --}}
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-800">Alasan Pengajuan</h3>
-                        <div class="mt-2 text-sm text-gray-700 bg-gray-50 p-4 rounded-lg border">
-                            <p>{{ $cuti->alasan }}</p>
-                        </div>
-                    </div>
-
-                    {{-- Catatan Approval --}}
-                    @if($cuti->catatan_approval)
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800">Catatan dari Atasan</h3>
-                            <div class="mt-2 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-gray-700">
-                                <p>{{ $cuti->catatan_approval }}</p>
+            {{-- 2. HEADER UTAMA --}}
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden mb-6">
+                <div class="p-6 md:p-8 bg-[#001A6E] text-white">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-5">
+                            <div class="h-14 w-14 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm">
+                                <i class="fas fa-calendar-alt text-3xl text-white"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-2xl font-bold tracking-tight">Pengajuan Cuti {{ $cuti->jenis_cuti }}</h1>
+                                <p class="text-slate-300 text-sm mt-1">
+                                    Diajukan pada {{ $cuti->created_at->translatedFormat('d F Y, H:i') }} WIB
+                                </p>
                             </div>
                         </div>
-                    @endif
-
-                    {{-- FORM TINDAKAN APPROVER (Logic Updated) --}}
-                    @php
-                        $userLoggedIn = Auth::user();
-                        $pemohon = $cuti->user;
-                        $showForm = false;
-
-                        if ($cuti->status == 'diajukan') {
-                            // Cek giliran Atasan 1
-                            if ($pemohon->approver_cuti_1_id == $userLoggedIn->id && $cuti->status_approver_1 == 'menunggu') {
-                                $showForm = true;
-                            } 
-                            // Cek giliran Atasan 2 (Muncul jika Atasan 1 sudah Beres/Skipped)
-                            elseif ($pemohon->approver_cuti_2_id == $userLoggedIn->id && $cuti->status_approver_2 == 'menunggu') {
-                                if ($cuti->status_approver_1 == 'disetujui' || $cuti->status_approver_1 == 'skipped') {
-                                    $showForm = true;
-                                }
-                            }
-                        }
-                    @endphp
-
-                    @if ($showForm)
-                        <div class="pt-6 border-t border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Tindakan Persetujuan</h3>
-                            <form action="{{ route('cuti.updateStatus', $cuti) }}" method="POST">
-                                @csrf
-                                @method('PUT')
-                                <div class="space-y-4">
-                                    <div>
-                                        <label for="catatan_approval" class="block text-sm font-medium text-gray-700 mb-1">Catatan (Opsional)</label>
-                                        <textarea name="catatan_approval" id="catatan_approval" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2" placeholder="Berikan alasan..."></textarea>
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <button type="submit" name="status" value="disetujui" class="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 transition-all">
-                                            <i class="fas fa-check mr-2"></i> Setujui
-                                        </button>
-                                        <button type="submit" name="status" value="ditolak" class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition-all">
-                                            <i class="fas fa-times mr-2"></i> Tolak
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
+                        
+                        <div>
+                            @php
+                                $statusClass = match($cuti->status) {
+                                    'disetujui' => 'bg-green-500 shadow-green-500/30',
+                                    'ditolak' => 'bg-red-500 shadow-red-500/30',
+                                    'proses_finalisasi' => 'bg-purple-500 shadow-purple-500/30',
+                                    'dibatalkan' => 'bg-slate-500 shadow-slate-500/30',
+                                    default => 'bg-blue-500 shadow-blue-500/30',
+                                };
+                                $label = str_replace('_', ' ', $cuti->status);
+                            @endphp
+                            <span class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold shadow-lg text-white uppercase tracking-wider {{ $statusClass }}">
+                                {{ $label }}
+                            </span>
                         </div>
-                    @endif
-
-                    {{-- Tombol Pembatalan (Untuk Pemilik) --}}
-                    @if(Auth::id() == $cuti->user_id && $cuti->status == 'diajukan')
-                    <div class="pt-6 border-t border-gray-200 mt-4">
-                        <form action="{{ route('cuti.cancel', $cuti) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pengajuan cuti ini?');">
-                            @csrf
-                            <button type="submit" class="inline-flex items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 transition-all">
-                                <i class="fas fa-ban mr-2"></i> Batalkan Pengajuan Cuti
-                            </button>
-                        </form>
                     </div>
-                    @endif
-
                 </div>
             </div>
+
+            {{-- 3. INFO PENGAJUAN & TIMELINE --}}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                {{-- INFO DETAIL --}}
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden h-full flex flex-col">
+                        <div class="px-5 py-4 border-b border-slate-100 bg-[#D0E1FD]">
+                            <h2 class="text-base font-bold text-slate-800 flex items-center">
+                                <i class="fas fa-info-circle text-slate-700 mr-2"></i> Detail Pengajuan
+                            </h2>
+                        </div>
+                        <div class="p-5 text-sm space-y-4 flex-grow">
+                            <div>
+                                <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest block">Pemohon</span>
+                                <span class="font-bold text-slate-800">{{ $cuti->user->name ?? 'N/A' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest block">Rentang Tanggal</span>
+                                <span class="font-bold text-slate-800">
+                                    {{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d/m/Y') }}
+                                </span>
+                                <p class="text-blue-600 font-bold mt-1 text-xs">{{ $cuti->total_hari }} Hari Kerja</p>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest block">Alasan</span>
+                                <p class="text-slate-700 italic mt-1 leading-relaxed">"{{ $cuti->alasan }}"</p>
+                            </div>
+                            @if($cuti->lampiran)
+                            <div class="pt-2">
+                                <a href="{{ asset('storage/' . $cuti->lampiran) }}" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-bold text-xs transition-colors">
+                                    <i class="fas fa-paperclip mr-1"></i> Lihat Lampiran Dokumen
+                                </a>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- TIMELINE PROGRESS --}}
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden h-full">
+                        <div class="px-5 py-3 border-b border-slate-100 bg-[#D0E1FD]">
+                            <h2 class="text-sm font-bold text-slate-800 flex items-center">
+                                <i class="fas fa-tasks text-slate-700 mr-2 text-lg"></i> Timeline Persetujuan
+                            </h2>
+                        </div>
+
+                        <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {{-- TAHAP 1 --}}
+                            <div class="rounded-lg border border-slate-200 p-4 bg-slate-50 border-l-[4px] {{ $cuti->status_approver_1 == 'disetujui' ? 'border-l-green-500' : ($cuti->status_approver_1 == 'ditolak' ? 'border-l-red-500' : 'border-l-yellow-400') }}">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tahap 1 (Atasan)</span>
+                                <h4 class="text-xs font-bold text-slate-800 truncate mt-1">{{ $cuti->approver1->name ?? 'N/A' }}</h4>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase {{ $cuti->status_approver_1 == 'disetujui' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                        {{ $cuti->status_approver_1 }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- TAHAP 2 --}}
+                            <div class="rounded-lg border border-slate-200 p-4 bg-slate-50 border-l-[4px] {{ $cuti->status_approver_2 == 'disetujui' ? 'border-l-green-500' : ($cuti->status_approver_2 == 'ditolak' ? 'border-l-red-500' : 'border-l-yellow-400') }}">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tahap 2 (Manager)</span>
+                                <h4 class="text-xs font-bold text-slate-800 truncate mt-1">{{ $cuti->approver2->name ?? 'N/A' }}</h4>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase {{ $cuti->status_approver_2 == 'disetujui' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                        {{ $cuti->status_approver_2 }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- TAHAP 3 (FINAL) --}}
+                            <div class="rounded-lg border border-slate-200 p-4 bg-slate-50 border-l-[4px] {{ $cuti->status_approver_3 == 'disetujui' ? 'border-l-green-500' : ($cuti->status_approver_3 == 'ditolak' ? 'border-l-red-500' : 'border-l-yellow-400') }}">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tahap 3 (Final)</span>
+                                <h4 class="text-xs font-bold text-slate-800 truncate mt-1">{{ $cuti->approver3->name ?? 'N/A' }}</h4>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase {{ $cuti->status_approver_3 == 'disetujui' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                        {{ $cuti->status_approver_3 }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- CATATAN PENINJAU --}}
+                        @if($cuti->catatan_approver_1 || $cuti->catatan_approver_2 || $cuti->catatan_approver_3)
+                        <div class="px-5 pb-5">
+                            <div class="p-3 bg-slate-100 rounded-lg space-y-2">
+                                <h5 class="text-[10px] font-bold text-slate-500 uppercase">Catatan Peninjau:</h5>
+                                @if($cuti->catatan_approver_1) <p class="text-[11px] text-slate-700"><strong>App 1:</strong> {{ $cuti->catatan_approver_1 }}</p> @endif
+                                @if($cuti->catatan_approver_2) <p class="text-[11px] text-slate-700"><strong>App 2:</strong> {{ $cuti->catatan_approver_2 }}</p> @endif
+                                @if($cuti->catatan_approver_3) <p class="text-[11px] text-slate-700"><strong>Final:</strong> {{ $cuti->catatan_approver_3 }}</p> @endif
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            {{-- 4. FORM TINDAKAN (LOGIKA URUTAN) --}}
+            @php
+                $user = Auth::user();
+                $isAppr1 = ($user->id == $cuti->approver_cuti_1_id && $cuti->status_approver_1 == 'menunggu' && $cuti->status == 'diajukan');
+                $isAppr2 = ($user->id == $cuti->approver_cuti_2_id && $cuti->status_approver_1 == 'disetujui' && $cuti->status_approver_2 == 'menunggu');
+                $isAppr3 = ($user->id == $cuti->approver_cuti_3_id && $cuti->status_approver_2 == 'disetujui' && $cuti->status_approver_3 == 'menunggu');
+                
+                $showForm = $isAppr1 || $isAppr2 || $isAppr3;
+            @endphp
+
+            @if($showForm)
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 border-t-4 border-t-blue-500 mb-8 animate-pulse-subtle">
+                <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center">
+                    <i class="fas fa-gavel text-slate-800 mr-2"></i> Tindakan Persetujuan {{ $isAppr3 ? '(Finalisasi)' : '' }}
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {{-- FORM SETUJU --}}
+                    <form action="{{ route('cuti.updateStatus', $cuti->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="bg-green-50 p-6 rounded-2xl border border-green-100 text-center h-full flex flex-col hover:shadow-md transition-all">
+                            <label class="block text-sm font-bold text-green-800 mb-3">Setujui Pengajuan Cuti</label>
+                            <textarea name="catatan" rows="3" class="w-full p-3 border border-green-200 rounded-xl mb-4 text-sm focus:ring-green-500 focus:border-green-500 bg-white" placeholder="Berikan catatan persetujuan (opsional)..."></textarea>
+                            <input type="hidden" name="status" value="disetujui">
+                            <button type="submit" class="mt-auto w-full bg-green-600 text-white font-bold py-3.5 rounded-xl hover:bg-green-700 transition shadow-md active:scale-95">
+                                <i class="fas fa-check-circle mr-2"></i> Setujui Sekarang
+                            </button>
+                        </div>
+                    </form>
+
+                    {{-- FORM TOLAK --}}
+                    <form action="{{ route('cuti.updateStatus', $cuti->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="bg-red-50 p-6 rounded-2xl border border-red-100 text-center h-full flex flex-col hover:shadow-md transition-all">
+                            <label class="block text-sm font-bold text-red-800 mb-3">Tolak Pengajuan <span class="text-red-500">*</span></label>
+                            <textarea name="catatan" rows="3" class="w-full p-3 border border-red-200 rounded-xl mb-4 text-sm focus:ring-red-500 focus:border-red-500 bg-white" placeholder="Alasan penolakan wajib diisi..." required></textarea>
+                            <input type="hidden" name="status" value="ditolak">
+                            <button type="submit" class="mt-auto w-full bg-red-600 text-white font-bold py-3.5 rounded-xl hover:bg-red-700 transition shadow-md active:scale-95">
+                                <i class="fas fa-times-circle mr-2"></i> Tolak Pengajuan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @endif
+
+            {{-- 5. BATALKAN (JIKA PEMILIK) --}}
+            @if(Auth::id() == $cuti->user_id && $cuti->status == 'diajukan' && $cuti->status_approver_1 == 'menunggu')
+            <div class="text-center mb-10">
+                <form action="{{ route('cuti.cancel', $cuti) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pengajuan cuti ini?');">
+                    @csrf
+                    <button type="submit" class="text-slate-500 hover:text-red-600 text-xs font-bold transition-all uppercase tracking-widest border-b border-dotted border-slate-400 hover:border-red-600 pb-1">
+                        <i class="fas fa-trash-alt mr-1"></i> Batalkan Pengajuan Saya
+                    </button>
+                </form>
+            </div>
+            @endif
+
         </div>
     </div>
 </x-layout-users>

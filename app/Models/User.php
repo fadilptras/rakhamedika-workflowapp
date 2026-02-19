@@ -39,10 +39,10 @@ class User extends Authenticatable
         'manager_keuangan_id',
 
         // approver pengajuan barang
-        'approver_barang_1_id', 'approver_barang_2_id',
+        'approver_barang_1_id', 'approver_barang_2_id', 'approver_barang_3_id',
 
         // approver pengajuan cuti
-        'approver_cuti_1_id', 'approver_cuti_2_id',
+        'approver_cuti_1_id', 'approver_cuti_2_id', 'approver_cuti_3_id',
 
         // Informasi Pribadi
         'nomor_telepon',
@@ -156,6 +156,9 @@ class User extends Authenticatable
     public function approverCuti2(): BelongsTo {
         return $this->belongsTo(User::class, 'approver_cuti_2_id');
     }
+    public function approverCuti3(): BelongsTo {
+        return $this->belongsTo(User::class, 'approver_cuti_3_id');
+    }
 
     // Relasi untuk Barang
     public function approverBarang1(): BelongsTo {
@@ -163,5 +166,8 @@ class User extends Authenticatable
     }
     public function approverBarang2(): BelongsTo {
         return $this->belongsTo(User::class, 'approver_barang_2_id');
+    }
+    public function approverBarang3(): BelongsTo {
+        return $this->belongsTo(User::class, 'approver_barang_3_id');
     }
 }

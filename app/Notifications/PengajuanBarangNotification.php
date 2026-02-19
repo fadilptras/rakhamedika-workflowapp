@@ -82,6 +82,14 @@ class PengajuanBarangNotification extends Notification
                 $icon = 'fas fa-times-circle';
                 $color = 'text-red-600';
                 break;
+            case 'lanjut_final':
+                $header = "🔔 *PENGAJUAN BARANG: PERLU FINALISASI*";
+                $pesan = "Pengajuan *'{$judul}'* dari *{$pemohon}* telah disetujui di tahap 2. Mohon lakukan review final.";
+                break;
+            case 'disetujui_final':
+                $header = "✅ *PENGAJUAN BARANG SELESAI*";
+                $pesan = "Selamat! Pengajuan barang *'{$judul}'* Anda telah disetujui sepenuhnya.";
+                break;
             case 'baru':
             default:
                 $title = 'Pengajuan Barang Baru';

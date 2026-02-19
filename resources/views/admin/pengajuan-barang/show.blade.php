@@ -86,17 +86,14 @@
                 </div>
             </div>
 
-            {{-- KOLOM KANAN: ALUR PERSETUJUAN (2 TAHAP: ATASAN -> GUDANG) --}}
+            {{-- Ganti bagian Alur Persetujuan (Kolom Kanan) dengan ini --}}
+
             <div class="lg:col-span-1 space-y-6 border-t lg:border-t-0 lg:border-l border-zinc-700 pt-6 lg:pt-0 lg:pl-8">
                 <h3 class="text-lg font-semibold text-white mb-3">Alur Persetujuan</h3>
 
                 {{-- TAHAP 1: ATASAN --}}
                 @php
                     $statusAtasan = $pengajuanBarang->status_appr_1;
-                    $catatanAtasan = $pengajuanBarang->catatan_approver_1;
-                    $tglAtasan = $pengajuanBarang->tanggal_approve_1;
-                    $namaAtasan = $pengajuanBarang->approverAtasan->name ?? $pengajuanBarang->user->name; // Fallback jika data lama
-
                     $clsAtasan = match($statusAtasan) {
                         'disetujui' => 'text-emerald-400',
                         'ditolak' => 'text-red-400',
@@ -112,86 +109,79 @@
                 @endphp
                 <div>
                     <label class="block text-sm font-medium text-zinc-400 mb-1">
-                        Atasan Langsung: <span class="text-zinc-300">{{ $namaAtasan }}</span>
+                        Atasan Langsung: <span class="text-zinc-300">{{ $pengajuanBarang->approverAtasan->name ?? $pengajuanBarang->user->name }}</span>
                     </label>
                     <p class="flex items-center font-medium {{ $clsAtasan }}">
-                        <i class="fas {{ $iconAtasan }} mr-2 w-4 text-center"></i> {{ ucfirst($statusAtasan) }}
+                        <i class="fas {{ $iconAtasan }} mr-2 w-4 text-center"></i> {{ ucfirst($statusAtasan ?? 'Menunggu') }}
                     </p>
-                    
-                    @if($tglAtasan || $catatanAtasan)
-                    <div class="mt-2 space-y-1">
-                        @if($tglAtasan)
-                            <p class="text-xs text-zinc-400 flex items-center">
-                                <i class="fas fa-calendar-alt fa-fw mr-2 text-zinc-500"></i>
-                                <span>{{ \Carbon\Carbon::parse($tglAtasan)->translatedFormat('d M Y, H:i') }}</span>
-                            </p>
-                        @endif
-                        @if($catatanAtasan)
-                            <div class="text-xs text-zinc-500 border-l-2 border-zinc-600 pl-2 italic">"{{ $catatanAtasan }}"</div>
-                        @endif
-                    </div>
+                    @if($pengajuanBarang->tanggal_approve_1)
+                        <p class="text-xs text-zinc-500 mt-1"><i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::parse($pengajuanBarang->tanggal_approve_1)->translatedFormat('d M Y, H:i') }}</p>
                     @endif
                 </div>
 
-                {{-- TAHAP 2: GUDANG --}}
+                {{-- TAHAP 2: GUDANG/DIREKTUR --}}
                 @php
                     $statusGudang = $pengajuanBarang->status_appr_2;
-                    $catatanGudang = $pengajuanBarang->catatan_approver_2;
-                    $tglGudang = $pengajuanBarang->tanggal_approve_2;
-                    $namaGudang = $pengajuanBarang->approverGudang->name ?? 'Admin Gudang';
-
                     $clsGudang = match($statusGudang) {
                         'disetujui' => 'text-emerald-400',
                         'ditolak' => 'text-red-400',
                         'skipped' => 'text-zinc-400',
                         default => 'text-yellow-400',
                     };
-                    $iconGudang = match($statusGudang) {
-                        'disetujui' => 'fa-check-circle',
-                        'ditolak' => 'fa-times-circle',
-                        'skipped' => 'fa-minus-circle',
-                        default => 'fa-clock',
+                @endphp
+                <div>
+                    <label class="block text-sm font-medium text-zinc-400 mb-1">
+                        Gudang/Logistik: <span class="text-zinc-300">{{ $pengajuanBarang->approverGudang->name ?? 'Admin Gudang' }}</span>
+                    </label>
+                    <p class="flex items-center font-medium {{ $clsGudang }}">
+                        <i class="fas {{ match($statusGudang){'disetujui'=>'fa-check-circle','ditolak'=>'fa-times-circle','skipped'=>'fa-minus-circle',default=>'fa-clock'} }} mr-2 w-4 text-center"></i> 
+                        {{ ucfirst($statusGudang ?? 'Menunggu') }}
+                    </p>
+                    @if($pengajuanBarang->tanggal_approve_2)
+                        <p class="text-xs text-zinc-500 mt-1"><i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::parse($pengajuanBarang->tanggal_approve_2)->translatedFormat('d M Y, H:i') }}</p>
+                    @endif
+                </div>
+
+                {{-- TAHAP 3: MANAJER KEUANGAN (BARU) --}}
+                @php
+                    $statusKeuangan = $pengajuanBarang->status_appr_3;
+                    $clsKeuangan = match($statusKeuangan) {
+                        'disetujui' => 'text-emerald-400',
+                        'ditolak' => 'text-red-400',
+                        'skipped' => 'text-zinc-400',
+                        default => 'text-yellow-400',
                     };
                 @endphp
                 <div>
                     <label class="block text-sm font-medium text-zinc-400 mb-1">
-                        Gudang/Logistik: <span class="text-zinc-300">{{ $namaGudang }}</span>
+                        Manajer Keuangan: <span class="text-zinc-300">{{ $pengajuanBarang->approver3->name ?? 'Belum Ditentukan' }}</span>
                     </label>
-                    <p class="flex items-center font-medium {{ $clsGudang }}">
-                        <i class="fas {{ $iconGudang }} mr-2 w-4 text-center"></i> {{ ucfirst($statusGudang) }}
+                    <p class="flex items-center font-medium {{ $clsKeuangan }}">
+                        <i class="fas {{ match($statusKeuangan){'disetujui'=>'fa-check-circle','ditolak'=>'fa-times-circle','skipped'=>'fa-minus-circle',default=>'fa-clock'} }} mr-2 w-4 text-center"></i> 
+                        {{ ucfirst($statusKeuangan ?? 'Menunggu') }}
                     </p>
-                    
-                    @if($tglGudang || $catatanGudang)
-                    <div class="mt-2 space-y-1">
-                        @if($tglGudang)
-                            <p class="text-xs text-zinc-400 flex items-center">
-                                <i class="fas fa-calendar-alt fa-fw mr-2 text-zinc-500"></i>
-                                <span>{{ \Carbon\Carbon::parse($tglGudang)->translatedFormat('d M Y, H:i') }}</span>
-                            </p>
-                        @endif
-                        @if($catatanGudang)
-                            <div class="text-xs text-zinc-500 border-l-2 border-zinc-600 pl-2 italic">"{{ $catatanGudang }}"</div>
-                        @endif
-                    </div>
+                    @if($pengajuanBarang->tanggal_approved_3)
+                        <p class="text-xs text-zinc-500 mt-1"><i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::parse($pengajuanBarang->tanggal_approved_3)->translatedFormat('d M Y, H:i') }}</p>
                     @endif
                 </div>
 
                 {{-- STATUS FINAL --}}
                 <div class="border-t border-zinc-700 pt-4">
                     <label class="block text-sm font-medium text-zinc-400 mb-1">Status Final</label>
-                    @if ($pengajuanBarang->status == 'selesai')
-                        <p class="text-xl font-bold flex items-center text-emerald-400"><i class="fas fa-check-circle mr-2"></i> SELESAI</p>
-                    @elseif ($pengajuanBarang->status == 'ditolak')
-                        <p class="text-xl font-bold flex items-center text-red-400"><i class="fas fa-times-circle mr-2"></i> DITOLAK</p>
-                    @elseif ($pengajuanBarang->status == 'diproses')
-                        <p class="text-xl font-bold flex items-center text-blue-400"><i class="fas fa-sync-alt fa-spin mr-2"></i> DIPROSES</p>
-                    @elseif ($pengajuanBarang->status == 'dibatalkan')
-                        <p class="text-xl font-bold flex items-center text-zinc-400"><i class="fas fa-ban mr-2"></i> DIBATALKAN</p>
-                    @else
-                        <p class="text-xl font-bold flex items-center text-yellow-400"><i class="fas fa-hourglass-start mr-2"></i> DIAJUKAN</p>
-                    @endif
+                    @php
+                        $finalMatch = match($pengajuanBarang->status) {
+                            'selesai' => ['text-emerald-400', 'fa-check-circle', 'SELESAI'],
+                            'ditolak' => ['text-red-400', 'fa-times-circle', 'DITOLAK'],
+                            'dibatalkan' => ['text-zinc-400', 'fa-ban', 'DIBATALKAN'],
+                            'diproses' => ['text-blue-400', 'fa-sync-alt fa-spin', 'DIPROSES'],
+                            default => ['text-yellow-400', 'fa-hourglass-start', 'DIAJUKAN'],
+                        };
+                    @endphp
+                    <p class="text-xl font-bold flex items-center {{ $finalMatch[0] }}">
+                        <i class="fas {{ $finalMatch[1] }} mr-2"></i> {{ $finalMatch[2] }}
+                    </p>
                 </div>
             </div>
-        </div>
+            
     </div>
 </x-layout-admin>

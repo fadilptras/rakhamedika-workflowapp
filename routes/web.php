@@ -67,7 +67,7 @@ Route::middleware('auth')->group(function () {
         
         Route::put('/{cuti}/status', [CutiController::class, 'updateStatus'])->name('updateStatus');
         Route::post('/{cuti}/cancel', [CutiController::class, 'cancel'])->name('cancel');
-        Route::get('/{cuti}/download', [CutiController::class, 'download'])->name('download');
+        Route::get('/{cuti}/download', [CutiController::class, 'downloadPdf'])->name('download');
     });
 
     // Route Approval Cuti (Ini yang mentrigger notifikasi 'disetujui'/'ditolak')

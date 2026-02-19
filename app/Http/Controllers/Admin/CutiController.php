@@ -56,30 +56,30 @@ class CutiController extends Controller
     }
     
     /**
-     * HALAMAN BARU: Menampilkan list untuk setting approver cuti.
+     * Menampilkan list untuk setting approver cuti.
      */
     public function setApprovers()
     {
-        // Ambil semua user kecuali 'Admin Rakha' agar bisa dipilih sebagai approver
         $potentialApprovers = User::where('name', '!=', 'Admin Rakha')
                                   ->orderBy('name')
                                   ->get();
 
         return view('admin.cuti.set-approvers', [
             'employees' => User::where('role', 'user')->orderBy('name')->get(),
-            'approvers' => $potentialApprovers, // Variabel ini sekarang berisi seluruh karyawan (kecuali admin rakha)
+            'approvers' => $potentialApprovers, 
             'title' => 'Set Approver Pengajuan Cuti'
         ]);
     }
 
     /**
-     * METHODO BARU: Menyimpan perubahan approver cuti per karyawan.
+     * Menyimpan perubahan approver cuti per karyawan.
      */
     public function saveApprovers(Request $request)
     {
         $request->validate([
             'approver_cuti_1.*' => 'nullable|exists:users,id',
             'approver_cuti_2.*' => 'nullable|exists:users,id',
+            'approver_cuti_3.*' => 'nullable|exists:users,id',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -88,6 +88,7 @@ class CutiController extends Controller
                     User::where('id', $userId)->update([
                         'approver_cuti_1_id' => $request->approver_cuti_1[$userId],
                         'approver_cuti_2_id' => $request->approver_cuti_2[$userId] ?? null,
+                        'approver_cuti_3_id' => $request->approver_cuti_3[$userId] ?? null,
                     ]);
                 }
             }
@@ -107,16 +108,12 @@ class CutiController extends Controller
      */
     public function download(Cuti $cuti)
     {
-        // [HAPUS/GANTI BARIS INI]
-        // $approver = $this->getApprover($cuti->user); 
-
-        // [GANTI DENGAN INI]
-        // Ambil Approver 1 dari data user pemohon cuti
-        $approver = User::find($cuti->user->approver_cuti_1_id);
+        $approver1 = User::find($cuti->user->approver_cuti_1_id);
+        $approver2 = User::find($cuti->user->approver_cuti_2_id);
+        $approver3 = User::find($cuti->user->approver_cuti_3_id);
 
         $user = $cuti->user;
         
-        // Hitung sisa cuti berdasarkan TAHUN PENGAJUAN CUTI tersebut
         $tahunCuti = Carbon::parse($cuti->tanggal_mulai)->year;
 
         // Ambil cuti yang disetujui di tahun yang sama dengan cuti ini
@@ -132,7 +129,9 @@ class CutiController extends Controller
 
         $pdf = Pdf::loadView('pdf.cuti', [
             'cuti' => $cuti,
-            'approver' => $approver, // Kirim object user approver ke view
+            'approver1' => $approver1,
+            'approver2' => $approver2,
+            'approver3' => $approver3,
             'sisaCuti' => $sisaCuti
         ]);
         
@@ -142,7 +141,6 @@ class CutiController extends Controller
 
 
     /**
-     * [PENTING] Halaman Pengaturan Jatah Cuti
      * Di sini logika hitung sisa cuti diperbaiki agar konsisten.
      */
     public function pengaturanCuti()

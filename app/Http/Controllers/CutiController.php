@@ -2,22 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Absensi;
 use App\Models\Cuti;
-use App\Models\Holiday;
 use App\Models\User;
 use App\Notifications\CutiNotification;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class CutiController extends Controller
 {
+    /**
+     * Menampilkan form pembuatan cuti dan riwayat cuti user.
+     */
     public function create()
     {
         $user = Auth::user();
@@ -30,8 +28,7 @@ class CutiController extends Controller
             ->whereYear('tanggal_mulai', $tahunIni)
             ->get();
 
-        $cutiTerpakai = $this->hitungCutiTerpakai($cutiDisetujui);
-        $terpakaiTahunan = $cutiTerpakai['tahunan'] ?? 0;
+        $terpakaiTahunan = $cutiDisetujui->sum('total_hari');
         $sisaCuti = $totalCuti - $terpakaiTahunan;
 
         $cutiRequests = Cuti::where('user_id', $user->id)
@@ -39,276 +36,189 @@ class CutiController extends Controller
             ->latest()
             ->get();
 
-        return view('users.cuti', compact('title', 'sisaCuti', 'totalCuti', 'terpakaiTahunan', 'cutiRequests'));
+        return view('users.cuti', compact('title', 'sisaCuti', 'terpakaiTahunan', 'cutiRequests'));
     }
 
+    /**
+     * Menyimpan data pengajuan cuti baru.
+     */
     public function store(Request $request)
     {
-        $user = Auth::user();
-
         $request->validate([
             'jenis_cuti' => 'required',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'alasan' => 'required',
-            'lampiran' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'alasan' => 'required|string|max:500',
+            'lampiran' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
-        // Logika Approval Otomatis jika Atasan tidak ada (Skipped)
-        $statusApp1 = $user->approver_cuti_1_id ? 'menunggu' : 'skipped';
-        $statusApp2 = $user->approver_cuti_2_id ? 'menunggu' : 'skipped';
+        $user = Auth::user();
+        
+        // Logika Menghitung Hari Kerja (Opsional, sesuaikan dengan helper Anda)
+        $totalHari = Carbon::parse($request->tanggal_mulai)->diffInDays(Carbon::parse($request->tanggal_selesai)) + 1;
 
-        $statusGlobal = 'diajukan';
-        if ($statusApp1 === 'skipped' && $statusApp2 === 'skipped') {
-            $statusGlobal = 'disetujui';
-        }
-
-        $lampiranPath = $request->file('lampiran') ? $request->file('lampiran')->store('lampiran_cuti', 'public') : null;
+        $path = $request->hasFile('lampiran') ? $request->file('lampiran')->store('lampiran_cuti', 'public') : null;
 
         $cuti = Cuti::create([
             'user_id' => $user->id,
             'jenis_cuti' => $request->jenis_cuti,
             'tanggal_mulai' => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
+            'total_hari' => $totalHari,
             'alasan' => $request->alasan,
-            'lampiran' => $lampiranPath,
-            'status' => $statusGlobal,
-            'status_approver_1' => $statusApp1,
-            'status_approver_2' => $statusApp2,
+            'lampiran' => $path,
+            'status' => 'diajukan',
+            'approver_cuti_1_id' => $user->approver_cuti_1_id,
+            'approver_cuti_2_id' => $user->approver_cuti_2_id,
+            'approver_cuti_3_id' => $user->approver_cuti_3_id, // Finalisasi
+            'status_approver_1' => $user->approver_cuti_1_id ? 'menunggu' : 'skipped',
+            'status_approver_2' => $user->approver_cuti_2_id ? 'menunggu' : 'skipped',
+            'status_approver_3' => $user->approver_cuti_3_id ? 'menunggu' : 'skipped',
         ]);
 
-        if ($statusGlobal === 'disetujui') {
-            $this->syncAbsensiCuti($cuti);
-            return redirect()->route('cuti.create')->with('success', 'Cuti otomatis disetujui karena tidak ada atasan.');
+        // Kirim Notifikasi ke Approver 1
+        if ($user->approverCuti1) {
+            Notification::send($user->approverCuti1, new CutiNotification($cuti, 'baru'));
         }
-
-        // Jalankan logic notifikasi yang Anda minta
-        $this->notifyNextApproverOnCreate($cuti);
 
         return redirect()->route('cuti.create')->with('success', 'Pengajuan cuti berhasil dikirim.');
     }
 
-    public function show(Cuti $cuti)
-    {
-        $user = Auth::user();
-        $cuti->load('user');
-        $pemohon = $cuti->user;
-
-        // Cek Akses: Pemilik, Admin, atau Atasan terkait
-        $isOwner = $user->id === $cuti->user_id;
-        $isAdmin = $user->role === 'admin';
-        $isApprover1 = ($pemohon->approver_cuti_1_id == $user->id);
-        $isApprover2 = ($pemohon->approver_cuti_2_id == $user->id);
-
-        if (!$isOwner && !$isAdmin && !$isApprover1 && !$isApprover2) {
-            abort(403, 'Anda tidak memiliki akses ke detail pengajuan ini.');
-        }
-
-        $approver1 = $pemohon->approver_cuti_1_id ? User::find($pemohon->approver_cuti_1_id) : null;
-        $approver2 = $pemohon->approver_cuti_2_id ? User::find($pemohon->approver_cuti_2_id) : null;
-
-        return view('users.detail-cuti', [
-            'title' => 'Detail Cuti',
-            'cuti' => $cuti,
-            'approver1' => $approver1,
-            'approver2' => $approver2,
-        ]);
-    }
-
-    public function updateStatus(Request $request, Cuti $cuti)
-    {
-        $user = Auth::user();
-        $pemohon = $cuti->user;
-
-        $request->validate([
-            'status' => 'required|in:disetujui,ditolak',
-            'catatan_approval' => 'nullable|string'
-        ]);
-
-        DB::transaction(function () use ($request, $cuti, $user, $pemohon) {
-            $isApprover1 = ($pemohon->approver_cuti_1_id == $user->id);
-            $isApprover2 = ($pemohon->approver_cuti_2_id == $user->id);
-
-            if ($isApprover1) {
-                $cuti->status_approver_1 = $request->status;
-                $cuti->tanggal_approve_1 = now();
-                
-                if ($request->status === 'ditolak') {
-                    $cuti->status = 'ditolak';
-                } elseif ($cuti->status_approver_2 === 'skipped') {
-                    $cuti->status = 'disetujui';
-                    $this->syncAbsensiCuti($cuti);
-                } else {
-                    // Berlanjut ke Approver 2
-                    $this->notifyApprover2($cuti);
-                }
-            } elseif ($isApprover2) {
-                $cuti->status_approver_2 = $request->status;
-                $cuti->tanggal_approve_2 = now();
-                
-                if ($request->status === 'ditolak') {
-                    $cuti->status = 'ditolak';
-                } else {
-                    $cuti->status = 'disetujui';
-                    $this->syncAbsensiCuti($cuti);
-                }
-            }
-
-            $cuti->catatan_approval = $request->catatan_approval;
-            $cuti->save();
-
-            // Kirim notifikasi balik ke pemohon
-            try {
-                $pemohon->notify(new CutiNotification($cuti, $request->status));
-            } catch (\Exception $e) {
-                Log::error("Gagal kirim notif status: " . $e->getMessage());
-            }
-        });
-
-        return redirect()->back()->with('success', 'Status cuti berhasil diperbarui.');
-    }
-
-    private function notifyNextApproverOnCreate(Cuti $cuti): void
-    {
-        try {
-            $pemohon = $cuti->user;
-            // Kirim ke Approver 1 jika ada
-            if ($pemohon->approver_cuti_1_id) {
-                $approver1 = User::find($pemohon->approver_cuti_1_id);
-                if ($approver1) {
-                    $approver1->notify(new CutiNotification($cuti, 'baru'));
-                }
-            } 
-            // Jika Approver 1 tidak ada tapi Approver 2 ada, langsung ke Approver 2
-            elseif ($pemohon->approver_cuti_2_id) {
-                $approver2 = User::find($pemohon->approver_cuti_2_id);
-                if ($approver2) {
-                    $approver2->notify(new CutiNotification($cuti, 'baru'));
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error("Gagal kirim notif buat cuti: " . $e->getMessage());
-        }
-    }
-
-    private function notifyApprover2(Cuti $cuti): void
-    {
-        $pemohon = $cuti->user;
-        if ($pemohon->approver_cuti_2_id) {
-            $approver2 = User::find($pemohon->approver_cuti_2_id);
-            if ($approver2) {
-                $approver2->notify(new CutiNotification($cuti, 'baru'));
-            }
-        }
-    }
-
-    private function hitungCutiTerpakai($cutiCollection): array
-    {
-        $cutiTerpakai = [];
-        $holidays = Holiday::pluck('tanggal')->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
-
-        foreach ($cutiCollection as $cuti) {
-            $days = 0;
-            $period = CarbonPeriod::create($cuti->tanggal_mulai, $cuti->tanggal_selesai);
-            foreach ($period as $date) {
-                if (!$date->isSunday() && !in_array($date->format('Y-m-d'), $holidays)) {
-                    $days++;
-                }
-            }
-            $jenis = strtolower($cuti->jenis_cuti);
-            $cutiTerpakai[$jenis] = ($cutiTerpakai[$jenis] ?? 0) + $days;
-        }
-        return $cutiTerpakai;
-    }
-
-    private function syncAbsensiCuti(Cuti $cuti): void
-    {
-        $holidays = Holiday::pluck('tanggal')->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
-        $period = CarbonPeriod::create($cuti->tanggal_mulai, $cuti->tanggal_selesai);
-
-        foreach ($period as $date) {
-            if ($date->isSunday() || in_array($date->format('Y-m-d'), $holidays)) continue;
-
-            Absensi::updateOrCreate(
-                ['user_id' => $cuti->user_id, 'tanggal' => $date->format('Y-m-d')],
-                [
-                    'status' => 'cuti', 
-                    'keterangan' => 'Cuti: ' . $cuti->jenis_cuti,
-                    // TAMBAHKAN INI agar tidak error 1364
-                    'jam_masuk' => '00:00:00', 
-                    'jam_keluar' => '00:00:00'
-                ]
-            );
-        }
-    }
-
     /**
-     * Membatalkan Pengajuan Cuti
+     * Menampilkan detail cuti (Termasuk akses untuk Approver 3).
      */
-    public function cancel(Cuti $cuti)
-    {
-        if (Auth::id() !== $cuti->user_id) {
-            abort(403);
-        }
-
-        // Jika sudah disetujui sebelumnya, hapus sinkronisasi absensinya
-        if ($cuti->status === 'disetujui') {
-            \App\Models\Absensi::where('user_id', $cuti->user_id)
-                ->where('status', 'cuti')
-                ->whereBetween('tanggal', [$cuti->tanggal_mulai, $cuti->tanggal_selesai])
-                ->delete();
-        }
-
-        $cuti->update([
-            'status' => 'dibatalkan',
-            'status_approver_1' => 'dibatalkan',
-            'status_approver_2' => 'dibatalkan'
-        ]);
-
-        return redirect()->route('cuti.create')->with('success', 'Pengajuan cuti telah berhasil dibatalkan.');
-    }
-
-    /**
-     * Download Formulir Cuti dalam bentuk PDF
-     */
-    public function download(Cuti $cuti)
+    public function show($id)
     {
         $user = Auth::user();
-        $pemohon = $cuti->user;
+        // Eager load semua relasi agar tidak ada data kosong di view
+        $cuti = Cuti::with(['user', 'approver1', 'approver2', 'approver3'])->findOrFail($id);
         
-        // Cek Akses (Pemilik, Admin, atau Approver)
         $isOwner = $user->id === $cuti->user_id;
         $isAdmin = $user->role === 'admin';
-        $isApprover = ($pemohon->approver_cuti_1_id === $user->id || $pemohon->approver_cuti_2_id === $user->id);
+        // Tambahkan pengecekan untuk Approver 3
+        $isApprover = in_array($user->id, [
+            $cuti->approver_cuti_1_id, 
+            $cuti->approver_cuti_2_id, 
+            $cuti->approver_cuti_3_id
+        ]);
 
         if (!$isOwner && !$isAdmin && !$isApprover) {
-            abort(403);
+            abort(403, 'Anda tidak memiliki akses ke pengajuan ini.');
         }
-        
-        $approver1 = $pemohon->approver_cuti_1_id ? User::find($pemohon->approver_cuti_1_id) : null;
-        $approver2 = $pemohon->approver_cuti_2_id ? User::find($pemohon->approver_cuti_2_id) : null;
-        
-        $tahunCuti = \Carbon\Carbon::parse($cuti->tanggal_mulai)->year;
 
-        $cutiDisetujui = Cuti::where('user_id', $pemohon->id)
+        $title = 'Detail Pengajuan Cuti';
+        
+        // Logika Sisa Cuti Pemohon
+        $tahunCuti = Carbon::parse($cuti->tanggal_mulai)->year;
+        $cutiDisetujui = Cuti::where('user_id', $cuti->user_id)
             ->where('status', 'disetujui')
             ->whereYear('tanggal_mulai', $tahunCuti)
             ->get();
-
-        $cutiTerpakai = $this->hitungCutiTerpakai($cutiDisetujui);
-        $terpakaiCount = $cutiTerpakai['tahunan'] ?? 0;
-        $sisaCuti = ($pemohon->jatah_cuti ?? 12) - $terpakaiCount;
-
-        // Pastikan package barryvdh/laravel-dompdf sudah terinstall
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.cuti', [
-            'cuti' => $cuti,
-            'approver1' => $approver1, 
-            'approver2' => $approver2, 
-            'sisaCuti' => $sisaCuti,
-            'user' => $pemohon
-        ]);
         
-        $pdf->setPaper('a4', 'portrait');
-        return $pdf->download('Formulir-Cuti-' . $pemohon->name . '.pdf');
+        $sisaCuti = ($cuti->user->jatah_cuti ?? 12) - $cutiDisetujui->sum('total_hari');
+
+        return view('users.detail-cuti', compact('cuti', 'sisaCuti', 'title'));
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:disetujui,ditolak',
+            'catatan' => 'nullable|string|max:255'
+        ]);
+
+        // Eager load semua relasi agar tidak error saat kirim notif
+        $cuti = Cuti::with(['user', 'approver1', 'approver2', 'approver3'])->findOrFail($id);
+        $user = Auth::user();
+        $statusInput = $request->status;
+
+        // --- ALUR APPROVER 1 ---
+        if ($user->id == $cuti->approver_cuti_1_id && $cuti->status_approver_1 == 'menunggu') {
+            $cuti->update([
+                'status_approver_1' => $statusInput,
+                'catatan_approver_1' => $request->catatan,
+            ]);
+
+            if ($statusInput == 'disetujui') {
+                // KIRIM NOTIF KE APPROVER 2
+                if ($cuti->approver2) {
+                    Notification::send($cuti->approver2, new CutiNotification($cuti, 'baru'));
+                }
+            } else {
+                $cuti->update(['status' => 'ditolak']);
+                Notification::send($cuti->user, new CutiNotification($cuti, 'ditolak'));
+            }
+        } 
+
+        // --- ALUR APPROVER 2 (Hanya bisa jika App 1 sudah setuju) ---
+        elseif ($user->id == $cuti->approver_cuti_2_id && $cuti->status_approver_1 == 'disetujui' && $cuti->status_approver_2 == 'menunggu') {
+            $cuti->update([
+                'status_approver_2' => $statusInput,
+                'catatan_approver_2' => $request->catatan,
+            ]);
+
+            if ($statusInput == 'disetujui') {
+                // KIRIM NOTIF KE APPROVER 3
+                if ($cuti->approver3) {
+                    Notification::send($cuti->approver3, new CutiNotification($cuti, 'baru'));
+                }
+            } else {
+                $cuti->update(['status' => 'ditolak']);
+                Notification::send($cuti->user, new CutiNotification($cuti, 'ditolak'));
+            }
+        }
+
+        // --- ALUR APPROVER 3 / FINAL (Hanya bisa jika App 2 sudah setuju) ---
+        elseif ($user->id == $cuti->approver_cuti_3_id && $cuti->status_approver_2 == 'disetujui' && $cuti->status_approver_3 == 'menunggu') {
+            $cuti->update([
+                'status_approver_3' => $statusInput,
+                'catatan_approver_3' => $request->catatan,
+                'status' => $statusInput // Update status utama pengajuan
+            ]);
+
+            // NOTIF FINAL KE PEMOHON
+            Notification::send($cuti->user, new CutiNotification($cuti, $statusInput));
+        } 
+        
+        else {
+            return redirect()->back()->with('error', 'Otoritas tidak valid atau urutan persetujuan belum sampai ke Anda.');
+        }
+
+        return redirect()->back()->with('success', 'Status pengajuan berhasil diperbarui.');
+    }
+    /**
+     * Download PDF Cuti (Eager Load Relasi).
+     */
+    public function downloadPdf($id)
+    {
+        $cuti = Cuti::with(['user', 'approver1', 'approver2', 'approver3'])->findOrFail($id);
+        
+        // Anda perlu menghitung sisa cuti di sini jika ingin menampilkannya di PDF
+        $user = $cuti->user;
+        $totalCuti = $user->jatah_cuti ?? 12;
+        $terpakai = Cuti::where('user_id', $user->id)
+            ->where('status', 'disetujui')
+            ->whereYear('tanggal_mulai', \Carbon\Carbon::parse($cuti->tanggal_mulai)->year)
+            ->sum('total_hari');
+        $sisaCuti = $totalCuti - $terpakai;
+
+        $pdf = Pdf::loadView('pdf.cuti', [
+            'cuti' => $cuti,
+            'sisaCuti' => $sisaCuti // Tambahkan ini agar tidak undefined
+        ])->setPaper('a4', 'portrait');
+
+        $fileName = 'Cuti_' . ($cuti->user->name ?? 'User') . '_' . $cuti->id . '.pdf';
+        return $pdf->download($fileName);
+    }
+
+    public function cancel(Cuti $cuti)
+    {
+        if (Auth::id() !== $cuti->user_id) abort(403);
+        if ($cuti->status !== 'diajukan') return redirect()->back()->with('error', 'Pengajuan sudah diproses, tidak bisa dibatalkan.');
+
+        $cuti->status = 'dibatalkan';
+        $cuti->save();
+
+        return redirect()->back()->with('success', 'Pengajuan berhasil dibatalkan.');
     }
 }

@@ -20,6 +20,7 @@ class PengajuanBarangController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Validasi input dari form
         $request->validate([
             'judul_pengajuan' => 'required|string|max:255',
             'divisi' => 'required|string|max:255',
@@ -30,43 +31,40 @@ class PengajuanBarangController extends Controller
 
         $user = Auth::user();
 
-        // Olah Rincian Barang
-        $rincian = [];
-        foreach ($request->rincian_deskripsi as $key => $val) {
-            $rincian[] = [
-                'nama_barang' => $val,
-                'jumlah' => $request->rincian_jumlah[$key],
-                'satuan' => $request->rincian_satuan[$key],
-                'keperluan' => $request->rincian_keperluan[$key] ?? '-',
-            ];
-        }
+        // 2. Ambil ID approver dari data user agar variabel terdefinisi
+        $app1 = $user->approver_barang_1_id;
+        $app2 = $user->approver_barang_2_id;
+        $app3 = $user->approver_barang_3_id;
 
-        // Olah Lampiran (Multi-upload)
-        $pathFiles = [];
-        if ($request->hasFile('file_pendukung')) {
-            foreach ($request->file('file_pendukung') as $file) {
-                $pathFiles[] = $file->store('pengajuan-barang', 'public');
-            }
-        }
+        // 3. Identifikasi status awal: jika ID kosong, langsung tandai 'skipped'
+        $st1 = $app1 ? 'menunggu' : 'skipped';
+        $st2 = $app2 ? 'menunggu' : 'skipped';
+        $st3 = $app3 ? 'menunggu' : 'skipped';
 
+        // 4. Buat data pengajuan barang
         $pengajuan = PengajuanBarang::create([
             'user_id' => $user->id,
             'judul_pengajuan' => $request->judul_pengajuan,
             'divisi' => $request->divisi,
-            'rincian_barang' => $rincian,
-            'lampiran' => $pathFiles,
+            'rincian_barang' => $this->parseRincian($request),
+            'lampiran' => $this->uploadFiles($request),
             'status' => 'diajukan',
-            // Logika Approver Otomatis
-            'approver_1_id' => $user->approver_barang_1_id,
-            'status_appr_1' => $user->approver_barang_1_id ? 'menunggu' : 'skipped',
-            'approver_2_id' => $user->approver_barang_2_id,
-            'status_appr_2' => $user->approver_barang_2_id ? 'menunggu' : 'skipped',
+            'approver_barang_1_id' => $app1,
+            'status_appr_1' => $st1,
+            'approver_barang_2_id' => $app2,
+            'status_appr_2' => $st2,
+            'approver_barang_3_id' => $app3,
+            'status_appr_3' => $st3,
         ]);
 
-        $pengajuan->load('user');
-
-        if ($user->approver_barang_1_id) {
-            User::find($user->approver_barang_1_id)->notify(new PengajuanBarangNotification($pengajuan, 'baru'));
+        // 5. Logika Notifikasi Pertama (Melompati yang kosong)
+        // Mencari siapa yang harus menerima notifikasi pertama kali berdasarkan status 'menunggu'
+        if ($st1 === 'menunggu') {
+            $pengajuan->approver1->notify(new PengajuanBarangNotification($pengajuan, 'baru'));
+        } elseif ($st2 === 'menunggu') {
+            $pengajuan->approver2->notify(new PengajuanBarangNotification($pengajuan, 'baru'));
+        } elseif ($st3 === 'menunggu') {
+            $pengajuan->approver3->notify(new PengajuanBarangNotification($pengajuan, 'baru'));
         }
 
         return redirect()->route('pengajuan_barang.index')->with('success', 'Pengajuan berhasil dikirim.');
@@ -77,46 +75,130 @@ class PengajuanBarangController extends Controller
         return view('users.detail-pengajuan-barang', compact('pengajuanBarang'));
     }
 
-    public function updateStatus(Request $request, PengajuanBarang $pengajuanBarang)
+    public function updateStatus(Request $request, $id)
     {
+        $request->validate([
+            'status' => 'required|in:disetujui,ditolak',
+            'alasan' => 'nullable|string|max:255'
+        ]);
+
+        $pengajuanBarang = PengajuanBarang::with(['user', 'approver1', 'approver2', 'approver3'])->findOrFail($id);
         $user = Auth::user();
-        $status = $request->status; // 'disetujui' / 'ditolak'
+        $statusInput = $request->status;
 
-        if ($user->id == $pengajuanBarang->approver_1_id) {
+        // --- LOGIKA APPROVER 1 ---
+        if ($user->id == $pengajuanBarang->approver_barang_1_id && $pengajuanBarang->status_appr_1 == 'menunggu') {
             $pengajuanBarang->update([
-                'status_appr_1' => $status,
+                'status_appr_1' => $statusInput,
                 'catatan_approver_1' => $request->alasan,
-                'tanggal_approved_1' => now(),
             ]);
 
-            if ($status == 'disetujui' && $pengajuanBarang->approver_2_id) {
-                User::find($pengajuanBarang->approver_2_id)->notify(new PengajuanBarangNotification($pengajuanBarang, 'disetujui_atasan'));
+            if ($statusInput == 'disetujui') {
+                // Cari siapa berikutnya yang aktif
+                if ($pengajuanBarang->approver_barang_2_id) {
+                    $pengajuanBarang->approver2->notify(new PengajuanBarangNotification($pengajuanBarang, 'baru'));
+                } elseif ($pengajuanBarang->approver_barang_3_id) {
+                    $pengajuanBarang->update(['status_appr_2' => 'skipped']);
+                    $pengajuanBarang->approver3->notify(new PengajuanBarangNotification($pengajuanBarang, 'baru'));
+                } else {
+                    $pengajuanBarang->update(['status' => 'selesai']);
+                    $pengajuanBarang->user->notify(new PengajuanBarangNotification($pengajuanBarang, 'disetujui_final'));
+                }
+            } else {
+                $pengajuanBarang->update(['status' => 'ditolak']);
+                $pengajuanBarang->user->notify(new PengajuanBarangNotification($pengajuanBarang, 'ditolak'));
             }
-        } elseif ($user->id == $pengajuanBarang->approver_2_id) {
+        }
+
+        // --- LOGIKA APPROVER 2 ---
+        elseif ($user->id == $pengajuanBarang->approver_barang_2_id && $pengajuanBarang->status_appr_2 == 'menunggu') {
             $pengajuanBarang->update([
-                'status_appr_2' => $status,
+                'status_appr_2' => $statusInput,
                 'catatan_approver_2' => $request->alasan,
-                'tanggal_approved_2' => now(),
             ]);
+
+            if ($statusInput == 'disetujui') {
+                if ($pengajuanBarang->approver_barang_3_id) {
+                    $pengajuanBarang->approver3->notify(new PengajuanBarangNotification($pengajuanBarang, 'baru'));
+                } else {
+                    $pengajuanBarang->update(['status' => 'selesai']);
+                    $pengajuanBarang->user->notify(new PengajuanBarangNotification($pengajuanBarang, 'disetujui_final'));
+                }
+            } else {
+                $pengajuanBarang->update(['status' => 'ditolak']);
+                $pengajuanBarang->user->notify(new PengajuanBarangNotification($pengajuanBarang, 'ditolak'));
+            }
         }
 
-        // Final Status Logic
-        if ($status == 'ditolak') {
-            $pengajuanBarang->update(['status' => 'ditolak']);
-        } elseif ($pengajuanBarang->status_appr_1 == 'disetujui' && ($pengajuanBarang->status_appr_2 == 'disetujui' || $pengajuanBarang->status_appr_2 == 'skipped')) {
-            $pengajuanBarang->update(['status' => 'selesai']);
+        // --- LOGIKA APPROVER 3 (FINAL) ---
+        elseif ($user->id == $pengajuanBarang->approver_barang_3_id && $pengajuanBarang->status_appr_3 == 'menunggu') {
+            $pengajuanBarang->update([
+                'status_appr_3' => $statusInput,
+                'catatan_approver_3' => $request->alasan,
+                'status' => ($statusInput == 'disetujui') ? 'selesai' : 'ditolak'
+            ]);
+
+            $pengajuanBarang->user->notify(new PengajuanBarangNotification($pengajuanBarang, ($statusInput == 'disetujui' ? 'disetujui_final' : 'ditolak')));
+        } 
+        
+        else {
+            return redirect()->back()->with('error', 'Otoritas tidak valid atau urutan persetujuan salah.');
         }
 
-        return redirect()->back()->with('success', 'Status berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Status pengajuan barang berhasil diperbarui.');
+    }
+
+
+    private function notifyNext($pengajuan, $stage) {
+        $nextId = $pengajuan->{"approver_barang_{$stage}_id"};
+        if ($nextId) {
+            User::find($nextId)->notify(new PengajuanBarangNotification($pengajuan, 'baru'));
+        } else if ($stage < 3) {
+            $this->notifyNext($pengajuan, $stage + 1); // Cek stage berikutnya jika yang ini null
+        }
     }
 
     public function download(PengajuanBarang $pengajuanBarang)
     {
-        $pdf = Pdf::loadView('pdf.pengajuan-barang', [
+            $pdf = Pdf::loadView('pdf.pengajuan-barang', [
             'pengajuanBarang' => $pengajuanBarang,
-            'approver1' => User::find($pengajuanBarang->approver_1_id),
-            'approver2' => User::find($pengajuanBarang->approver_2_id),
+            'approver1' => User::find($pengajuanBarang->approver_barang_1_id),
+            'approver2' => User::find($pengajuanBarang->approver_barang_2_id),
+            'approver3' => User::find($pengajuanBarang->approver_barang_3_id),
         ]);
         return $pdf->download('Pengajuan_'.$pengajuanBarang->id.'.pdf');
     }
+
+/**
+     * Fungsi Pembantu: Mengolah rincian barang dari form ke format array (JSON)
+     */
+    private function parseRincian(Request $request)
+    {
+        $rincian = [];
+        if ($request->has('rincian_deskripsi')) {
+            foreach ($request->rincian_deskripsi as $index => $deskripsi) {
+                $rincian[] = [
+                    'deskripsi' => $deskripsi,
+                    'satuan' => $request->rincian_satuan[$index] ?? '-',
+                    'jumlah' => $request->rincian_jumlah[$index] ?? 0,
+                ];
+            }
+        }
+        return $rincian;
+    }
+
+    /**
+     * Fungsi Pembantu: Mengurus upload banyak file lampiran
+     */
+    private function uploadFiles(Request $request)
+    {
+        $pathFiles = [];
+        if ($request->hasFile('file_pendukung')) {
+            foreach ($request->file('file_pendukung') as $file) {
+                // Simpan ke storage/app/public/lampiran_barang
+                $pathFiles[] = $file->store('lampiran_barang', 'public');
+            }
+        }
+        return $pathFiles;
+    }    
 }

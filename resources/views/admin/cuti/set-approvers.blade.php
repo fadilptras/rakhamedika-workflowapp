@@ -26,6 +26,7 @@
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-zinc-400 uppercase tracking-wider">Nama Karyawan</th>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-zinc-400 uppercase tracking-wider">Approver Cuti 1</th>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-zinc-400 uppercase tracking-wider">Approver Cuti 2</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-zinc-400 uppercase tracking-wider">HRD</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-700">
@@ -55,6 +56,16 @@
                                             @endforeach
                                         </select>
                                     </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <select name="approver_cuti_3[{{ $employee->id }}]" class="w-full max-w-xs p-2 bg-zinc-700 border border-zinc-600 rounded-lg text-sm text-white focus:ring-amber-500 focus:border-amber-500 approver-select">
+                                        <option value="">-- Tidak Ada --</option>
+                                        @foreach ($approvers as $approver)
+                                            <option value="{{ $approver->id }}" @selected($employee->approver_cuti_3_id == $approver->id)>
+                                                {{ $approver->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </td>
                                 </tr>
                             @empty
                                 <tr>

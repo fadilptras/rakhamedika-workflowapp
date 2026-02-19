@@ -44,6 +44,7 @@
                                     'ditolak' => 'bg-red-500 shadow-red-500/30',
                                     'diproses' => 'bg-blue-500 shadow-blue-500/30',
                                     'dibatalkan' => 'bg-slate-500 shadow-slate-500/30',
+                                    'proses_finalisasi' => 'bg-purple-500 shadow-purple-500/30',
                                     default => 'bg-yellow-500 shadow-yellow-500/30',
                                 };
                             @endphp
@@ -67,7 +68,7 @@
                         <div class="p-5 text-sm space-y-3">
                             <div class="flex justify-between items-center border-b border-slate-50 pb-2">
                                 <span class="text-slate-500">Nama</span>
-                                <span class="font-semibold text-slate-800">{{ $pengajuanBarang->user->name }}</span>
+                                <span class="font-semibold text-slate-800">{{ $pengajuanBarang->user->name ?? 'User Tidak Ditemukan' }}</span>
                             </div>
                             <div class="flex justify-between items-center border-b border-slate-50 pb-2">
                                 <span class="text-slate-500">Divisi</span>
@@ -91,37 +92,32 @@
                             </h2>
                         </div>
 
-                        <div class="p-5 space-y-3">
+                        <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-3">
                             {{-- TAHAP 1 --}}
                             <div class="rounded border border-slate-200 p-3 bg-slate-50 border-l-[3px] {{ $pengajuanBarang->status_appr_1 == 'disetujui' ? 'border-l-green-500' : 'border-l-yellow-400' }}">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tahap 1: Approver 1</span>
-                                        <h4 class="text-sm font-bold text-slate-800 leading-tight">{{ $pengajuanBarang->approver1->name ?? 'Belum Diatur' }}</h4>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $pengajuanBarang->status_appr_1 == 'disetujui' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                        {{ ucfirst($pengajuanBarang->status_appr_1) }}
-                                    </span>
-                                </div>
-                                @if($pengajuanBarang->catatan_approver_1)
-                                    <p class="mt-2 text-xs text-slate-600 italic">"{{ $pengajuanBarang->catatan_approver_1 }}"</p>
-                                @endif
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tahap 1</span>
+                                <h4 class="text-xs font-bold text-slate-800 truncate">{{ $pengajuanBarang->approver1->name ?? 'Belum Diatur' }}</h4>
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold {{ $pengajuanBarang->status_appr_1 == 'disetujui' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                    {{ ucfirst($pengajuanBarang->status_appr_1) }}
+                                </span>
                             </div>
 
                             {{-- TAHAP 2 --}}
                             <div class="rounded border border-slate-200 p-3 bg-slate-50 border-l-[3px] {{ $pengajuanBarang->status_appr_2 == 'disetujui' ? 'border-l-green-500' : 'border-l-yellow-400' }}">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tahap 2: Approver 2</span>
-                                        <h4 class="text-sm font-bold text-slate-800 leading-tight">{{ $pengajuanBarang->approver2->name ?? 'Belum Diatur' }}</h4>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $pengajuanBarang->status_appr_2 == 'disetujui' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                        {{ ucfirst($pengajuanBarang->status_appr_2) }}
-                                    </span>
-                                </div>
-                                @if($pengajuanBarang->catatan_approver_2)
-                                    <p class="mt-2 text-xs text-slate-600 italic">"{{ $pengajuanBarang->catatan_approver_2 }}"</p>
-                                @endif
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tahap 2</span>
+                                <h4 class="text-xs font-bold text-slate-800 truncate">{{ $pengajuanBarang->approver2->name ?? 'Belum Diatur' }}</h4>
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold {{ $pengajuanBarang->status_appr_2 == 'disetujui' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                    {{ ucfirst($pengajuanBarang->status_appr_2) }}
+                                </span>
+                            </div>
+
+                            {{-- TAHAP 3 --}}
+                            <div class="rounded border border-slate-200 p-3 bg-slate-50 border-l-[3px] {{ $pengajuanBarang->status_appr_3 == 'disetujui' ? 'border-l-green-500' : 'border-l-yellow-400' }}">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tahap 3 (Final)</span>
+                                <h4 class="text-xs font-bold text-slate-800 truncate">{{ $pengajuanBarang->approver3->name ?? 'Belum Diatur' }}</h4>
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold {{ $pengajuanBarang->status_appr_3 == 'disetujui' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                    {{ ucfirst($pengajuanBarang->status_appr_3) }}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -157,21 +153,33 @@
                 </div>
             </div>
 
-            {{-- AREA TINDAKAN --}}
+            {{-- FORM TINDAKAN --}}
             @php
                 $user = Auth::user();
-                $showForm = ($user->id == $pengajuanBarang->approver_1_id && $pengajuanBarang->status_appr_1 == 'menunggu') ||
-                            ($user->id == $pengajuanBarang->approver_2_id && $pengajuanBarang->status_appr_1 == 'disetujui' && $pengajuanBarang->status_appr_2 == 'menunggu');
-            @endphp
+                
+                // Status pengecekan apakah tahap sebelumnya sudah 'clear' (disetujui atau skipped)
+                $afterAppr1 = in_array($pengajuanBarang->status_appr_1, ['disetujui', 'skipped']);
+                $afterAppr2 = in_array($pengajuanBarang->status_appr_2, ['disetujui', 'skipped']);
+
+                // Logic siapa yang sedang bertugas approve
+                $isAppr1 = ($user->id == $pengajuanBarang->approver_barang_1_id && $pengajuanBarang->status_appr_1 == 'menunggu');
+                
+                // Approver 2 muncul jika Appr 1 sudah clear
+                $isAppr2 = ($user->id == $pengajuanBarang->approver_barang_2_id && $afterAppr1 && $pengajuanBarang->status_appr_2 == 'menunggu');
+                
+                // Approver 3 muncul jika Appr 2 sudah clear (baik disetujui atau karena Appr 2 null/skipped)
+                $isAppr3 = ($user->id == $pengajuanBarang->approver_barang_3_id && $afterAppr2 && $pengajuanBarang->status_appr_3 == 'menunggu');
+                
+                $showForm = $isAppr1 || $isAppr2 || $isAppr3;
+            @endphp                         
 
             @if($showForm)
             <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 border-t-4 border-t-blue-500 mb-12">
                 <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center">
-                    <i class="fas fa-gavel text-slate-800 mr-2"></i> Tindakan Persetujuan
+                    <i class="fas fa-gavel text-slate-800 mr-2"></i> Tindakan Persetujuan {{ $isAppr3 ? '(Final)' : '' }}
                 </h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {{-- Form Setuju --}}
                     <form action="{{ route('pengajuan_barang.updateStatus', $pengajuanBarang) }}" method="POST">
                         @csrf
                         @method('PATCH')
@@ -183,7 +191,6 @@
                         </div>
                     </form>
 
-                    {{-- Form Tolak --}}
                     <form action="{{ route('pengajuan_barang.updateStatus', $pengajuanBarang) }}" method="POST">
                         @csrf
                         @method('PATCH')

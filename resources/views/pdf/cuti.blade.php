@@ -79,7 +79,7 @@
             padding: 10px;
             background-color: #fafafa;
             border-radius: 4px;
-            min-height: 50px;
+            min-height: 20px;
         }
     </style>
 </head>
@@ -132,54 +132,92 @@
             </tr>
         </table>
 
-        {{-- III. PERSETUJUAN --}}
+        {{-- III. PERSETUJUAN (3 KOLOM) --}}
         <div class="section-title">III. LEMBAR PERSETUJUAN</div>
         <table class="signatures">
             <tr>
-                {{-- KOLOM 1: PEMOHON --}}
+                {{-- KOLOM 1: APPROVER 1 (Atasan Langsung) --}}
                 <td>
-                    <div class="ttd-header">Diajukan oleh,</div>
-                    {{-- Pemohon selalu dianggap 'signed' saat mengajukan --}}
-                    <div class="st-placeholder" style="border:none; margin: 20px 0;">&nbsp;</div> 
+                    <div class="ttd-header">Disetujui oleh (Approver 1),</div>
                     
-                    <p class="ttd-nama">{{ $cuti->user->name }}</p>
-                    <p class="ttd-jabatan">{{ $cuti->user->jabatan ?? 'Karyawan' }}</p>
-                    <p class="ttd-tanggal">{{ $cuti->created_at->translatedFormat('l, d F Y H:i') }} WIB</p>
-                </td>
-
-                {{-- KOLOM 2: ATASAN / APPROVER --}}
-                <td>
-                    <div class="ttd-header">Disetujui oleh (Atasan Langsung),</div>
-
-                    @if($cuti->status == 'disetujui')
+                    @if($cuti->status_approver_1 == 'disetujui')
                         <div class="st-approved">[ DISETUJUI ]</div>
-                        <p class="ttd-nama">{{ $approver->name ?? 'Atasan' }}</p>
-                        <p class="ttd-jabatan">{{ $approver->jabatan ?? '-' }}</p>
-                        {{-- Menggunakan updated_at sebagai waktu persetujuan --}}
-                        <p class="ttd-tanggal">{{ $cuti->updated_at->translatedFormat('l, d F Y H:i') }} WIB</p>
+                        <p class="ttd-nama">{{ $cuti->approver1->name ?? 'Atasan' }}</p>
+                        <p class="ttd-jabatan">{{ $cuti->approver1->jabatan ?? 'Atasan Langsung' }}</p>
+                        <p class="ttd-tanggal">{{ $cuti->updated_at->translatedFormat('d/m/Y H:i') }} WIB</p>
                     
-                    @elseif($cuti->status == 'ditolak')
+                    @elseif($cuti->status_approver_1 == 'ditolak')
                         <div class="st-rejected">[ DITOLAK ]</div>
-                        <p class="ttd-nama">{{ $approver->name ?? 'Atasan' }}</p>
-                        <p class="ttd-tanggal">{{ $cuti->updated_at->translatedFormat('l, d F Y H:i') }} WIB</p>
+                        <p class="ttd-nama">{{ $cuti->approver1->name ?? 'Atasan' }}</p>
+                        <p class="ttd-tanggal">{{ $cuti->updated_at->translatedFormat('d/m/Y H:i') }} WIB</p>
 
-                    @elseif($cuti->status == 'dibatalkan')
-                        <div class="st-placeholder">( Dibatalkan oleh Pemohon )</div>
-
+                    @elseif($cuti->status_approver_1 == 'skipped')
+                        <div class="st-placeholder">( Dilewati )</div>
                     @else
                         <div class="st-placeholder">( Menunggu Persetujuan )</div>
-                        <p class="ttd-nama" style="text-decoration:none; color:#999;">{{ $approver->name ?? 'Atasan' }}</p>
+                    @endif
+                </td>
+
+                {{-- KOLOM 2: APPROVER 2 (Manager) --}}
+                <td>
+                    <div class="ttd-header">Disetujui oleh (Approver 2),</div>
+
+                    @if($cuti->status_approver_2 == 'disetujui')
+                        <div class="st-approved">[ DISETUJUI ]</div>
+                        <p class="ttd-nama">{{ $cuti->approver2->name ?? 'Manager' }}</p>
+                        <p class="ttd-jabatan">{{ $cuti->approver2->jabatan ?? 'Manager' }}</p>
+                        <p class="ttd-tanggal">{{ $cuti->updated_at->translatedFormat('d/m/Y H:i') }} WIB</p>
+
+                    @elseif($cuti->status_approver_2 == 'ditolak')
+                        <div class="st-rejected">[ DITOLAK ]</div>
+                        <p class="ttd-nama">{{ $cuti->approver2->name ?? 'Manager' }}</p>
+                        <p class="ttd-tanggal">{{ $cuti->updated_at->translatedFormat('d/m/Y H:i') }} WIB</p>
+
+                    @elseif($cuti->status_approver_2 == 'skipped')
+                        <div class="st-placeholder">( Dilewati )</div>
+                    @else
+                        <div class="st-placeholder">( Menunggu Persetujuan )</div>
+                    @endif
+                </td>
+
+                {{-- KOLOM 3: APPROVER 3 (HRD) --}}
+                <td>
+                    <div class="ttd-header">Disetujui oleh (HRD),</div>
+
+                    @if($cuti->status_approver_3 == 'disetujui')
+                        <div class="st-approved">[ DISETUJUI ]</div>
+                        <p class="ttd-nama">{{ $cuti->approver3->name ?? 'HRD' }}</p>
+                        <p class="ttd-jabatan">{{ $cuti->approver3->jabatan ?? 'Human Resources' }}</p>
+                        <p class="ttd-tanggal">{{ $cuti->updated_at->translatedFormat('d/m/Y H:i') }} WIB</p>
+
+                    @elseif($cuti->status_approver_3 == 'ditolak')
+                        <div class="st-rejected">[ DITOLAK ]</div>
+                        <p class="ttd-nama">{{ $cuti->approver3->name ?? 'HRD' }}</p>
+                        <p class="ttd-tanggal">{{ $cuti->updated_at->translatedFormat('d/m/Y H:i') }} WIB</p>
+
+                    @elseif($cuti->status_approver_3 == 'skipped')
+                        <div class="st-placeholder">( Dilewati )</div>
+                    @else
+                        <div class="st-placeholder">( Menunggu Persetujuan )</div>
                     @endif
                 </td>
             </tr>
         </table>
 
-        {{-- CATATAN ATASAN (Jika Ada) --}}
-        @if($cuti->catatan_approval)
-            <div class="section-title">IV. CATATAN PIMPINAN</div>
-            <div style="border: 1px solid #ccc; padding: 10px; background: #fff; font-style: italic; color: #555;">
-                "{{ $cuti->catatan_approval }}"
-            </div>
+        {{-- IV. CATATAN APPROVER --}}
+        @if($cuti->catatan_approver_1 || $cuti->catatan_approver_2 || $cuti->catatan_approver_3)
+            <div class="section-title">IV. CATATAN APPROVER</div>
+            <table class="data-table">
+                @if($cuti->catatan_approver_1)
+                    <tr><td width="25%">Catatan Approver 1</td><td><div class="catatan">{{ $cuti->catatan_approver_1 }}</div></td></tr>
+                @endif
+                @if($cuti->catatan_approver_2)
+                    <tr><td width="25%">Catatan Approver 2</td><td><div class="catatan">{{ $cuti->catatan_approver_2 }}</div></td></tr>
+                @endif
+                @if($cuti->catatan_approver_3)
+                    <tr><td width="25%">Catatan Approver 3</td><td><div class="catatan">{{ $cuti->catatan_approver_3 }}</div></td></tr>
+                @endif
+            </table>
         @endif
 
         {{-- STATUS FINAL BOX --}}
